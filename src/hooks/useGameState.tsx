@@ -11,10 +11,11 @@ const useGameState = () => {
   const [shipPosition, setShipPosition] = useState(50); // Center position (%)
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
-  const [speed, setSpeed] = useState(2);
+  // Start with a lower initial speed
+  const [speed, setSpeed] = useState(0.8);
   
   const scoreRef = useRef(0);
-  const speedRef = useRef(2);
+  const speedRef = useRef(0.8);
   
   useEffect(() => {
     scoreRef.current = score;
@@ -31,11 +32,12 @@ const useGameState = () => {
     setShipPosition(50);
     setObstacles([]);
     setProjectiles([]);
-    setSpeed(2);
+    // Reset to initial slow speed
+    setSpeed(0.8);
     resetObstacleTimer();
     resetProjectileTimer();
     scoreRef.current = 0;
-    speedRef.current = 2;
+    speedRef.current = 0.8;
   }, [resetObstacleTimer, resetProjectileTimer]);
 
   const startGame = useCallback(() => {
@@ -59,8 +61,11 @@ const useGameState = () => {
     
     setScore(prev => prev + 1);
     
-    if (scoreRef.current > 0 && scoreRef.current % 500 === 0) {
-      setSpeed(prev => Math.min(prev + 0.5, 10));
+    // Gradually increase speed at more regular intervals
+    // This creates a smooth progression
+    if (scoreRef.current > 0 && scoreRef.current % 300 === 0) {
+      setSpeed(prev => Math.min(prev + 0.2, 5)); // Smaller increments, lower max
+      console.log("Speed increased to:", speedRef.current + 0.2);
     }
     
     // Create new obstacle if it's time
