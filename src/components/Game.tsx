@@ -69,6 +69,8 @@ const Game = () => {
     };
   }, [updateGame]);
 
+  console.log("Game render - obstacles count:", obstacles.length);
+
   return (
     <div 
       ref={gameContainerRef}

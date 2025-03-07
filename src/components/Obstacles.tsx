@@ -10,7 +10,7 @@ interface ObstaclesProps {
 const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
   return (
     <div
-      className={`absolute rounded-full ${obstacle.isExploding ? 'animate-ping' : ''}`}
+      className={`absolute rounded-full ${obstacle.isExploding ? 'animate-pulse' : ''}`}
       style={{
         width: `${obstacle.size}%`,
         height: `${obstacle.size}%`,

@@ -66,29 +66,36 @@ const useGameState = () => {
     // Create new obstacle if it's time
     const newObstacle = createObstacle();
     if (newObstacle) {
+      console.log("Adding new obstacle to state:", newObstacle.id);
       setObstacles(prev => [...prev, newObstacle]);
     }
     
-    // Update obstacles and projectiles positions
-    const updatedObstacles = updateObstacles(obstacles);
-    const updatedProjectiles = updateProjectiles(projectiles);
+    // Update obstacles positions
+    setObstacles(prev => {
+      const updated = updateObstacles(prev);
+      console.log("Updated obstacles count:", updated.length);
+      return updated;
+    });
     
-    // Check for collisions
+    // Update projectiles positions
+    const updatedProjectiles = updateProjectiles(projectiles);
+    setProjectiles(updatedProjectiles);
+    
+    // Check for collisions between projectiles and obstacles
     const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } = 
-      checkProjectileCollisions(updatedObstacles, updatedProjectiles);
+      checkProjectileCollisions(obstacles, updatedProjectiles);
     
     if (obstaclesHit) {
+      console.log("Obstacle hit by projectile!");
       setScore(prev => prev + 50);
       setObstacles(collidedObstacles);
       setProjectiles(newProjectilesList);
-    } else {
-      setObstacles(updatedObstacles);
-      setProjectiles(updatedProjectiles);
     }
     
     // Check if ship collided with an obstacle
-    const shipCollided = checkShipCollision(collidedObstacles, shipPosition, gameOver);
+    const shipCollided = checkShipCollision(obstacles, shipPosition, gameOver);
     if (shipCollided) {
+      console.log("Ship collision detected! Game over.");
       setGameOver(true);
     }
   }, [

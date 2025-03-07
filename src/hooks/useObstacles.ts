@@ -7,10 +7,11 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
 
   const createObstacle = useCallback(() => {
     const now = Date.now();
-    const obstacleInterval = Math.max(800 - scoreRef.current! / 10, 400); // Decrease interval as score increases
+    // Make obstacles appear more frequently (reduce interval)
+    const obstacleInterval = Math.max(600 - scoreRef.current! / 10, 300);
     
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
-      console.log('Creating new obstacle');
+      console.log('Creating new obstacle with id:', now);
       const newObstacle: Obstacle = {
         id: now,
         x: Math.random() * 80 + 10, // 10% to 90% of screen width
