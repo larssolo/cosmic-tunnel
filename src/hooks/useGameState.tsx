@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from "react";
 
 interface Obstacle {
@@ -22,7 +23,7 @@ const useGameState = () => {
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   const [speed, setSpeed] = useState(2);
   
-  const lastObstacleTimeRef = useRef(0);
+  const lastObstacleTimeRef = useRef(Date.now());
   const lastShootTimeRef = useRef(0);
   const scoreRef = useRef(0);
   const speedRef = useRef(2);
@@ -39,7 +40,7 @@ const useGameState = () => {
     setObstacles([]);
     setProjectiles([]);
     setSpeed(2);
-    lastObstacleTimeRef.current = 0;
+    lastObstacleTimeRef.current = Date.now();
     lastShootTimeRef.current = 0;
     scoreRef.current = 0;
     speedRef.current = 2;
@@ -70,12 +71,15 @@ const useGameState = () => {
 
   const createObstacle = useCallback(() => {
     const now = Date.now();
-    if (now - lastObstacleTimeRef.current > 1000) {
+    const obstacleInterval = Math.max(1000 - scoreRef.current / 10, 500); // Decrease interval as score increases
+    
+    if (now - lastObstacleTimeRef.current > obstacleInterval) {
+      console.log('Creating new obstacle');
       const newObstacle: Obstacle = {
         id: now,
-        x: Math.random() * 80 + 10,
-        y: 0,
-        size: Math.random() * 10 + 5,
+        x: Math.random() * 80 + 10, // 10% to 90% of screen width
+        y: 0, // Start at the top
+        size: Math.random() * 10 + 5, // Size between 5% and 15% of container
       };
       
       setObstacles(prev => [...prev, newObstacle]);
@@ -194,10 +198,8 @@ const useGameState = () => {
     setObstacles(updatedObstacles);
     setProjectiles(updatedProjectiles);
     
-    requestAnimationFrame(() => {
-      checkProjectileCollisions();
-      checkShipCollision();
-    });
+    checkProjectileCollisions();
+    checkShipCollision();
   }, [gameOver, createObstacle, checkProjectileCollisions, checkShipCollision, obstacles, projectiles]);
 
   useEffect(() => {

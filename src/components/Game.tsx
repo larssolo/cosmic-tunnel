@@ -27,6 +27,10 @@ const Game = () => {
     updateGame
   } = useGameState();
 
+  useEffect(() => {
+    console.log('Current obstacles:', obstacles.length);
+  }, [obstacles]);
+
   // Control ship with touch/mouse
   const handlePointerMove = (e: React.PointerEvent) => {
     if (gameContainerRef.current && !gameOver) {
@@ -70,7 +74,7 @@ const Game = () => {
     >
       <Tunnel />
       <Spaceship position={shipPosition} onShoot={shootProjectile} />
-      <Obstacles obstacles={obstacles} />
+      {obstacles && obstacles.length > 0 && <Obstacles obstacles={obstacles} />}
       <Projectiles projectiles={projectiles} />
       <GameUI score={score} gameOver={gameOver} onRestart={resetGame} />
     </div>

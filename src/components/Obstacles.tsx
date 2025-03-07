@@ -75,6 +75,7 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
 
 // Memoize the entire Obstacles component
 const Obstacles: React.FC<ObstaclesProps> = memo(({ obstacles }) => {
+  console.log('Rendering obstacles:', obstacles.length);
   return (
     <>
       {obstacles.map((obstacle) => (
