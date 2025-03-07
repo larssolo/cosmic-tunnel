@@ -1,28 +1,64 @@
 
 import React from "react";
+import { Zap } from "lucide-react";
 
 interface SpaceshipProps {
   position: number;
+  onShoot: () => void;
 }
 
-const Spaceship: React.FC<SpaceshipProps> = ({ position }) => {
+const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot }) => {
   return (
     <div
-      className="absolute w-16 h-16 transform -translate-x-1/2"
+      className="absolute w-16 h-16 transform -translate-x-1/2 cursor-pointer"
       style={{
         bottom: "20%",
         left: `${position}%`,
       }}
+      onClick={onShoot}
     >
-      {/* Spaceship body */}
+      {/* Spaceship body - more modern design */}
       <div className="relative w-full h-full">
-        <div className="absolute top-0 left-1/2 w-4 h-12 bg-gray-300 transform -translate-x-1/2 rounded-t-full"></div>
-        <div className="absolute bottom-0 left-1/2 w-10 h-6 bg-blue-500 transform -translate-x-1/2 rounded-b-lg"></div>
-        <div className="absolute bottom-0 left-1/2 w-16 h-4 bg-gray-400 transform -translate-x-1/2 rounded-full"></div>
+        {/* Main body with gradient */}
+        <div 
+          className="absolute top-0 left-1/2 w-6 h-12 transform -translate-x-1/2 rounded-t-2xl"
+          style={{
+            background: "linear-gradient(180deg, #33C3F0 0%, #0EA5E9 100%)",
+            boxShadow: "0 0 10px rgba(14, 165, 233, 0.6)"
+          }}
+        ></div>
         
-        {/* Engine flames */}
-        <div className="absolute -bottom-2 left-1/2 w-8 h-4 bg-orange-500 transform -translate-x-1/2 rounded-b-full animate-pulse"></div>
-        <div className="absolute -bottom-4 left-1/2 w-4 h-4 bg-red-500 transform -translate-x-1/2 rounded-b-full animate-pulse"></div>
+        {/* Cockpit */}
+        <div 
+          className="absolute top-2 left-1/2 w-4 h-5 transform -translate-x-1/2 rounded-full"
+          style={{
+            background: "linear-gradient(180deg, #D6BCFA 0%, #9b87f5 100%)",
+            boxShadow: "0 0 10px rgba(155, 135, 245, 0.6)"
+          }}
+        ></div>
+        
+        {/* Wings */}
+        <div className="absolute top-6 left-1/2 w-12 h-4 bg-blue-400 transform -translate-x-1/2 rounded-full"
+             style={{background: "linear-gradient(90deg, #8B5CF6 0%, #0EA5E9 100%)"}}></div>
+        
+        {/* Engine section */}
+        <div className="absolute bottom-0 left-1/2 w-10 h-6 transform -translate-x-1/2 rounded-b-lg"
+             style={{background: "linear-gradient(180deg, #6E59A5 0%, #1A1F2C 100%)"}}></div>
+        
+        {/* Engine flames - animated */}
+        <div className="absolute -bottom-2 left-1/2 w-6 h-5 transform -translate-x-1/2 rounded-b-full animate-pulse"
+             style={{background: "linear-gradient(180deg, #F97316 0%, #FFA500 50%, #FF4500 100%)"}}></div>
+        <div className="absolute -bottom-4 left-1/2 w-3 h-4 transform -translate-x-1/2 rounded-b-full animate-pulse"
+             style={{background: "linear-gradient(180deg, #FF4500 0%, #FF0000 100%)"}}></div>
+        
+        {/* Weapon indicators */}
+        <div className="absolute top-8 left-1 w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></div>
+        <div className="absolute top-8 right-1 w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></div>
+        
+        {/* Shoot indicator */}
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-yellow-300 opacity-80">
+          <Zap size={16} className="animate-pulse" />
+        </div>
       </div>
     </div>
   );

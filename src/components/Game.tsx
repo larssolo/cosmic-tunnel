@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Tunnel from "./Tunnel";
 import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
+import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
 import useGameState from "@/hooks/useGameState";
 
@@ -13,9 +14,11 @@ const Game = () => {
     gameOver,
     shipPosition,
     obstacles,
+    projectiles,
     startGame,
     resetGame,
     moveShip,
+    shootProjectile,
     updateGame
   } = useGameState();
 
@@ -47,8 +50,9 @@ const Game = () => {
       onPointerMove={handlePointerMove}
     >
       <Tunnel />
-      <Spaceship position={shipPosition} />
+      <Spaceship position={shipPosition} onShoot={shootProjectile} />
       <Obstacles obstacles={obstacles} />
+      <Projectiles projectiles={projectiles} />
       <GameUI score={score} gameOver={gameOver} onRestart={resetGame} />
     </div>
   );
