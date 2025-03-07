@@ -1,13 +1,6 @@
 
 import React, { memo } from "react";
-
-interface Obstacle {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  isExploding?: boolean;
-}
+import { Obstacle } from "@/types/gameTypes";
 
 interface ObstaclesProps {
   obstacles: Obstacle[];

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import Tunnel from "./Tunnel";
 import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
@@ -27,16 +27,19 @@ const Game = () => {
     updateGame
   } = useGameState();
 
-  useEffect(() => {
-    console.log('Current obstacles:', obstacles.length);
-  }, [obstacles]);
-
   // Control ship with touch/mouse
   const handlePointerMove = (e: React.PointerEvent) => {
     if (gameContainerRef.current && !gameOver) {
       const containerWidth = gameContainerRef.current.clientWidth;
       const position = (e.clientX / containerWidth) * 100;
       moveShip(position);
+    }
+  };
+
+  // Handle clicks/taps to shoot
+  const handleClick = () => {
+    if (!gameOver) {
+      shootProjectile();
     }
   };
 
@@ -71,10 +74,11 @@ const Game = () => {
       ref={gameContainerRef}
       className="relative w-full h-full overflow-hidden touch-none"
       onPointerMove={handlePointerMove}
+      onClick={handleClick}
     >
       <Tunnel />
       <Spaceship position={shipPosition} onShoot={shootProjectile} />
-      {obstacles && obstacles.length > 0 && <Obstacles obstacles={obstacles} />}
+      <Obstacles obstacles={obstacles} />
       <Projectiles projectiles={projectiles} />
       <GameUI score={score} gameOver={gameOver} onRestart={resetGame} />
     </div>
