@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 interface Obstacle {
   id: number;
@@ -21,10 +21,17 @@ const useGameState = () => {
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   const [speed, setSpeed] = useState(2);
-  const [lastObstacleTime, setLastObstacleTime] = useState(0);
-  const [lastShootTime, setLastShootTime] = useState(0);
+  
+  const lastObstacleTimeRef = useRef(0);
+  const lastShootTimeRef = useRef(0);
+  const scoreRef = useRef(0);
+  const speedRef = useRef(2);
+  
+  useEffect(() => {
+    scoreRef.current = score;
+    speedRef.current = speed;
+  }, [score, speed]);
 
-  // Reset game state
   const resetGame = useCallback(() => {
     setScore(0);
     setGameOver(false);
@@ -32,160 +39,167 @@ const useGameState = () => {
     setObstacles([]);
     setProjectiles([]);
     setSpeed(2);
-    setLastObstacleTime(0);
-    setLastShootTime(0);
+    lastObstacleTimeRef.current = 0;
+    lastShootTimeRef.current = 0;
+    scoreRef.current = 0;
+    speedRef.current = 2;
   }, []);
 
-  // Start game
   const startGame = useCallback(() => {
     resetGame();
   }, [resetGame]);
 
-  // Move ship
   const moveShip = useCallback((position: number) => {
-    // Clamp position between 10-90% to keep ship on screen
     const clampedPosition = Math.max(10, Math.min(90, position));
     setShipPosition(clampedPosition);
   }, []);
 
-  // Shoot projectile
   const shootProjectile = useCallback(() => {
     const now = Date.now();
-    // Limit shooting rate (can shoot every 300ms)
-    if (now - lastShootTime > 300 && !gameOver) {
+    if (now - lastShootTimeRef.current > 300 && !gameOver) {
       const newProjectile: Projectile = {
         id: now,
         x: shipPosition,
-        y: 20, // Start at ship position
+        y: 20,
       };
       
       setProjectiles(prev => [...prev, newProjectile]);
-      setLastShootTime(now);
+      lastShootTimeRef.current = now;
     }
-  }, [lastShootTime, shipPosition, gameOver]);
+  }, [shipPosition, gameOver]);
 
-  // Create new obstacle
   const createObstacle = useCallback(() => {
     const now = Date.now();
-    if (now - lastObstacleTime > 1000) { // Create obstacle every second
+    if (now - lastObstacleTimeRef.current > 1000) {
       const newObstacle: Obstacle = {
         id: now,
-        x: Math.random() * 80 + 10, // Random position between 10-90%
-        y: 0, // Start at top
-        size: Math.random() * 10 + 5, // Random size between 5-15%
+        x: Math.random() * 80 + 10,
+        y: 0,
+        size: Math.random() * 10 + 5,
       };
       
       setObstacles(prev => [...prev, newObstacle]);
-      setLastObstacleTime(now);
+      lastObstacleTimeRef.current = now;
     }
-  }, [lastObstacleTime]);
+  }, []);
 
-  // Check ship collision with obstacles
   const checkShipCollision = useCallback(() => {
-    // Ship is approximately at y position 80%
+    if (gameOver) return false;
+    
     const shipY = 80;
-    const shipSize = 10; // Approximate ship size
+    const shipSize = 10;
+    const shipSizeHalf = shipSize / 2;
 
     for (const obstacle of obstacles) {
-      // Only check obstacles near the ship's y position
-      if (!obstacle.isExploding && Math.abs(obstacle.y - shipY) < 10) {
-        // Simple circle collision detection
-        const distance = Math.sqrt(
-          Math.pow(obstacle.x - shipPosition, 2) + 
-          Math.pow(obstacle.y - shipY, 2)
-        );
-        
-        if (distance < (obstacle.size + shipSize) / 2) {
-          setGameOver(true);
-          return true;
-        }
+      if (obstacle.isExploding) continue;
+      
+      const yDiff = Math.abs(obstacle.y - shipY);
+      if (yDiff > 10) continue;
+      
+      const xDiff = Math.abs(obstacle.x - shipPosition);
+      const combinedRadii = (obstacle.size + shipSize) / 2;
+      
+      if (xDiff > combinedRadii) continue;
+      
+      const distance = Math.sqrt(
+        Math.pow(obstacle.x - shipPosition, 2) + 
+        Math.pow(obstacle.y - shipY, 2)
+      );
+      
+      if (distance < combinedRadii) {
+        setGameOver(true);
+        return true;
       }
     }
     
     return false;
-  }, [obstacles, shipPosition]);
+  }, [obstacles, shipPosition, gameOver]);
 
-  // Check projectile collision with obstacles
   const checkProjectileCollisions = useCallback(() => {
     let obstaclesHit = false;
+    const updatedObstacles = [...obstacles];
+    const newProjectiles = [...projectiles];
+    let projectilesToRemove: number[] = [];
     
-    const updatedObstacles = obstacles.map(obstacle => {
-      if (obstacle.isExploding) return obstacle;
+    for (let i = 0; i < updatedObstacles.length; i++) {
+      if (updatedObstacles[i].isExploding) continue;
       
-      for (const projectile of projectiles) {
-        // Calculate distance between projectile and obstacle
+      const obstacle = updatedObstacles[i];
+      const obstacleSizeHalf = obstacle.size / 2;
+      
+      for (let j = 0; j < newProjectiles.length; j++) {
+        const projectile = newProjectiles[j];
+        
+        const xDiff = Math.abs(obstacle.x - projectile.x);
+        if (xDiff > obstacleSizeHalf) continue;
+        
+        const yDiff = Math.abs(obstacle.y - (100 - projectile.y));
+        if (yDiff > obstacleSizeHalf) continue;
+        
         const distance = Math.sqrt(
           Math.pow(obstacle.x - projectile.x, 2) + 
           Math.pow(obstacle.y - (100 - projectile.y), 2)
         );
         
-        // If collision detected
-        if (distance < obstacle.size / 2) {
+        if (distance < obstacleSizeHalf) {
           obstaclesHit = true;
-          // Mark obstacle for explosion animation
-          return { ...obstacle, isExploding: true };
+          updatedObstacles[i] = { ...obstacle, isExploding: true };
+          projectilesToRemove.push(j);
+          break;
         }
       }
-      return obstacle;
-    });
+    }
     
     if (obstaclesHit) {
       setObstacles(updatedObstacles);
-      // Increase score for hitting obstacles
+      
+      if (projectilesToRemove.length > 0) {
+        setProjectiles(prev => 
+          prev.filter((_, index) => !projectilesToRemove.includes(index))
+        );
+      }
+      
       setScore(prev => prev + 50);
     }
   }, [obstacles, projectiles]);
 
-  // Update game state
   const updateGame = useCallback(() => {
     if (gameOver) return;
     
-    // Increase score
     setScore(prev => prev + 1);
     
-    // Increase speed gradually
-    if (score > 0 && score % 500 === 0) {
+    if (scoreRef.current > 0 && scoreRef.current % 500 === 0) {
       setSpeed(prev => Math.min(prev + 0.5, 10));
     }
     
-    // Create new obstacles
     createObstacle();
     
-    // Move and filter obstacles
-    setObstacles(prev => {
-      // Move obstacles down
-      return prev
-        .map(obstacle => {
-          // If obstacle is exploding, keep it for a short time then remove it
-          if (obstacle.isExploding) {
-            if (obstacle.y > 110) return null; // Remove when off screen
-            return { ...obstacle, y: obstacle.y + speed }; // Keep moving
-          }
-          return { ...obstacle, y: obstacle.y + speed };
-        })
-        .filter(Boolean) // Remove null obstacles
-        // Remove obstacles that are off screen
-        .filter(obstacle => obstacle && obstacle.y < 110) as Obstacle[];
-    });
+    const updatedObstacles = obstacles
+      .map(obstacle => {
+        if (obstacle.isExploding) {
+          if (obstacle.y > 110) return null;
+          return { ...obstacle, y: obstacle.y + speedRef.current };
+        }
+        return { ...obstacle, y: obstacle.y + speedRef.current };
+      })
+      .filter(Boolean) as Obstacle[];
     
-    // Move and filter projectiles
-    setProjectiles(prev => {
-      // Move projectiles up
-      return prev
-        .map(projectile => ({
-          ...projectile,
-          y: projectile.y + 3 // Speed of projectiles
-        }))
-        // Remove projectiles that are off screen
-        .filter(projectile => projectile.y < 100);
-    });
+    const updatedProjectiles = projectiles
+      .map(projectile => ({
+        ...projectile,
+        y: projectile.y + 3
+      }))
+      .filter(projectile => projectile.y < 100);
     
-    // Check for collisions
-    checkProjectileCollisions();
-    checkShipCollision();
-  }, [gameOver, score, speed, createObstacle, checkShipCollision, checkProjectileCollisions]);
+    setObstacles(updatedObstacles);
+    setProjectiles(updatedProjectiles);
+    
+    requestAnimationFrame(() => {
+      checkProjectileCollisions();
+      checkShipCollision();
+    });
+  }, [gameOver, createObstacle, checkProjectileCollisions, checkShipCollision, obstacles, projectiles]);
 
-  // Initialize game
   useEffect(() => {
     startGame();
   }, [startGame]);

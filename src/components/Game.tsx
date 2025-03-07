@@ -9,6 +9,11 @@ import useGameState from "@/hooks/useGameState";
 
 const Game = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
+  const frameIdRef = useRef<number>(0);
+  const lastUpdateRef = useRef<number>(0);
+  const FPS = 60;
+  const frameDelay = 1000 / FPS;
+  
   const { 
     score,
     gameOver,
@@ -31,16 +36,30 @@ const Game = () => {
     }
   };
 
-  // Game loop
+  // Optimized game loop with frame rate control
   useEffect(() => {
-    let frameId: number;
-    const gameLoop = () => {
-      updateGame();
-      frameId = requestAnimationFrame(gameLoop);
+    const gameLoop = (timestamp: number) => {
+      if (!lastUpdateRef.current) {
+        lastUpdateRef.current = timestamp;
+      }
+      
+      const elapsed = timestamp - lastUpdateRef.current;
+      
+      if (elapsed > frameDelay) {
+        updateGame();
+        lastUpdateRef.current = timestamp - (elapsed % frameDelay);
+      }
+      
+      frameIdRef.current = requestAnimationFrame(gameLoop);
     };
     
-    frameId = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(frameId);
+    frameIdRef.current = requestAnimationFrame(gameLoop);
+    
+    return () => {
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+      }
+    };
   }, [updateGame]);
 
   return (
