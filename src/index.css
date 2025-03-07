@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,15 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .perspective-\[800px\] {
+    perspective: 800px;
+  }
+  
+  .touch-none {
+    touch-action: none;
   }
 }
