@@ -4,6 +4,7 @@ import { Obstacle, Projectile } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
+import { useSound } from "./useSound";
 
 const useGameState = () => {
   const [score, setScore] = useState(0);
@@ -16,6 +17,9 @@ const useGameState = () => {
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.8);
+  
+  // Add sound effects
+  const { playSound } = useSound();
   
   useEffect(() => {
     scoreRef.current = score;
@@ -53,8 +57,10 @@ const useGameState = () => {
     const newProjectile = createProjectile(shipPosition, gameOver);
     if (newProjectile) {
       setProjectiles(prev => [...prev, newProjectile]);
+      // Play shoot sound when firing projectile
+      playSound('shoot');
     }
-  }, [shipPosition, gameOver, createProjectile]);
+  }, [shipPosition, gameOver, createProjectile, playSound]);
 
   const updateGame = useCallback(() => {
     if (gameOver) return;
@@ -92,6 +98,8 @@ const useGameState = () => {
     
     if (obstaclesHit) {
       console.log("Obstacle hit by projectile!");
+      // Play explosion sound when obstacle is hit
+      playSound('explosion');
       setScore(prev => prev + 50);
       setObstacles(collidedObstacles);
       setProjectiles(newProjectilesList);
@@ -101,6 +109,8 @@ const useGameState = () => {
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOver);
     if (shipCollided) {
       console.log("Ship collision detected! Game over.");
+      // Play game over sound when ship collides
+      playSound('gameOver');
       setGameOver(true);
     }
   }, [
@@ -112,7 +122,8 @@ const useGameState = () => {
     checkShipCollision, 
     obstacles, 
     projectiles, 
-    shipPosition
+    shipPosition,
+    playSound
   ]);
 
   useEffect(() => {
