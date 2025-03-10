@@ -14,7 +14,7 @@ interface GameUIProps {
 const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultiplier, meteorHits }) => {
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
-      {/* Score display with multiplier and meteor hits */}
+      {/* Score display with meteor hits */}
       <div className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm"
            style={{
              boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
@@ -22,12 +22,7 @@ const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultip
            }}>
         <p className="font-bold">Score: {score}</p>
         
-        {/* Show only the multiplier value when it's greater than 1 */}
-        {scoreMultiplier > 1 && (
-          <p className="text-sm text-yellow-300 font-medium">
-            {scoreMultiplier.toFixed(1)}x
-          </p>
-        )}
+        {/* Removed the multiplier display that was here */}
         
         {/* Display meteor hits counter */}
         <p className="text-sm text-green-300 font-medium">
