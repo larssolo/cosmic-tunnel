@@ -79,7 +79,11 @@ const Game = () => {
       onClick={handleClick}
     >
       <Tunnel />
-      <Spaceship position={shipPosition} onShoot={shootProjectile} />
+      <Spaceship 
+        position={shipPosition} 
+        onShoot={shootProjectile} 
+        isExploding={gameOver} 
+      />
       <Obstacles obstacles={obstacles} />
       <Projectiles projectiles={projectiles} />
       <GameUI score={score} gameOver={gameOver} onRestart={resetGame} />
