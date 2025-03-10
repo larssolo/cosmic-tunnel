@@ -24,6 +24,7 @@ const Game = () => {
     shipPosition,
     obstacles,
     projectiles,
+    scoreMultiplier, // Get the score multiplier
     startGame,
     resetGame,
     moveShip,
@@ -132,6 +133,7 @@ const Game = () => {
         score={score} 
         gameOver={gameOver && explosionComplete} 
         onRestart={handleRestart} 
+        scoreMultiplier={scoreMultiplier} // Pass the score multiplier
       />
     </div>
   );

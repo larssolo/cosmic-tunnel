@@ -14,9 +14,12 @@ const useGameState = () => {
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   // Start with an even lower initial speed
   const [speed, setSpeed] = useState(0.5);
+  // Add a score multiplier state that starts at 1
+  const [scoreMultiplier, setScoreMultiplier] = useState(1);
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
+  const scoreMultiplierRef = useRef(1);
   
   // Add sound effects
   const { playSound } = useSound();
@@ -24,7 +27,8 @@ const useGameState = () => {
   useEffect(() => {
     scoreRef.current = score;
     speedRef.current = speed;
-  }, [score, speed]);
+    scoreMultiplierRef.current = scoreMultiplier;
+  }, [score, speed, scoreMultiplier]);
 
   const { createObstacle, updateObstacles, resetObstacleTimer } = useObstacles(scoreRef, speedRef);
   const { createProjectile, updateProjectiles, resetProjectileTimer } = useProjectiles();
@@ -38,10 +42,13 @@ const useGameState = () => {
     setProjectiles([]);
     // Reset to initial slower speed
     setSpeed(0.5);
+    // Reset score multiplier
+    setScoreMultiplier(1);
     resetObstacleTimer();
     resetProjectileTimer();
     scoreRef.current = 0;
     speedRef.current = 0.5;
+    scoreMultiplierRef.current = 1;
     // Play start game sound
     playSound('start');
   }, [resetObstacleTimer, resetProjectileTimer, playSound]);
@@ -67,7 +74,8 @@ const useGameState = () => {
   const updateGame = useCallback(() => {
     if (gameOver) return;
     
-    setScore(prev => prev + 1);
+    // Use base score increment of 1, multiplied by current multiplier
+    setScore(prev => prev + Math.round(1 * scoreMultiplierRef.current));
     
     // More gradual speed increase at less frequent intervals
     // This creates a much smoother and slower progression
@@ -104,7 +112,14 @@ const useGameState = () => {
       console.log("Obstacle hit by projectile!");
       // Play explosion sound when obstacle is hit
       playSound('explosion');
-      setScore(prev => prev + 50);
+      
+      // Increase the score multiplier by 1.2x when hitting a meteor
+      setScoreMultiplier(prev => prev * 1.2);
+      console.log("Score multiplier increased to:", scoreMultiplierRef.current * 1.2);
+      
+      // Add bonus points for hitting obstacle (50 base points * current multiplier)
+      setScore(prev => prev + Math.round(50 * scoreMultiplierRef.current));
+      
       setObstacles(collidedObstacles);
       setProjectiles(newProjectilesList);
     }
@@ -140,6 +155,7 @@ const useGameState = () => {
     shipPosition,
     obstacles,
     projectiles,
+    scoreMultiplier,
     startGame,
     resetGame,
     moveShip,
