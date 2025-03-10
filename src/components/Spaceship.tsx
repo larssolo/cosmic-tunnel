@@ -17,14 +17,13 @@ const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot }) => {
       }}
       onClick={onShoot}
     >
-      {/* Spaceship body - more modern design */}
+      {/* Spaceship body - more modern design without rings */}
       <div className="relative w-full h-full">
         {/* Main body with gradient */}
         <div 
           className="absolute top-0 left-1/2 w-6 h-12 transform -translate-x-1/2 rounded-t-2xl"
           style={{
             background: "linear-gradient(180deg, #33C3F0 0%, #0EA5E9 100%)",
-            boxShadow: "0 0 10px rgba(14, 165, 233, 0.6)"
           }}
         ></div>
         
@@ -33,12 +32,11 @@ const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot }) => {
           className="absolute top-2 left-1/2 w-4 h-5 transform -translate-x-1/2 rounded-full"
           style={{
             background: "linear-gradient(180deg, #D6BCFA 0%, #9b87f5 100%)",
-            boxShadow: "0 0 10px rgba(155, 135, 245, 0.6)"
           }}
         ></div>
         
         {/* Wings */}
-        <div className="absolute top-6 left-1/2 w-12 h-4 bg-blue-400 transform -translate-x-1/2 rounded-full"
+        <div className="absolute top-6 left-1/2 w-12 h-4 transform -translate-x-1/2 rounded-full"
              style={{background: "linear-gradient(90deg, #8B5CF6 0%, #0EA5E9 100%)"}}></div>
         
         {/* Engine section */}
@@ -52,12 +50,12 @@ const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot }) => {
              style={{background: "linear-gradient(180deg, #FF4500 0%, #FF0000 100%)"}}></div>
         
         {/* Weapon indicators */}
-        <div className="absolute top-8 left-1 w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></div>
-        <div className="absolute top-8 right-1 w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></div>
+        <div className="absolute top-8 left-1 w-2 h-2 rounded-full bg-yellow-300"></div>
+        <div className="absolute top-8 right-1 w-2 h-2 rounded-full bg-yellow-300"></div>
         
         {/* Shoot indicator */}
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-yellow-300 opacity-80">
-          <Zap size={16} className="animate-pulse" />
+          <Zap size={16} />
         </div>
       </div>
     </div>

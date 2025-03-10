@@ -9,10 +9,10 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     const now = Date.now();
     
     // Start with a longer interval and gradually decrease it based on score
-    // This makes obstacles appear less frequently at the start and more frequently as score increases
-    const baseInterval = 1200; // Starting with a longer delay (1.2 seconds)
-    const minInterval = 300;   // Minimum interval (fastest spawn rate)
-    const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 5, minInterval);
+    // Even longer base interval for slower obstacle generation at the beginning
+    const baseInterval = 1500; // Starting with a longer delay (1.5 seconds)
+    const minInterval = 400;   // Minimum interval (fastest spawn rate)
+    const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 8, minInterval);
     
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
       console.log('Creating new obstacle with id:', now);
@@ -34,9 +34,9 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     return obstacles
       .map(obstacle => {
         // Calculate the speed factor based on the game's current score
-        // Start slow and gradually increase speed
-        const baseSpeed = 0.5; // Start with a slower speed
-        const speedFactor = Math.min(1 + (scoreRef.current! / 2000), 3); // Max 3x speed increase
+        // Start even slower and gradually increase speed
+        const baseSpeed = 0.3; // Start with a slower base speed
+        const speedFactor = Math.min(1 + (scoreRef.current! / 3000), 2.5); // More gradual increase, lower max
         
         // If the obstacle is exploding, move it faster
         if (obstacle.isExploding) {

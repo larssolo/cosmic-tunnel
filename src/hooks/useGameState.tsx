@@ -12,11 +12,11 @@ const useGameState = () => {
   const [shipPosition, setShipPosition] = useState(50); // Center position (%)
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
-  // Start with a lower initial speed
-  const [speed, setSpeed] = useState(0.8);
+  // Start with an even lower initial speed
+  const [speed, setSpeed] = useState(0.5);
   
   const scoreRef = useRef(0);
-  const speedRef = useRef(0.8);
+  const speedRef = useRef(0.5);
   
   // Add sound effects
   const { playSound } = useSound();
@@ -36,13 +36,15 @@ const useGameState = () => {
     setShipPosition(50);
     setObstacles([]);
     setProjectiles([]);
-    // Reset to initial slow speed
-    setSpeed(0.8);
+    // Reset to initial slower speed
+    setSpeed(0.5);
     resetObstacleTimer();
     resetProjectileTimer();
     scoreRef.current = 0;
-    speedRef.current = 0.8;
-  }, [resetObstacleTimer, resetProjectileTimer]);
+    speedRef.current = 0.5;
+    // Play start game sound
+    playSound('start');
+  }, [resetObstacleTimer, resetProjectileTimer, playSound]);
 
   const startGame = useCallback(() => {
     resetGame();
@@ -67,11 +69,13 @@ const useGameState = () => {
     
     setScore(prev => prev + 1);
     
-    // Gradually increase speed at more regular intervals
-    // This creates a smooth progression
-    if (scoreRef.current > 0 && scoreRef.current % 300 === 0) {
-      setSpeed(prev => Math.min(prev + 0.2, 5)); // Smaller increments, lower max
-      console.log("Speed increased to:", speedRef.current + 0.2);
+    // More gradual speed increase at less frequent intervals
+    // This creates a much smoother and slower progression
+    if (scoreRef.current > 0 && scoreRef.current % 500 === 0) {
+      setSpeed(prev => Math.min(prev + 0.1, 3.0)); // Smaller increments, lower max
+      console.log("Speed increased to:", speedRef.current + 0.1);
+      // Play speed increase sound
+      playSound('speedUp');
     }
     
     // Create new obstacle if it's time

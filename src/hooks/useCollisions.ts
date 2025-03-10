@@ -11,17 +11,18 @@ export function useCollisions() {
     if (gameOver) return false;
     
     const shipY = 80; // Ship position from bottom
-    const shipSize = 10; // Approximate ship size
+    const shipSize = 12; // Slightly increased ship collision size for better detection
     
     for (const obstacle of obstacles) {
       if (obstacle.isExploding) continue; // Exploding obstacles don't cause collisions
       
-      // Simple distance-based collision detection
+      // Improved collision detection with slightly larger detection area
       const xDiff = Math.abs(obstacle.x - shipPosition);
       const yDiff = Math.abs(obstacle.y - shipY);
       const combinedRadii = (obstacle.size + shipSize) / 2;
       
-      if (xDiff <= combinedRadii && yDiff <= 10) {
+      // Slightly more generous collision bounds
+      if (xDiff <= combinedRadii && yDiff <= 12) {
         console.log('Ship collision detected!');
         return true;
       }
