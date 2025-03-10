@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useRef } from 'react';
 
 type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp';
@@ -21,6 +22,30 @@ export const useSound = () => {
     audioRefs.current.start = new Audio('data:audio/wav;base64,UklGRqQEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYAEAACBgYKBgoGDgoOChIKEg4WDhYSGhIaFh4WHhoiGiIeJh4mIiomKiYuJi4qMioyLjYuNjI6Mjo2PjY+OkI6QjpGPkZCSkJKRk5GTkpSSlJOVk5WUlpSWlZeVl5aYlpiXmZeZmJqYmpmbmZuam5qcm5ybnZudnJ6cn52fn5+goKChoaGioqKjo6OkpKSlpaWmpqanp6eoqKipqamqqqqrq6usrKytra2urq6vr6+wsLCxsbGysrKzs7O0tLS1tbW2tra3t7e4uLi5ubm6urq7u7u8vLy9vb2+vr6/v7/AwMDBwcHCwsLDw8PExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8jIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vMzMzMzMzMzMzA==');
     audioRefs.current.speedUp = new Audio('data:audio/wav;base64,UklGRpQDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXADAAAAgICAgICAfn59fXx8e3t6enl5eHh3d3Z2dXV0dHNzc3JycXFwcG9vbm5tbWxsaGhiYl1dWVlVVVJST09MTElJRkZDQz8/PDw5OTY2MzMwMCUlEBDt7bm5kJBoaEBAICAQEAAAAODgwMCgoICAYGBAQICAwMCAgEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQECAgMDBAPCQkVFRwcHh4gICIiJCQmJigoKioqKisrLCwsLC0tLS0uLi4uLi4uLi4uLy8vLy8vLy8vLy8vLy8vb29vb29vb29vb2+vr6+vr6+vr6+vr6+vr6+vr+/v7+/v7+/v7+/v7+/v7+/v8DAwMDAwMDAwMDAwMDAwMDAwMDAwMDBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsPDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8jIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vMzMzMzMzMzMzA==');
 
+    // Set audio volume levels
+    if (audioRefs.current.shoot) {
+      audioRefs.current.shoot.volume = 0.6; // Set a good volume level
+    }
+    if (audioRefs.current.explosion) {
+      audioRefs.current.explosion.volume = 0.7;
+    }
+    if (audioRefs.current.gameOver) {
+      audioRefs.current.gameOver.volume = 0.8;
+    }
+    if (audioRefs.current.start) {
+      audioRefs.current.start.volume = 0.7;
+    }
+    if (audioRefs.current.speedUp) {
+      audioRefs.current.speedUp.volume = 0.6;
+    }
+
+    // Preload audio to ensure they're ready when needed
+    Object.values(audioRefs.current).forEach(audio => {
+      if (audio) {
+        audio.load();
+      }
+    });
+
     // Clean up function to release audio resources
     return () => {
       Object.values(audioRefs.current).forEach(audio => {
@@ -35,11 +60,19 @@ export const useSound = () => {
   const playSound = useCallback((type: SoundType) => {
     const audio = audioRefs.current[type];
     if (audio) {
-      // Reset and play
+      // Reset the audio to the beginning before playing
       audio.currentTime = 0;
-      audio.play().catch(err => {
-        console.log(`Error playing ${type} sound:`, err);
-      });
+      
+      // Use Promise API for better error handling
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.error(`Error playing ${type} sound:`, err);
+        });
+      }
+    } else {
+      console.warn(`Sound not loaded for type: ${type}`);
     }
   }, []);
 
