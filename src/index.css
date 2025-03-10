@@ -111,14 +111,29 @@
   }
 }
 
-/* Custom animation for explosion particles */
-@keyframes explosion-particle {
+/* Enhanced explosion animation for fragments */
+@keyframes explosion-fragment {
+  0% {
+    opacity: 1;
+    transform-origin: center;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0.2) rotate(var(--tw-rotate));
+  }
+}
+
+/* Spiral animation for some fragments */
+@keyframes explosion-spiral {
   0% {
     opacity: 1;
     transform-origin: center;
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0) rotate(0);
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0.1) rotate(calc(var(--tw-rotate) + 720deg));
   }
 }

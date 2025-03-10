@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Tunnel from "./Tunnel";
 import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
@@ -14,6 +14,10 @@ const Game = () => {
   const FPS = 60;
   const frameDelay = 1000 / FPS;
   
+  // Add state to track if the explosion animation is complete
+  const [explosionComplete, setExplosionComplete] = useState(false);
+  const explosionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   const { 
     score,
     gameOver,
@@ -26,6 +30,38 @@ const Game = () => {
     shootProjectile,
     updateGame
   } = useGameState();
+
+  // Set up explosion timer when game over occurs
+  useEffect(() => {
+    if (gameOver && !explosionComplete) {
+      // Clear any existing timer
+      if (explosionTimerRef.current) {
+        clearTimeout(explosionTimerRef.current);
+      }
+      
+      // Set a new timer to mark explosion as complete after animation
+      // Making it longer (3500ms) to allow for the enhanced explosion animation
+      explosionTimerRef.current = setTimeout(() => {
+        setExplosionComplete(true);
+      }, 3500);
+    }
+    
+    // Reset explosion state when game restarts
+    if (!gameOver) {
+      setExplosionComplete(false);
+      if (explosionTimerRef.current) {
+        clearTimeout(explosionTimerRef.current);
+        explosionTimerRef.current = null;
+      }
+    }
+    
+    // Clean up timer on unmount
+    return () => {
+      if (explosionTimerRef.current) {
+        clearTimeout(explosionTimerRef.current);
+      }
+    };
+  }, [gameOver]);
 
   // Control ship with touch/mouse
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -41,6 +77,12 @@ const Game = () => {
     if (!gameOver) {
       shootProjectile();
     }
+  };
+
+  // Handle game restart
+  const handleRestart = () => {
+    resetGame();
+    setExplosionComplete(false);
   };
 
   // Optimized game loop with frame rate control
@@ -86,7 +128,11 @@ const Game = () => {
       />
       <Obstacles obstacles={obstacles} />
       <Projectiles projectiles={projectiles} />
-      <GameUI score={score} gameOver={gameOver} onRestart={resetGame} />
+      <GameUI 
+        score={score} 
+        gameOver={gameOver && explosionComplete} 
+        onRestart={handleRestart} 
+      />
     </div>
   );
 };
