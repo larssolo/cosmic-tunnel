@@ -15,18 +15,6 @@ const generateStars = () => {
   }));
 };
 
-// Pre-generate tunnel rings for better performance
-const generateTunnelRings = () => {
-  return Array.from({ length: 5 }).map((_, i) => ({
-    id: i,
-    size: (i + 1) * 10,
-    duration: 3 + i * 0.2,
-    opacity: 1 - i * 0.1,
-    color: `rgb(${155 - i * 10}, ${135 - i * 5}, ${245 - i * 15})`,
-    shadow: `0 0 ${5 + i * 2}px rgba(155, 135, 245, ${0.5 - i * 0.05})`,
-  }));
-};
-
 // Pre-generate flashes for better performance
 const generateFlashes = () => {
   return Array.from({ length: 3 }).map((_, i) => ({
@@ -58,30 +46,6 @@ const Stars = memo(() => {
             top: `${star.top}%`,
             animationDuration: `${star.duration}s`,
             opacity: star.opacity,
-          }}
-        />
-      ))}
-    </div>
-  );
-});
-
-// Memoize tunnel rings
-const TunnelRings = memo(() => {
-  const rings = React.useMemo(() => generateTunnelRings(), []);
-  
-  return (
-    <div className="absolute inset-0 perspective-[800px]">
-      {rings.map((ring) => (
-        <div
-          key={ring.id}
-          className="absolute left-1/2 top-1/2 border-2 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-ping"
-          style={{
-            width: `${ring.size}%`,
-            height: `${ring.size}%`,
-            animationDuration: `${ring.duration}s`,
-            opacity: ring.opacity,
-            borderColor: ring.color,
-            boxShadow: ring.shadow,
           }}
         />
       ))}
@@ -126,7 +90,6 @@ const Tunnel = memo(() => {
       
       {/* Dynamic elements - memoized */}
       <Stars />
-      <TunnelRings />
       <Flashes />
     </div>
   );
