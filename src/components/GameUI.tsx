@@ -36,9 +36,7 @@ const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultip
           <h2 className="text-6xl font-bold text-white" 
               style={{textShadow: "0 0 10px rgba(155, 135, 245, 0.8)"}}>Game Over</h2>
           <p className="text-2xl text-white">Final Score: {score}</p>
-          {scoreMultiplier > 1 && (
-            <p className="text-lg text-yellow-300">{scoreMultiplier.toFixed(1)}x</p>
-          )}
+          {/* Removed the score multiplier display here */}
           <p className="text-lg text-green-300">Meteor Hit: {meteorHits}</p>
           <Button onClick={onRestart} className="mt-4 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600">
             Play Again
