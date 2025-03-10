@@ -7,25 +7,32 @@ interface GameUIProps {
   score: number;
   gameOver: boolean;
   onRestart: () => void;
-  scoreMultiplier: number; // Add the scoreMultiplier prop
+  scoreMultiplier: number;
+  meteorHits: number; // Add meteorHits prop
 }
 
-const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultiplier }) => {
+const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultiplier, meteorHits }) => {
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {/* Score display with multiplier */}
+      {/* Score display with multiplier and meteor hits */}
       <div className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm"
            style={{
              boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
              border: "1px solid rgba(155, 135, 245, 0.2)"
            }}>
         <p className="font-bold">Score: {score}</p>
-        {/* Only show multiplier when it's greater than 1 */}
+        
+        {/* Show multiplier with new name when it's greater than 1 */}
         {scoreMultiplier > 1 && (
           <p className="text-sm text-yellow-300 font-medium">
             Multiplier: {scoreMultiplier.toFixed(1)}x
           </p>
         )}
+        
+        {/* Display meteor hits counter */}
+        <p className="text-sm text-green-300 font-medium">
+          Meteor Hit: {meteorHits}
+        </p>
       </div>
 
       {/* Game over screen */}
@@ -35,8 +42,9 @@ const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultip
               style={{textShadow: "0 0 10px rgba(155, 135, 245, 0.8)"}}>Game Over</h2>
           <p className="text-2xl text-white">Final Score: {score}</p>
           {scoreMultiplier > 1 && (
-            <p className="text-lg text-yellow-300">Final Multiplier: {scoreMultiplier.toFixed(1)}x</p>
+            <p className="text-lg text-yellow-300">Multiplier: {scoreMultiplier.toFixed(1)}x</p>
           )}
+          <p className="text-lg text-green-300">Meteor Hit: {meteorHits}</p>
           <Button onClick={onRestart} className="mt-4 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600">
             Play Again
           </Button>

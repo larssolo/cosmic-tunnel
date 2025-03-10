@@ -20,4 +20,5 @@ export interface GameState {
   obstacles: Obstacle[];
   projectiles: Projectile[];
   speed: number;
+  meteorHits: number; // Add meteor hits counter
 }

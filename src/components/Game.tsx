@@ -24,7 +24,8 @@ const Game = () => {
     shipPosition,
     obstacles,
     projectiles,
-    scoreMultiplier, // Get the score multiplier
+    scoreMultiplier,
+    meteorHits, // Get the meteor hits count
     startGame,
     resetGame,
     moveShip,
@@ -133,7 +134,8 @@ const Game = () => {
         score={score} 
         gameOver={gameOver && explosionComplete} 
         onRestart={handleRestart} 
-        scoreMultiplier={scoreMultiplier} // Pass the score multiplier
+        scoreMultiplier={scoreMultiplier}
+        meteorHits={meteorHits} // Pass meteor hits to GameUI
       />
     </div>
   );
