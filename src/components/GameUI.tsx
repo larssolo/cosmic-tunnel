@@ -38,7 +38,7 @@ const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultip
       {/* Game over screen */}
       {gameOver && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center flex-col gap-4 pointer-events-auto backdrop-blur-sm">
-          <h2 className="text-4xl font-bold text-white" 
+          <h2 className="text-6xl font-bold text-white" 
               style={{textShadow: "0 0 10px rgba(155, 135, 245, 0.8)"}}>Game Over</h2>
           <p className="text-2xl text-white">Final Score: {score}</p>
           {scoreMultiplier > 1 && (

@@ -1,13 +1,15 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap'); /* Fallback font */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Robot 9000 font - using a fallback monospace font as placeholder */
+/* Robot 9000 font from fontspace */
 @font-face {
   font-family: 'Robot 9000';
-  src: url('https://fonts.cdnfonts.com/css/robot-9000') format('woff2');
+  src: url('https://cdn.fontspace.com/c/open/54819/robot-9000-font/robot-9000.woff2') format('woff2'),
+       url('https://cdn.fontspace.com/c/open/54819/robot-9000-font/robot-9000.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
