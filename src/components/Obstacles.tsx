@@ -41,22 +41,47 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
                style={{top: "60%", left: "70%"}}></div>
         </>
       ) : (
-        // Optimized explosion effect with fewer DOM elements
+        // Enhanced explosion effect with more dramatic animation
         <div className="relative w-full h-full">
+          {/* Core explosion */}
           <div className="absolute inset-0 rounded-full bg-orange-500 animate-pulse"></div>
-          <div className="absolute inset-1/4 rounded-full bg-yellow-400 animate-ping"></div>
-          <div className="absolute inset-2/5 rounded-full bg-white"></div>
+          <div className="absolute inset-1/4 rounded-full bg-yellow-400 animate-ping opacity-90"></div>
+          <div className="absolute inset-2/5 rounded-full bg-white animate-pulse"></div>
           
-          {/* Reduced number of explosion particles */}
-          {Array.from({ length: 4 }).map((_, i) => (
+          {/* Shockwave effect */}
+          <div className="absolute inset-0 rounded-full border-4 border-orange-300 animate-ping opacity-30"
+               style={{animationDuration: "0.8s"}}></div>
+          
+          {/* Explosion particles - more particles and better animations */}
+          {Array.from({ length: 8 }).map((_, i) => (
             <div 
               key={i}
-              className="absolute w-2 h-2 bg-orange-400 rounded-full animate-ping"
+              className="absolute bg-orange-400 rounded-full animate-ping"
               style={{
-                top: `${50 + 30 * Math.sin(i * Math.PI / 2)}%`,
-                left: `${50 + 30 * Math.cos(i * Math.PI / 2)}%`,
-                animationDuration: `${0.5 + Math.random() * 0.5}s`,
-                animationDelay: `${Math.random() * 0.2}s`
+                width: `${Math.random() * 5 + 2}%`,
+                height: `${Math.random() * 5 + 2}%`,
+                top: `${50 + 45 * Math.sin(i * Math.PI / 4)}%`,
+                left: `${50 + 45 * Math.cos(i * Math.PI / 4)}%`,
+                animationDuration: `${0.3 + Math.random() * 0.7}s`,
+                animationDelay: `${Math.random() * 0.2}s`,
+                opacity: 0.8
+              }}
+            ></div>
+          ))}
+          
+          {/* Flying debris */}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div 
+              key={`debris-${i}`}
+              className="absolute bg-gray-700 rounded-sm"
+              style={{
+                width: `${Math.random() * 6 + 3}%`,
+                height: `${Math.random() * 3 + 1}%`,
+                top: `${50 + 60 * Math.sin(i * Math.PI / 3)}%`,
+                left: `${50 + 60 * Math.cos(i * Math.PI / 3)}%`,
+                transform: `rotate(${Math.random() * 360}deg)`,
+                animation: `fade-out ${0.5 + Math.random() * 0.5}s ease-out forwards`,
+                animationDelay: `${Math.random() * 0.15}s`,
               }}
             ></div>
           ))}

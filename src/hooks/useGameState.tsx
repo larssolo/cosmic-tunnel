@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
@@ -12,11 +11,8 @@ const useGameState = () => {
   const [shipPosition, setShipPosition] = useState(50); // Center position (%)
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
-  // Start with an even lower initial speed
   const [speed, setSpeed] = useState(0.5);
-  // Score multiplier state that starts at 1
   const [scoreMultiplier, setScoreMultiplier] = useState(1);
-  // Add meteor hits counter
   const [meteorHits, setMeteorHits] = useState(0);
   
   const scoreRef = useRef(0);
@@ -24,7 +20,6 @@ const useGameState = () => {
   const scoreMultiplierRef = useRef(1);
   const meteorHitsRef = useRef(0);
   
-  // Add sound effects
   const { playSound } = useSound();
   
   useEffect(() => {
@@ -44,11 +39,8 @@ const useGameState = () => {
     setShipPosition(50);
     setObstacles([]);
     setProjectiles([]);
-    // Reset to initial slower speed
     setSpeed(0.5);
-    // Reset score multiplier
     setScoreMultiplier(1);
-    // Reset meteor hits
     setMeteorHits(0);
     resetObstacleTimer();
     resetProjectileTimer();
@@ -56,7 +48,6 @@ const useGameState = () => {
     speedRef.current = 0.5;
     scoreMultiplierRef.current = 1;
     meteorHitsRef.current = 0;
-    // Play start game sound
     playSound('start');
   }, [resetObstacleTimer, resetProjectileTimer, playSound]);
 
@@ -73,7 +64,6 @@ const useGameState = () => {
     const newProjectile = createProjectile(shipPosition, gameOver);
     if (newProjectile) {
       setProjectiles(prev => [...prev, newProjectile]);
-      // Play shoot sound when firing projectile
       playSound('shoot');
     }
   }, [shipPosition, gameOver, createProjectile, playSound]);
@@ -81,65 +71,48 @@ const useGameState = () => {
   const updateGame = useCallback(() => {
     if (gameOver) return;
     
-    // Use base score increment of 1, multiplied by current multiplier
     setScore(prev => prev + Math.round(1 * scoreMultiplierRef.current));
     
-    // More gradual speed increase at less frequent intervals
-    // This creates a much smoother and slower progression
     if (scoreRef.current > 0 && scoreRef.current % 500 === 0) {
-      setSpeed(prev => Math.min(prev + 0.1, 3.0)); // Smaller increments, lower max
+      setSpeed(prev => Math.min(prev + 0.1, 3.0));
       console.log("Speed increased to:", speedRef.current + 0.1);
-      // Play speed increase sound
       playSound('speedUp');
     }
     
-    // Create new obstacle if it's time
     const newObstacle = createObstacle();
     if (newObstacle) {
       console.log("Adding new obstacle to state:", newObstacle.id);
       setObstacles(prev => [...prev, newObstacle]);
     }
     
-    // Update obstacles positions
     setObstacles(prev => {
       const updated = updateObstacles(prev);
       console.log("Updated obstacles count:", updated.length);
       return updated;
     });
     
-    // Update projectiles positions
     const updatedProjectiles = updateProjectiles(projectiles);
     setProjectiles(updatedProjectiles);
     
-    // Check for collisions between projectiles and obstacles
     const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } = 
       checkProjectileCollisions(obstacles, updatedProjectiles);
     
     if (obstaclesHit) {
       console.log("Obstacle hit by projectile!");
-      // Play explosion sound when obstacle is hit
       playSound('explosion');
-      
-      // Increase the meteor hits counter
+      playSound('rumble');
       setMeteorHits(prev => prev + 1);
-      
-      // Increase the score multiplier by 1.2x when hitting a meteor
       setScoreMultiplier(prev => prev * 1.2);
       console.log("Score multiplier increased to:", scoreMultiplierRef.current * 1.2);
       console.log("Meteor hits:", meteorHitsRef.current + 1);
-      
-      // Add bonus points for hitting obstacle (50 base points * current multiplier)
       setScore(prev => prev + Math.round(50 * scoreMultiplierRef.current));
-      
       setObstacles(collidedObstacles);
       setProjectiles(newProjectilesList);
     }
     
-    // Check if ship collided with an obstacle
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOver);
     if (shipCollided) {
       console.log("Ship collision detected! Game over.");
-      // Play game over sound when ship collides
       playSound('gameOver');
       setGameOver(true);
     }
@@ -167,7 +140,7 @@ const useGameState = () => {
     obstacles,
     projectiles,
     scoreMultiplier,
-    meteorHits, // Return the meteor hits count
+    meteorHits,
     startGame,
     resetGame,
     moveShip,
