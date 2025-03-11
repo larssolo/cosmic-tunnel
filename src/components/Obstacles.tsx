@@ -41,7 +41,7 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
                style={{top: "60%", left: "70%"}}></div>
         </>
       ) : (
-        // Enhanced explosion effect with more dramatic animation
+        // Enhanced explosion effect with 40 fragments
         <div className="relative w-full h-full">
           {/* Core explosion */}
           <div className="absolute inset-0 rounded-full bg-orange-500 animate-pulse"></div>
@@ -51,25 +51,50 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
           {/* Shockwave effect */}
           <div className="absolute inset-0 rounded-full border-4 border-orange-300 animate-ping opacity-30"
                style={{animationDuration: "0.8s"}}></div>
+          <div className="absolute inset-0 rounded-full border-2 border-yellow-200 animate-ping opacity-20"
+               style={{animationDuration: "1.2s"}}></div>
           
-          {/* Explosion particles - more particles and better animations */}
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div 
-              key={i}
-              className="absolute bg-orange-400 rounded-full animate-ping"
-              style={{
-                width: `${Math.random() * 5 + 2}%`,
-                height: `${Math.random() * 5 + 2}%`,
-                top: `${50 + 45 * Math.sin(i * Math.PI / 4)}%`,
-                left: `${50 + 45 * Math.cos(i * Math.PI / 4)}%`,
-                animationDuration: `${0.3 + Math.random() * 0.7}s`,
-                animationDelay: `${Math.random() * 0.2}s`,
-                opacity: 0.8
-              }}
-            ></div>
-          ))}
+          {/* 40 explosion fragments with various speeds, sizes and directions */}
+          {Array.from({ length: 40 }).map((_, i) => {
+            // Distribute fragments in a circle with slightly random variations
+            const angle = (i * 9) + (Math.random() * 8); // Slightly randomize angles (0-360 degrees)
+            const distance = 35 + (Math.random() * 45); // Random distance from center (35-80% of radius)
+            const fragmentSize = Math.random() * 4 + 1; // Size between 1-5% of parent
+            const speed = 0.3 + Math.random() * 0.7; // Animation duration between 0.3-1s
+            const delay = Math.random() * 0.2; // Random delay for more natural look
+            
+            // Calculate position based on angle and distance
+            const xPos = 50 + distance * Math.cos(angle * Math.PI / 180);
+            const yPos = 50 + distance * Math.sin(angle * Math.PI / 180);
+            
+            // Alternate between different fragment shapes and colors
+            const fragmentType = i % 5;
+            const colors = ['bg-orange-600', 'bg-orange-400', 'bg-yellow-500', 'bg-red-500', 'bg-gray-700'];
+            const color = colors[fragmentType];
+            
+            // Shapes: 0-2 = rounded, 3-4 = angular
+            const shape = fragmentType < 3 ? 'rounded-full' : 'rounded-sm';
+            
+            return (
+              <div 
+                key={`fragment-${i}`}
+                className={`absolute ${color} ${shape} animate-ping`}
+                style={{
+                  width: `${fragmentSize}%`,
+                  height: `${fragmentSize}%`,
+                  top: `${yPos}%`,
+                  left: `${xPos}%`,
+                  animationDuration: `${speed}s`,
+                  animationDelay: `${delay}s`,
+                  opacity: 0.8,
+                  transform: `rotate(${Math.random() * 360}deg)`,
+                  boxShadow: fragmentType < 3 ? '0 0 3px rgba(255, 165, 0, 0.8)' : 'none'
+                }}
+              ></div>
+            );
+          })}
           
-          {/* Flying debris */}
+          {/* Flying larger debris pieces */}
           {Array.from({ length: 6 }).map((_, i) => (
             <div 
               key={`debris-${i}`}

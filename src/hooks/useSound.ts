@@ -41,7 +41,7 @@ export const useSound = () => {
       audioRefs.current.speedUp.volume = 0.6;
     }
     if (audioRefs.current.rumble) {
-      audioRefs.current.rumble.volume = 1.0; // Increased from 0.85 to 1.0 (maximum volume)
+      audioRefs.current.rumble.volume = 1.0; // Maximum volume for rumble sound
     }
 
     // Preload audio
