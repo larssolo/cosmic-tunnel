@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
@@ -133,7 +132,8 @@ const useGameState = () => {
 
   useEffect(() => {
     startGame();
-  }, [startGame]);
+    playSound('atmosphere');
+  }, [startGame, playSound]);
 
   return {
     score,
