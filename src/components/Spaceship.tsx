@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { memo } from "react";
 import SpaceshipVessel from "./SpaceshipVessel";
 import SpaceshipExplosion from "./SpaceshipExplosion";
 
@@ -10,7 +10,8 @@ interface SpaceshipProps {
   isInvulnerable?: boolean;
 }
 
-const Spaceship: React.FC<SpaceshipProps> = ({ 
+// Use memo to prevent unnecessary re-renders when props haven't changed
+const Spaceship: React.FC<SpaceshipProps> = memo(({ 
   position, 
   onShoot, 
   isExploding = false, 
@@ -22,6 +23,8 @@ const Spaceship: React.FC<SpaceshipProps> = ({
       style={{
         bottom: "20%",
         left: `${position}%`,
+        // Use will-change for better performance during position changes
+        willChange: "left",
       }}
       onClick={onShoot}
     >
@@ -32,6 +35,6 @@ const Spaceship: React.FC<SpaceshipProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default Spaceship;

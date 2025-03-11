@@ -1,12 +1,13 @@
 
-import React from "react";
+import React, { memo } from "react";
 import { Zap } from "lucide-react";
 
 interface SpaceshipVesselProps {
   isInvulnerable: boolean;
 }
 
-const SpaceshipVessel: React.FC<SpaceshipVesselProps> = ({ isInvulnerable }) => {
+// Memoize the component to prevent unnecessary re-renders
+const SpaceshipVessel: React.FC<SpaceshipVesselProps> = memo(({ isInvulnerable }) => {
   return (
     <div className={`relative w-full h-full ${isInvulnerable ? 'animate-pulse opacity-80' : ''}`}>
       {/* Main body with gradient */}
@@ -55,6 +56,6 @@ const SpaceshipVessel: React.FC<SpaceshipVesselProps> = ({ isInvulnerable }) => 
       )}
     </div>
   );
-};
+});
 
 export default SpaceshipVessel;

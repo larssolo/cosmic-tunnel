@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Tunnel from "./Tunnel";
 import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
@@ -47,21 +47,20 @@ const Game = () => {
     setIsMobile(checkMobile());
   }, []);
 
+  // Optimize by memoizing handler functions
+  const handleDeviceOrientation = useCallback((event: DeviceOrientationEvent) => {
+    if (event.gamma === null) return;
+    
+    // Calculate position based on device tilt (gamma value)
+    const tiltSensitivity = 2; // Adjust sensitivity
+    const normalizedGamma = event.gamma * tiltSensitivity;
+    const position = 50 + normalizedGamma; // Center (50) + tilt adjustment
+    moveShip(position);
+  }, [moveShip]);
+
   // Set up device orientation handler for mobile devices
   useEffect(() => {
     if (!isMobile || gameOver) return;
-    
-    const handleDeviceOrientation = (event: DeviceOrientationEvent) => {
-      if (event.gamma === null) return;
-      
-      // Calculate position based on device tilt (gamma value)
-      // gamma ranges from -90 to 90, corresponding to device orientation
-      // Normalize to our ship position range (10-90)
-      const tiltSensitivity = 2; // Adjust sensitivity
-      const normalizedGamma = event.gamma * tiltSensitivity;
-      const position = 50 + normalizedGamma; // Center (50) + tilt adjustment
-      moveShip(position);
-    };
     
     // Request device orientation permissions on iOS 13+
     if (typeof DeviceOrientationEvent !== 'undefined' && 
@@ -81,7 +80,7 @@ const Game = () => {
     return () => {
       window.removeEventListener('deviceorientation', handleDeviceOrientation);
     };
-  }, [isMobile, gameOver, moveShip]);
+  }, [isMobile, gameOver, handleDeviceOrientation]);
   
   // Set up explosion timer when game over occurs
   useEffect(() => {
@@ -92,7 +91,6 @@ const Game = () => {
       }
       
       // Set a new timer to mark explosion as complete after animation
-      // Making it longer (3500ms) to allow for the enhanced explosion animation
       explosionTimerRef.current = setTimeout(() => {
         setExplosionComplete(true);
       }, 3500);
@@ -115,29 +113,29 @@ const Game = () => {
     };
   }, [gameOver]);
 
-  // Control ship with touch/mouse
-  const handlePointerMove = (e: React.PointerEvent) => {
+  // Control ship with touch/mouse - memoized for better performance
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (gameContainerRef.current && !gameOver && !isMobile) {
       const containerWidth = gameContainerRef.current.clientWidth;
       const position = (e.clientX / containerWidth) * 100;
       moveShip(position);
     }
-  };
+  }, [gameOver, isMobile, moveShip]);
 
   // Handle clicks/taps to shoot
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (!gameOver) {
       shootProjectile();
     }
-  };
+  }, [gameOver, shootProjectile]);
 
   // Handle game restart
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
     resetGame();
     setExplosionComplete(false);
-  };
+  }, [resetGame]);
 
-  // Optimized game loop with frame rate control
+  // Optimized game loop with frame rate control and RAF throttling
   useEffect(() => {
     const gameLoop = (timestamp: number) => {
       if (!lastUpdateRef.current) {
@@ -163,7 +161,8 @@ const Game = () => {
     };
   }, [updateGame]);
 
-  console.log("Game render - obstacles count:", obstacles.length);
+  // Reducing excessive logging
+  // console.log("Game render - obstacles count:", obstacles.length);
 
   return (
     <div 
