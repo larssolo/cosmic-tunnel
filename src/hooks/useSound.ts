@@ -32,7 +32,7 @@ export const useSound = () => {
       audioRefs.current.explosion.volume = 0.7;
     }
     if (audioRefs.current.gameOver) {
-      audioRefs.current.gameOver.volume = 0.8;
+      audioRefs.current.gameOver.volume = 1.0; // Increased from 0.8 to 1.0 (maximum volume)
     }
     if (audioRefs.current.start) {
       audioRefs.current.start.volume = 0.7;
