@@ -23,8 +23,8 @@ export const useSound = () => {
     audioRefs.current.start = new Audio('https://assets.mixkit.co/active_storage/sfx/219/219-preview.mp3');
     audioRefs.current.speedUp = new Audio('https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3');
     audioRefs.current.rumble = new Audio('https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3');
-    // Using a more clattering, noisy crash sound that's shorter
-    audioRefs.current.crash = new Audio('https://assets.mixkit.co/active_storage/sfx/146/146-preview.mp3');
+    // Using the provided crash sound
+    audioRefs.current.crash = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/game-over-classic-206486.mp3');
 
     // Set audio volume levels
     if (audioRefs.current.shoot) {
