@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
@@ -114,10 +113,7 @@ const useGameState = () => {
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOver);
     if (shipCollided) {
       console.log("Ship collision detected! Game over.");
-      // Play both the crash sound (for impact) and game over sound
       playSound('crash');
-      // Small delay before playing the game over sound
-      setTimeout(() => playSound('gameOver'), 300);
       setGameOver(true);
     }
   }, [
