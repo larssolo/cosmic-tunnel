@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef } from 'react';
 
 type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere';
@@ -52,7 +51,8 @@ export const useSound = () => {
       audioRefs.current.crash.volume = 1.0; // Full volume for crash sound
     }
     if (audioRefs.current.atmosphere) {
-      audioRefs.current.atmosphere.volume = 0.7; // Setting appropriate volume for atmosphere sound
+      audioRefs.current.atmosphere.volume = 0.3; // Reducing volume for better balance
+      audioRefs.current.atmosphere.loop = true; // Make atmosphere sound loop continuously
     }
 
     // Preload audio
@@ -95,6 +95,13 @@ export const useSound = () => {
         newAudio.play().catch(err => {
           console.error(`Error playing ${type} sound:`, err);
         });
+      } else if (type === 'atmosphere') {
+        // For atmosphere sound, ensure it's not already playing before starting
+        if (audio.paused) {
+          audio.play().catch(err => {
+            console.error(`Error playing atmosphere sound:`, err);
+          });
+        }
       } else {
         // For other sounds, reset and play the existing audio
         audio.currentTime = 0;

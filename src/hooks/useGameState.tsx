@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
@@ -49,6 +50,7 @@ const useGameState = () => {
     scoreMultiplierRef.current = 1;
     meteorHitsRef.current = 0;
     playSound('start');
+    playSound('atmosphere'); // Play atmospheric sound when game is reset
   }, [resetObstacleTimer, resetProjectileTimer, playSound]);
 
   const startGame = useCallback(() => {
