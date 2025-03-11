@@ -1,9 +1,12 @@
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
 import { useSound } from "./useSound";
+
+const MAX_LIVES = 3; // Define maximum lives
 
 const useGameState = () => {
   const [score, setScore] = useState(0);
@@ -14,11 +17,14 @@ const useGameState = () => {
   const [speed, setSpeed] = useState(0.5);
   const [scoreMultiplier, setScoreMultiplier] = useState(1);
   const [meteorHits, setMeteorHits] = useState(0);
+  const [lives, setLives] = useState(MAX_LIVES); // Initialize with maximum lives
+  const [isInvulnerable, setIsInvulnerable] = useState(false); // Add invulnerability state
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
   const scoreMultiplierRef = useRef(1);
   const meteorHitsRef = useRef(0);
+  const livesRef = useRef(MAX_LIVES);
   
   const { playSound } = useSound();
   
@@ -27,11 +33,33 @@ const useGameState = () => {
     speedRef.current = speed;
     scoreMultiplierRef.current = scoreMultiplier;
     meteorHitsRef.current = meteorHits;
-  }, [score, speed, scoreMultiplier, meteorHits]);
+    livesRef.current = lives;
+  }, [score, speed, scoreMultiplier, meteorHits, lives]);
 
   const { createObstacle, updateObstacles, resetObstacleTimer } = useObstacles(scoreRef, speedRef);
   const { createProjectile, updateProjectiles, resetProjectileTimer } = useProjectiles();
   const { checkShipCollision, checkProjectileCollisions } = useCollisions();
+
+  // Handle ship being hit
+  const handleShipHit = useCallback(() => {
+    if (isInvulnerable) return;
+    
+    setLives(prev => prev - 1);
+    if (livesRef.current - 1 <= 0) {
+      // Game over when no lives left
+      setGameOver(true);
+      playSound('crash');
+    } else {
+      // Set temporary invulnerability
+      setIsInvulnerable(true);
+      playSound('crash');
+      
+      // Reset invulnerability after 2 seconds
+      setTimeout(() => {
+        setIsInvulnerable(false);
+      }, 2000);
+    }
+  }, [isInvulnerable, playSound]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -42,12 +70,15 @@ const useGameState = () => {
     setSpeed(0.5);
     setScoreMultiplier(1);
     setMeteorHits(0);
+    setLives(MAX_LIVES); // Reset lives to maximum
+    setIsInvulnerable(false); // Reset invulnerability
     resetObstacleTimer();
     resetProjectileTimer();
     scoreRef.current = 0;
     speedRef.current = 0.5;
     scoreMultiplierRef.current = 1;
     meteorHitsRef.current = 0;
+    livesRef.current = MAX_LIVES;
     playSound('start');
     playSound('atmosphere'); // Play atmospheric sound when game is reset
   }, [resetObstacleTimer, resetProjectileTimer, playSound]);
@@ -112,10 +143,9 @@ const useGameState = () => {
     }
     
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOver);
-    if (shipCollided) {
-      console.log("Ship collision detected! Game over.");
-      playSound('crash');
-      setGameOver(true);
+    if (shipCollided && !isInvulnerable) {
+      console.log("Ship collision detected!");
+      handleShipHit();
     }
   }, [
     gameOver, 
@@ -127,7 +157,9 @@ const useGameState = () => {
     obstacles, 
     projectiles, 
     shipPosition,
-    playSound
+    playSound,
+    isInvulnerable,
+    handleShipHit
   ]);
 
   useEffect(() => {
@@ -143,6 +175,8 @@ const useGameState = () => {
     projectiles,
     scoreMultiplier,
     meteorHits,
+    lives,
+    isInvulnerable,
     startGame,
     resetGame,
     moveShip,

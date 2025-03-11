@@ -29,6 +29,8 @@ const Game = () => {
     projectiles,
     scoreMultiplier,
     meteorHits,
+    lives,
+    isInvulnerable,
     startGame,
     resetGame,
     moveShip,
@@ -174,7 +176,8 @@ const Game = () => {
       <Spaceship 
         position={shipPosition} 
         onShoot={shootProjectile} 
-        isExploding={gameOver} 
+        isExploding={gameOver}
+        isInvulnerable={isInvulnerable}
       />
       <Obstacles obstacles={obstacles} />
       <Projectiles projectiles={projectiles} />
@@ -184,6 +187,8 @@ const Game = () => {
         onRestart={handleRestart} 
         scoreMultiplier={scoreMultiplier}
         meteorHits={meteorHits}
+        lives={lives}
+        isInvulnerable={isInvulnerable}
       />
     </div>
   );
