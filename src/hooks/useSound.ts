@@ -24,9 +24,9 @@ export const useSound = () => {
     // Add rumble sound effect (a low-frequency rumble sound)
     audioRefs.current.rumble = new Audio('https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3');
 
-    // Set audio volume levels - increasing the shooting sound volume
+    // Set audio volume levels - reducing the shooting sound volume
     if (audioRefs.current.shoot) {
-      audioRefs.current.shoot.volume = 0.8; // Increased from 0.3 to 0.8
+      audioRefs.current.shoot.volume = 0.3; // Reduced from 0.8 to 0.3
     }
     if (audioRefs.current.explosion) {
       audioRefs.current.explosion.volume = 0.7;
@@ -80,7 +80,7 @@ export const useSound = () => {
       // Create a new instance for overlapping sounds
       if (type === 'shoot') {
         const newAudio = new Audio(audio.src);
-        newAudio.volume = audio.volume; // Use the same higher volume
+        newAudio.volume = audio.volume; // Use the same lower volume
         newAudio.play().catch(err => {
           console.error(`Error playing ${type} sound:`, err);
         });
