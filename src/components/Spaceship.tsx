@@ -6,9 +6,10 @@ interface SpaceshipProps {
   position: number;
   onShoot: () => void;
   isExploding?: boolean;
+  isInvulnerable?: boolean;
 }
 
-const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot, isExploding = false }) => {
+const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot, isExploding = false, isInvulnerable = false }) => {
   return (
     <div
       className="absolute w-16 h-16 transform -translate-x-1/2 cursor-pointer"
@@ -165,7 +166,7 @@ const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot, isExploding = 
         </div>
       ) : (
         // Regular spaceship design
-        <div className="relative w-full h-full">
+        <div className={`relative w-full h-full ${isInvulnerable ? 'animate-pulse opacity-80' : ''}`}>
           {/* Main body with gradient */}
           <div 
             className="absolute top-0 left-1/2 w-6 h-12 transform -translate-x-1/2 rounded-t-2xl"
@@ -204,6 +205,12 @@ const Spaceship: React.FC<SpaceshipProps> = ({ position, onShoot, isExploding = 
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-yellow-300 opacity-80">
             <Zap size={16} />
           </div>
+          
+          {/* Add shield effect when invulnerable */}
+          {isInvulnerable && (
+            <div className="absolute inset-0 rounded-full border-2 border-blue-400 animate-ping opacity-70"
+                 style={{transform: "scale(1.2)"}}></div>
+          )}
         </div>
       )}
     </div>
