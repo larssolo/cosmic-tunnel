@@ -18,7 +18,7 @@ export const useSound = () => {
   // Initialize audio elements
   useEffect(() => {
     // Create audio elements for each sound with more reliable URLs
-    audioRefs.current.shoot = new Audio('https://assets.mixkit.co/active_storage/sfx/2635/2635-preview.mp3');
+    audioRefs.current.shoot = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/lazercannon-37980.mp3');
     audioRefs.current.explosion = new Audio('https://assets.mixkit.co/active_storage/sfx/235/235-preview.mp3');
     audioRefs.current.gameOver = new Audio('https://assets.mixkit.co/active_storage/sfx/1204/1204-preview.mp3'); // Fixed game over sound
     audioRefs.current.start = new Audio('https://assets.mixkit.co/active_storage/sfx/219/219-preview.mp3');
