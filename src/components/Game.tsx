@@ -18,6 +18,9 @@ const Game = () => {
   const [explosionComplete, setExplosionComplete] = useState(false);
   const explosionTimerRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Add state for mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  
   const { 
     score,
     gameOver,
@@ -25,7 +28,7 @@ const Game = () => {
     obstacles,
     projectiles,
     scoreMultiplier,
-    meteorHits, // Get the meteor hits count
+    meteorHits,
     startGame,
     resetGame,
     moveShip,
@@ -33,6 +36,51 @@ const Game = () => {
     updateGame
   } = useGameState();
 
+  // Detect mobile device on component mount
+  useEffect(() => {
+    const checkMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    };
+    
+    setIsMobile(checkMobile());
+  }, []);
+
+  // Set up device orientation handler for mobile devices
+  useEffect(() => {
+    if (!isMobile || gameOver) return;
+    
+    const handleDeviceOrientation = (event: DeviceOrientationEvent) => {
+      if (event.gamma === null) return;
+      
+      // Calculate position based on device tilt (gamma value)
+      // gamma ranges from -90 to 90, corresponding to device orientation
+      // Normalize to our ship position range (10-90)
+      const tiltSensitivity = 2; // Adjust sensitivity
+      const normalizedGamma = event.gamma * tiltSensitivity;
+      const position = 50 + normalizedGamma; // Center (50) + tilt adjustment
+      moveShip(position);
+    };
+    
+    // Request device orientation permissions on iOS 13+
+    if (typeof DeviceOrientationEvent !== 'undefined' && 
+        typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as any).requestPermission()
+        .then((response: string) => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+          }
+        })
+        .catch(console.error);
+    } else {
+      // For non-iOS or older iOS
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
+    }
+    
+    return () => {
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+    };
+  }, [isMobile, gameOver, moveShip]);
+  
   // Set up explosion timer when game over occurs
   useEffect(() => {
     if (gameOver && !explosionComplete) {
@@ -67,7 +115,7 @@ const Game = () => {
 
   // Control ship with touch/mouse
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (gameContainerRef.current && !gameOver) {
+    if (gameContainerRef.current && !gameOver && !isMobile) {
       const containerWidth = gameContainerRef.current.clientWidth;
       const position = (e.clientX / containerWidth) * 100;
       moveShip(position);
@@ -135,7 +183,7 @@ const Game = () => {
         gameOver={gameOver && explosionComplete} 
         onRestart={handleRestart} 
         scoreMultiplier={scoreMultiplier}
-        meteorHits={meteorHits} // Pass meteor hits to GameUI
+        meteorHits={meteorHits}
       />
     </div>
   );

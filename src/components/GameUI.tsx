@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
 
@@ -12,6 +12,24 @@ interface GameUIProps {
 }
 
 const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultiplier, meteorHits }) => {
+  const [showInstructions, setShowInstructions] = useState(true);
+  
+  // Hide instructions after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowInstructions(false);
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Show instructions again when game restarts
+  useEffect(() => {
+    if (gameOver) {
+      setShowInstructions(true);
+    }
+  }, [gameOver]);
+  
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
       {/* Score display with meteor hits */}
@@ -21,8 +39,6 @@ const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultip
              border: "1px solid rgba(155, 135, 245, 0.2)"
            }}>
         <p className="font-bold">Score: {score}</p>
-        
-        {/* Removed the multiplier display that was here */}
         
         {/* Display meteor hits counter */}
         <p className="text-sm text-green-300 font-medium">
@@ -36,7 +52,6 @@ const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultip
           <h2 className="text-6xl font-bold text-white" 
               style={{textShadow: "0 0 10px rgba(155, 135, 245, 0.8)"}}>Game Over</h2>
           <p className="text-2xl text-white">Final Score: {score}</p>
-          {/* Removed the score multiplier display here */}
           <p className="text-lg text-green-300">Meteor Hit: {meteorHits}</p>
           <Button onClick={onRestart} className="mt-4 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600">
             Play Again
@@ -44,18 +59,21 @@ const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultip
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="absolute bottom-4 left-0 right-0 text-center text-white bg-black/50 py-2 backdrop-blur-sm"
-           style={{
-             boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
-             border: "1px solid rgba(155, 135, 245, 0.2)"
-           }}>
-        <p>Bevæg til venstre/højre for at styre rumskibet</p>
-        <p className="flex items-center justify-center gap-1 mt-1">
-          <span>Klik på rumskibet for at skyde</span> 
-          <Zap size={16} className="text-yellow-300" />
-        </p>
-      </div>
+      {/* Instructions - only show at the beginning */}
+      {showInstructions && (
+        <div className="absolute bottom-4 left-0 right-0 text-center text-white bg-black/50 py-2 backdrop-blur-sm"
+             style={{
+               boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
+               border: "1px solid rgba(155, 135, 245, 0.2)"
+             }}>
+          <p className="md:block hidden">Bevæg til venstre/højre for at styre rumskibet</p>
+          <p className="md:hidden">Vip telefonen til venstre/højre for at styre rumskibet</p>
+          <p className="flex items-center justify-center gap-1 mt-1">
+            <span>Klik på rumskibet for at skyde</span> 
+            <Zap size={16} className="text-yellow-300" />
+          </p>
+        </div>
+      )}
     </div>
   );
 };
