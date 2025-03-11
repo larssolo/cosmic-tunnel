@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 
-type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash';
+type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere';
 
 export const useSound = () => {
   const audioRefs = useRef<Record<SoundType, HTMLAudioElement | null>>({
@@ -11,7 +11,8 @@ export const useSound = () => {
     start: null,
     speedUp: null,
     rumble: null,
-    crash: null
+    crash: null,
+    atmosphere: null
   });
 
   // Initialize audio elements
@@ -25,6 +26,8 @@ export const useSound = () => {
     audioRefs.current.rumble = new Audio('https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3');
     // Using the provided crash sound
     audioRefs.current.crash = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/game-over-classic-206486.mp3');
+    // Adding the new atmosphere sound
+    audioRefs.current.atmosphere = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/atmosphere-sound-effect-239969.mp3');
 
     // Set audio volume levels
     if (audioRefs.current.shoot) {
@@ -47,6 +50,9 @@ export const useSound = () => {
     }
     if (audioRefs.current.crash) {
       audioRefs.current.crash.volume = 1.0; // Full volume for crash sound
+    }
+    if (audioRefs.current.atmosphere) {
+      audioRefs.current.atmosphere.volume = 0.7; // Setting appropriate volume for atmosphere sound
     }
 
     // Preload audio
