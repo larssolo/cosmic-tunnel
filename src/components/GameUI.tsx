@@ -14,14 +14,28 @@ interface GameUIProps {
 const GameUI: React.FC<GameUIProps> = ({ score, gameOver, onRestart, scoreMultiplier, meteorHits }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   
-  // Hide instructions after 5 seconds
+  // Hide instructions on game interaction
+  const hideInstructions = () => {
+    setShowInstructions(false);
+  };
+  
+  // Add event listeners to hide instructions on first interaction
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowInstructions(false);
-    }, 5000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    if (showInstructions) {
+      // Hide on any pointer move or tap
+      const handleInteraction = () => {
+        hideInstructions();
+      };
+      
+      window.addEventListener('pointerdown', handleInteraction, { once: true });
+      window.addEventListener('pointermove', handleInteraction, { once: true });
+      
+      return () => {
+        window.removeEventListener('pointerdown', handleInteraction);
+        window.removeEventListener('pointermove', handleInteraction);
+      };
+    }
+  }, [showInstructions]);
   
   // Show instructions again when game restarts
   useEffect(() => {
