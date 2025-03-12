@@ -140,6 +140,9 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
 });
 
 const Obstacles: React.FC<ObstaclesProps> = memo(({ obstacles }) => {
+  // Add a console log to debug obstacles rendering
+  console.log("Rendering obstacles:", obstacles.length);
+  
   return (
     <>
       {obstacles.map((obstacle) => (
