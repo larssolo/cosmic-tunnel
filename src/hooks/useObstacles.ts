@@ -8,16 +8,19 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
   const createObstacle = useCallback(() => {
     const now = Date.now();
     
-    const baseInterval = 1500;
-    const minInterval = 400;
-    const obstacleInterval = Math.max(baseInterval - (scoreRef.current || 0) / 8, minInterval);
+    // Start with a longer interval and gradually decrease it based on score
+    // Even longer base interval for slower obstacle generation at the beginning
+    const baseInterval = 1500; // Starting with a longer delay (1.5 seconds)
+    const minInterval = 400;   // Minimum interval (fastest spawn rate)
+    const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 8, minInterval);
     
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
+      console.log('Creating new obstacle with id:', now);
       const newObstacle: Obstacle = {
         id: now,
-        x: Math.random() * 80 + 10, // Keep x position between 10% and 90% of screen width
-        y: -20, // Start above the screen
-        sizeVmin: Math.random() * 10 + 14, // Size between 14-24vmin for better visibility
+        x: Math.random() * 80 + 10, // 10% to 90% of screen width
+        y: -5, // Start above the visible area
+        size: Math.random() * 10 + 5, // Size between 5% and 15% of container
       };
       
       lastObstacleTimeRef.current = now;
@@ -28,30 +31,24 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
   }, [scoreRef]);
 
   const updateObstacles = useCallback((obstacles: Obstacle[]) => {
-    if (obstacles.length === 0) return [];
-    
-    const score = scoreRef.current || 0;
-    const speed = speedRef.current || 0.5;
-    
-    // Enhanced speed calculations for smoother movement
-    const baseSpeed = 0.6; // Increased base speed for better visibility
-    const speedFactor = Math.min(1 + (score / 10000), 2.0); // More gradual speed increase
-    const normalSpeed = baseSpeed * speedFactor;
-    const explosionSpeed = normalSpeed * 1.5;
-    
     return obstacles
       .map(obstacle => {
-        // Remove obstacles when they're far below the screen
-        if (obstacle.y > 120) return null;
+        // Calculate the speed factor based on the game's current score
+        // Start even slower and gradually increase speed
+        const baseSpeed = 0.3; // Start with a slower base speed
+        const speedFactor = Math.min(1 + (scoreRef.current! / 3000), 2.5); // More gradual increase, lower max
         
+        // If the obstacle is exploding, move it faster
         if (obstacle.isExploding) {
-          obstacle.y += explosionSpeed;
-        } else {
-          obstacle.y += normalSpeed; // Apply speed for normal movement
+          // Remove if it's far below the screen
+          if (obstacle.y > 110) return null;
+          return { ...obstacle, y: obstacle.y + speedRef.current! * 1.5 * speedFactor };
         }
         
-        return obstacle;
+        // Normal movement for non-exploding obstacles - start slower, get faster over time
+        return { ...obstacle, y: obstacle.y + (baseSpeed + speedRef.current! * speedFactor) };
       })
+      // Filter out null values (removed obstacles)
       .filter(Boolean) as Obstacle[];
   }, [scoreRef, speedRef]);
 

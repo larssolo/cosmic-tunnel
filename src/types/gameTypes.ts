@@ -3,8 +3,7 @@ export interface Obstacle {
   id: number;
   x: number;
   y: number;
-  size?: number;
-  sizeVmin?: number;
+  size: number;
   isExploding?: boolean;
 }
 
@@ -22,5 +21,5 @@ export interface GameState {
   projectiles: Projectile[];
   speed: number;
   meteorHits: number;
-  lives: number;
+  lives: number; // Added lives counter
 }
