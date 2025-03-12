@@ -18,8 +18,8 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
       const newObstacle: Obstacle = {
         id: now,
         x: Math.random() * 80 + 10, // 10% to 90% of screen width
-        y: -10, // Start above the visible area to ensure smooth entry
-        sizeVmin: Math.random() * 8 + 6, // Size between 6vmin and 14vmin for better visibility
+        y: -5, // Start closer to the visible area
+        sizeVmin: Math.random() * 10 + 8, // Size between 8vmin and 18vmin for better visibility
       };
       
       lastObstacleTimeRef.current = now;
@@ -37,9 +37,9 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     const score = scoreRef.current || 0;
     const speed = speedRef.current || 0.5;
     
-    // Pre-calculate speed factors
-    const baseSpeed = 0.3;
-    const speedFactor = Math.min(1 + (score / 3000), 2.5);
+    // Pre-calculate speed factors - reduce speed slightly for better visibility
+    const baseSpeed = 0.2;
+    const speedFactor = Math.min(1 + (score / 3000), 2.0);
     const normalSpeed = baseSpeed + speed * speedFactor;
     const explosionSpeed = speed * 1.5 * speedFactor;
     
@@ -48,18 +48,14 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
         // Skip calculations for obstacles that are far below screen
         if (obstacle.y > 110) return null;
         
-        // Use existing object when possible, only create new objects when needed
-        // If exploding, move faster
+        // Update position
         if (obstacle.isExploding) {
           obstacle.y = obstacle.y + explosionSpeed;
-          return obstacle;
+        } else {
+          obstacle.y = obstacle.y + normalSpeed;
         }
-        
-        // Normal movement for non-exploding obstacles
-        obstacle.y = obstacle.y + normalSpeed;
         return obstacle;
       })
-      // Filter out null values (removed obstacles)
       .filter(Boolean) as Obstacle[];
   }, [scoreRef, speedRef]);
 
