@@ -11,22 +11,20 @@ export function useCollisions() {
     if (gameOver) return false;
     
     const shipY = 80; // Ship position from bottom
-    const shipSize = 12; // Slightly increased ship collision size for better detection
+    const shipSize = 12; // Ship collision size
     
     for (const obstacle of obstacles) {
-      if (obstacle.isExploding) continue; // Exploding obstacles don't cause collisions
+      if (obstacle.isExploding) continue;
       
-      // Get the actual obstacle size, whether it's using the old or new size property
-      const obstacleSize = obstacle.sizeVmin ? obstacle.sizeVmin * 0.9 : obstacle.size || 10;
+      // Optimize size calculation - cache the result
+      const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10) * 0.9;
       
-      // Improved collision detection with slightly larger detection area
+      // Simplified collision detection
       const xDiff = Math.abs(obstacle.x - shipPosition);
       const yDiff = Math.abs(obstacle.y - shipY);
       const combinedRadii = (obstacleSize + shipSize) / 2;
       
-      // Slightly more generous collision bounds
       if (xDiff <= combinedRadii && yDiff <= 12) {
-        console.log('Ship collision detected!');
         return true;
       }
     }
@@ -40,27 +38,23 @@ export function useCollisions() {
   ) => {
     let obstaclesHit = false;
     const updatedObstacles = [...obstacles];
-    const newProjectiles = [...projectiles];
-    let projectilesToRemove: number[] = [];
+    const projectilesToRemove: number[] = [];
     
     for (let i = 0; i < updatedObstacles.length; i++) {
-      if (updatedObstacles[i].isExploding) continue; // Skip already exploding obstacles
+      if (updatedObstacles[i].isExploding) continue;
       
       const obstacle = updatedObstacles[i];
-      // Get the actual obstacle size, whether it's using the old or new size property
-      const obstacleSize = obstacle.sizeVmin ? obstacle.sizeVmin * 0.9 : obstacle.size || 10;
+      // Optimize size calculation
+      const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10) * 0.9;
       const obstacleSizeHalf = obstacleSize / 2;
       
-      for (let j = 0; j < newProjectiles.length; j++) {
-        const projectile = newProjectiles[j];
+      for (let j = 0; j < projectiles.length; j++) {
+        const projectile = projectiles[j];
         
-        // Calculate distance between projectile and obstacle
         const xDiff = Math.abs(obstacle.x - projectile.x);
-        const yDiff = Math.abs(obstacle.y - (100 - projectile.y)); // Convert projectile y to same coordinate system
+        const yDiff = Math.abs(obstacle.y - (100 - projectile.y));
         
-        // Simple distance-based collision detection
         if (xDiff <= obstacleSizeHalf && yDiff <= obstacleSizeHalf) {
-          console.log('Projectile hit obstacle!');
           obstaclesHit = true;
           updatedObstacles[i] = { ...obstacle, isExploding: true };
           projectilesToRemove.push(j);
@@ -69,10 +63,9 @@ export function useCollisions() {
       }
     }
     
-    // Remove projectiles that hit obstacles
     const newProjectilesList = projectilesToRemove.length > 0 
-      ? newProjectiles.filter((_, index) => !projectilesToRemove.includes(index))
-      : newProjectiles;
+      ? projectiles.filter((_, index) => !projectilesToRemove.includes(index))
+      : projectiles;
     
     return {
       obstaclesHit,
