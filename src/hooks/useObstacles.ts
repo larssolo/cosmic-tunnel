@@ -14,12 +14,12 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     const obstacleInterval = Math.max(baseInterval - (scoreRef.current || 0) / 8, minInterval);
     
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
-      // Create with the correct type
+      // Create with the correct type and ensure size is adequate for visibility
       const newObstacle: Obstacle = {
         id: now,
         x: Math.random() * 80 + 10, // 10% to 90% of screen width
-        y: -5, // Start above the visible area
-        sizeVmin: Math.random() * 6 + 4, // Size between 4vmin and 10vmin
+        y: -10, // Start above the visible area to ensure smooth entry
+        sizeVmin: Math.random() * 8 + 6, // Size between 6vmin and 14vmin for better visibility
       };
       
       lastObstacleTimeRef.current = now;

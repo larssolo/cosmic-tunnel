@@ -69,27 +69,30 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
         top: `${obstacle.y}%`,
         transform: "translate(-50%, -50%)",
         opacity: obstacle.isExploding ? "0.8" : "1",
+        zIndex: 10,
         transition: "opacity 0.3s ease-out"
       }}
     >
       {!obstacle.isExploding ? (
-        // Normal asteroid with modern gradient
+        // Enhanced meteor appearance with more distinct colors and details
         <>
           <div 
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-full bg-slate-700"
             style={{
-              background: "linear-gradient(225deg, #7E69AB 0%, #1A1F2C 100%)",
-              boxShadow: "0 0 15px rgba(126, 105, 171, 0.5)"
+              background: "radial-gradient(circle at 30% 30%, #9A8FC7 0%, #4A3C78 30%, #1A1F2C 100%)",
+              boxShadow: "0 0 20px rgba(126, 105, 171, 0.7)"
             }}
           ></div>
-          <div className="absolute inset-2 rounded-full opacity-70"
-               style={{background: "linear-gradient(45deg, #6E59A5 0%, #D6BCFA 100%)"}}></div>
+          <div className="absolute inset-2 rounded-full opacity-80"
+               style={{background: "radial-gradient(circle at 70% 70%, #6E59A5 10%, #D6BCFA 90%)"}}></div>
           
-          {/* Simplified surface details - reduce DOM elements */}
-          <div className="absolute w-1/4 h-1/4 rounded-full bg-gray-700 opacity-80"
-               style={{top: "20%", left: "30%"}}></div>
-          <div className="absolute w-1/5 h-1/5 rounded-full bg-gray-800 opacity-70"
-               style={{top: "60%", left: "70%"}}></div>
+          {/* Enhanced surface details for better visibility */}
+          <div className="absolute w-1/3 h-1/3 rounded-full bg-gray-700 opacity-70"
+               style={{top: "15%", left: "25%"}}></div>
+          <div className="absolute w-1/4 h-1/4 rounded-full bg-gray-800 opacity-80"
+               style={{top: "55%", left: "65%"}}></div>
+          <div className="absolute w-1/5 h-1/5 rounded-full bg-gray-600 opacity-60"
+               style={{top: "40%", left: "20%"}}></div>
         </>
       ) : (
         // Enhanced explosion effect with optimized fragments
