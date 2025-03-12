@@ -1,3 +1,4 @@
+
 import React, { memo, useMemo } from "react";
 import { Obstacle } from "@/types/gameTypes";
 
@@ -60,7 +61,7 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
         top: `${obstacle.y}%`,
         transform: "translate(-50%, -50%)",
         opacity: obstacle.isExploding ? "0.8" : "1",
-        zIndex: 20,
+        zIndex: 30,
         transition: "opacity 0.3s ease-out, transform 0.3s ease-out"
       }}
     >
@@ -69,23 +70,23 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
           <div 
             className="absolute inset-0 rounded-full bg-slate-700"
             style={{
-              background: "radial-gradient(circle at 30% 30%, #9A8FC7 0%, #4A3C78 30%, #1A1F2C 100%)",
-              boxShadow: "0 0 30px rgba(126, 105, 171, 0.9)"
+              background: "radial-gradient(circle at 30% 30%, #B794F4 0%, #553C9A 30%, #1A1F2C 100%)",
+              boxShadow: "0 0 40px rgba(126, 105, 171, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.4)"
             }}
           ></div>
           <div 
-            className="absolute inset-1 rounded-full opacity-90"
+            className="absolute inset-2 rounded-full opacity-90"
             style={{
-              background: "radial-gradient(circle at 70% 70%, #6E59A5 10%, #D6BCFA 90%)",
-              boxShadow: "inset 0 0 15px rgba(214, 188, 250, 0.6)"
+              background: "radial-gradient(circle at 70% 70%, #9F7AEA 10%, #D6BCFA 90%)",
+              boxShadow: "inset 0 0 25px rgba(214, 188, 250, 0.8)"
             }}
           ></div>
           
-          <div className="absolute w-2/5 h-2/5 rounded-full bg-gray-700 opacity-80"
+          <div className="absolute w-1/2 h-1/2 rounded-full bg-gray-700 opacity-80"
                style={{top: "15%", left: "25%"}}></div>
-          <div className="absolute w-1/3 h-1/3 rounded-full bg-gray-800 opacity-90"
+          <div className="absolute w-2/5 h-2/5 rounded-full bg-gray-800 opacity-90"
                style={{top: "55%", left: "65%"}}></div>
-          <div className="absolute w-1/4 h-1/4 rounded-full bg-gray-600 opacity-70"
+          <div className="absolute w-1/3 h-1/3 rounded-full bg-gray-600 opacity-70"
                style={{top: "40%", left: "20%"}}></div>
         </>
       ) : (
