@@ -8,12 +8,16 @@ interface ObstaclesProps {
 
 // Memoize individual obstacles to prevent unnecessary re-renders
 const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
+  // Calculate size in vmin units for consistent proportions across devices
+  const sizeStyle = obstacle.sizeVmin ? 
+    { width: `${obstacle.sizeVmin}vmin`, height: `${obstacle.sizeVmin}vmin` } : 
+    { width: `${obstacle.size || 10}%`, height: `${obstacle.size || 10}%` };
+
   return (
     <div
       className={`absolute rounded-full ${obstacle.isExploding ? 'animate-pulse' : ''}`}
       style={{
-        width: `${obstacle.size}%`,
-        height: `${obstacle.size}%`,
+        ...sizeStyle,
         left: `${obstacle.x}%`,
         top: `${obstacle.y}%`,
         transform: "translate(-50%, -50%)",

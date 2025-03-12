@@ -20,7 +20,9 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
         id: now,
         x: Math.random() * 80 + 10, // 10% to 90% of screen width
         y: -5, // Start above the visible area
-        size: Math.random() * 10 + 5, // Size between 5% and 15% of container
+        // Fixed absolute size in viewport units instead of percentage
+        // This ensures consistent appearance across screen sizes
+        sizeVmin: Math.random() * 6 + 4, // Size between 4vmin and 10vmin
       };
       
       lastObstacleTimeRef.current = now;
