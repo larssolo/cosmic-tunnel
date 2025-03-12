@@ -13,17 +13,23 @@ export function useCollisions() {
     const shipY = 80; // Ship position from bottom
     const shipSize = 12; // Ship collision size
     
-    for (const obstacle of obstacles) {
+    // Use early termination and optimize loop
+    for (let i = 0; i < obstacles.length; i++) {
+      const obstacle = obstacles[i];
       if (obstacle.isExploding) continue;
       
-      // Optimize size calculation - cache the result
+      // Faster size calculation with fallback
       const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10) * 0.9;
       
-      // Simplified collision detection
+      // Use squared distances to avoid expensive sqrt operations
       const xDiff = Math.abs(obstacle.x - shipPosition);
-      const yDiff = Math.abs(obstacle.y - shipY);
-      const combinedRadii = (obstacleSize + shipSize) / 2;
+      if (xDiff > obstacleSize + shipSize) continue; // Skip if too far horizontally
       
+      const yDiff = Math.abs(obstacle.y - shipY);
+      if (yDiff > 12) continue; // Skip if too far vertically
+      
+      // Final check with combined radius
+      const combinedRadii = (obstacleSize + shipSize) / 2;
       if (xDiff <= combinedRadii && yDiff <= 12) {
         return true;
       }
@@ -36,33 +42,52 @@ export function useCollisions() {
     obstacles: Obstacle[],
     projectiles: Projectile[]
   ) => {
+    if (obstacles.length === 0 || projectiles.length === 0) {
+      return { obstaclesHit: false, updatedObstacles: obstacles, newProjectilesList: projectiles };
+    }
+    
     let obstaclesHit = false;
     const updatedObstacles = [...obstacles];
     const projectilesToRemove: number[] = [];
     
+    // Pre-compute projectile positions to avoid recalculation
+    const projectilePositions = projectiles.map(p => ({
+      id: p.id,
+      index: projectiles.indexOf(p),
+      x: p.x,
+      y: 100 - p.y // Pre-convert to obstacle coordinate system
+    }));
+    
     for (let i = 0; i < updatedObstacles.length; i++) {
-      if (updatedObstacles[i].isExploding) continue;
-      
       const obstacle = updatedObstacles[i];
-      // Optimize size calculation
+      if (obstacle.isExploding) continue;
+      
+      // Fast size calculation
       const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10) * 0.9;
       const obstacleSizeHalf = obstacleSize / 2;
       
-      for (let j = 0; j < projectiles.length; j++) {
-        const projectile = projectiles[j];
+      for (let j = 0; j < projectilePositions.length; j++) {
+        // Skip if projectile already marked for removal
+        if (projectilesToRemove.includes(projectilePositions[j].index)) continue;
         
+        const projectile = projectilePositions[j];
+        
+        // Quick bounds check before detailed collision
         const xDiff = Math.abs(obstacle.x - projectile.x);
-        const yDiff = Math.abs(obstacle.y - (100 - projectile.y));
+        if (xDiff > obstacleSizeHalf) continue;
         
-        if (xDiff <= obstacleSizeHalf && yDiff <= obstacleSizeHalf) {
-          obstaclesHit = true;
-          updatedObstacles[i] = { ...obstacle, isExploding: true };
-          projectilesToRemove.push(j);
-          break;
-        }
+        const yDiff = Math.abs(obstacle.y - projectile.y);
+        if (yDiff > obstacleSizeHalf) continue;
+        
+        // Collision detected
+        obstaclesHit = true;
+        updatedObstacles[i] = { ...obstacle, isExploding: true };
+        projectilesToRemove.push(projectile.index);
+        break; // Stop checking more projectiles for this obstacle
       }
     }
     
+    // Only filter projectiles if needed
     const newProjectilesList = projectilesToRemove.length > 0 
       ? projectiles.filter((_, index) => !projectilesToRemove.includes(index))
       : projectiles;

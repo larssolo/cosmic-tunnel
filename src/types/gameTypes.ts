@@ -3,8 +3,8 @@ export interface Obstacle {
   id: number;
   x: number;
   y: number;
-  size?: number; // Make size optional since we're now using sizeVmin
-  sizeVmin?: number; // Add the new size property in vmin units
+  size?: number;
+  sizeVmin?: number;
   isExploding?: boolean;
 }
 
@@ -22,5 +22,5 @@ export interface GameState {
   projectiles: Projectile[];
   speed: number;
   meteorHits: number;
-  lives: number; // Added lives counter
+  lives: number;
 }
