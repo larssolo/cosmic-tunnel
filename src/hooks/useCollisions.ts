@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 
@@ -11,15 +10,18 @@ export function useCollisions() {
     if (gameOver) return false;
     
     const shipY = 80; // Ship position from bottom
-    const shipSize = 12; // Ship collision size
+    const shipSize = 10; // Slightly reduced ship collision size for better accuracy
     
     // Use early termination and optimize loop
     for (let i = 0; i < obstacles.length; i++) {
       const obstacle = obstacles[i];
       if (obstacle.isExploding) continue;
       
+      // Don't check collision if obstacle is still too high (not visible yet)
+      if (obstacle.y < 0) continue;
+      
       // Faster size calculation with fallback
-      const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10) * 0.9;
+      const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10) * 0.8; // Reduced by 20% for tighter hitbox
       
       // Use squared distances to avoid expensive sqrt operations
       const xDiff = Math.abs(obstacle.x - shipPosition);

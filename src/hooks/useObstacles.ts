@@ -16,8 +16,8 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
       const newObstacle: Obstacle = {
         id: now,
         x: Math.random() * 80 + 10,
-        y: -10,
-        sizeVmin: Math.random() * 12 + 10,
+        y: -20, // Start higher above the screen to ensure visibility before collision
+        sizeVmin: Math.random() * 12 + 12, // Slightly larger size range: 12-24vmin
       };
       
       lastObstacleTimeRef.current = now;
@@ -34,14 +34,15 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     const speed = speedRef.current || 0.5;
     
     // Adjusted speed calculations for smoother movement
-    const baseSpeed = 0.6;
+    const baseSpeed = 0.5; // Slightly reduced from 0.6 to give more time to see meteors
     const speedFactor = Math.min(1 + (score / 5000), 2.0);
     const normalSpeed = baseSpeed * speedFactor;
     const explosionSpeed = normalSpeed * 1.5;
     
     return obstacles
       .map(obstacle => {
-        if (obstacle.y > 110) return null;
+        // Only remove obstacles that are far below the screen
+        if (obstacle.y > 120) return null;
         
         if (obstacle.isExploding) {
           obstacle.y += explosionSpeed;
