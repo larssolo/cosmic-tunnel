@@ -16,10 +16,13 @@ export function useCollisions() {
     for (const obstacle of obstacles) {
       if (obstacle.isExploding) continue; // Exploding obstacles don't cause collisions
       
+      // Get the actual obstacle size, whether it's using the old or new size property
+      const obstacleSize = obstacle.sizeVmin ? obstacle.sizeVmin * 0.9 : obstacle.size || 10;
+      
       // Improved collision detection with slightly larger detection area
       const xDiff = Math.abs(obstacle.x - shipPosition);
       const yDiff = Math.abs(obstacle.y - shipY);
-      const combinedRadii = (obstacle.size + shipSize) / 2;
+      const combinedRadii = (obstacleSize + shipSize) / 2;
       
       // Slightly more generous collision bounds
       if (xDiff <= combinedRadii && yDiff <= 12) {
@@ -44,7 +47,9 @@ export function useCollisions() {
       if (updatedObstacles[i].isExploding) continue; // Skip already exploding obstacles
       
       const obstacle = updatedObstacles[i];
-      const obstacleSizeHalf = obstacle.size / 2;
+      // Get the actual obstacle size, whether it's using the old or new size property
+      const obstacleSize = obstacle.sizeVmin ? obstacle.sizeVmin * 0.9 : obstacle.size || 10;
+      const obstacleSizeHalf = obstacleSize / 2;
       
       for (let j = 0; j < newProjectiles.length; j++) {
         const projectile = newProjectiles[j];

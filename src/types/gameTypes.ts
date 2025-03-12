@@ -3,7 +3,8 @@ export interface Obstacle {
   id: number;
   x: number;
   y: number;
-  size: number;
+  size?: number; // Make size optional since we're now using sizeVmin
+  sizeVmin?: number; // Add the new size property in vmin units
   isExploding?: boolean;
 }
 
