@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 
@@ -10,28 +9,21 @@ export function useCollisions() {
   ) => {
     if (gameOver) return false;
     
-    const shipY = 80; // Ship position from bottom
-    const shipSize = 10; // Ship collision size
+    const shipY = 80;
+    const shipSize = 10;
     
-    // Use early termination and optimize loop
     for (let i = 0; i < obstacles.length; i++) {
       const obstacle = obstacles[i];
       if (obstacle.isExploding) continue;
       
-      // Don't check collision if obstacle is still too high (not visible yet)
-      if (obstacle.y < 0) continue;
+      const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10);
       
-      // Faster size calculation with fallback
-      const obstacleSize = (obstacle.sizeVmin || obstacle.size || 10) * 0.8; // Reduced hitbox for better gameplay
-      
-      // Use squared distances to avoid expensive sqrt operations
       const xDiff = Math.abs(obstacle.x - shipPosition);
-      if (xDiff > obstacleSize + shipSize) continue; // Skip if too far horizontally
+      if (xDiff > obstacleSize + shipSize) continue;
       
       const yDiff = Math.abs(obstacle.y - shipY);
-      if (yDiff > 12) continue; // Skip if too far vertically
+      if (yDiff > 12) continue;
       
-      // Final check with combined radius
       const combinedRadii = (obstacleSize + shipSize) / 2;
       if (xDiff <= combinedRadii && yDiff <= 12) {
         return true;
