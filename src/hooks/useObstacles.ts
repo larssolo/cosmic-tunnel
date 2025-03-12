@@ -16,7 +16,7 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
       const newObstacle: Obstacle = {
         id: now,
         x: Math.random() * 80 + 10, // Keep x position between 10% and 90% of screen width
-        y: -20, // Start above the screen to ensure visibility before entering
+        y: -20, // Start above the screen
         sizeVmin: Math.random() * 10 + 14, // Size between 14-24vmin for better visibility
       };
       
@@ -34,7 +34,7 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     const speed = speedRef.current || 0.5;
     
     // Enhanced speed calculations for smoother movement
-    const baseSpeed = 0.6; // Increased base speed to make meteors more visible
+    const baseSpeed = 0.6; // Increased base speed for better visibility
     const speedFactor = Math.min(1 + (score / 10000), 2.0); // More gradual speed increase
     const normalSpeed = baseSpeed * speedFactor;
     const explosionSpeed = normalSpeed * 1.5;
