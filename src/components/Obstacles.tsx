@@ -14,6 +14,7 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
       style={{
         width: `${obstacle.size}%`,
         height: `${obstacle.size}%`,
+        aspectRatio: "1 / 1", // Enforce perfect circle aspect ratio
         left: `${obstacle.x}%`,
         top: `${obstacle.y}%`,
         transform: "translate(-50%, -50%)",
@@ -29,35 +30,42 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
             className="absolute inset-0 rounded-full"
             style={{
               background: "linear-gradient(225deg, #7E69AB 0%, #1A1F2C 100%)",
-              boxShadow: "0 0 15px rgba(126, 105, 171, 0.5)"
+              boxShadow: "0 0 15px rgba(126, 105, 171, 0.5)",
+              aspectRatio: "1 / 1" // Enforce circle aspect
             }}
           ></div>
           
           {/* Inner gradient for depth */}
           <div className="absolute inset-[15%] rounded-full opacity-70"
-               style={{background: "linear-gradient(45deg, #6E59A5 0%, #D6BCFA 100%)"}}></div>
+               style={{
+                 background: "linear-gradient(45deg, #6E59A5 0%, #D6BCFA 100%)",
+                 aspectRatio: "1 / 1" // Enforce circle aspect
+               }}></div>
           
           {/* Consistent crater patterns - fixed positioning relative to size */}
           <div className="absolute w-[25%] h-[25%] rounded-full bg-gray-700 opacity-80"
-               style={{top: "20%", left: "30%"}}></div>
+               style={{top: "20%", left: "30%", aspectRatio: "1 / 1"}}></div>
           <div className="absolute w-[20%] h-[20%] rounded-full bg-gray-800 opacity-70"
-               style={{top: "60%", left: "70%"}}></div>
+               style={{top: "60%", left: "70%", aspectRatio: "1 / 1"}}></div>
           <div className="absolute w-[15%] h-[15%] rounded-full bg-gray-700 opacity-60"
-               style={{top: "40%", left: "55%"}}></div>
+               style={{top: "40%", left: "55%", aspectRatio: "1 / 1"}}></div>
         </div>
       ) : (
         // Enhanced explosion effect with consistent fragment size and distribution
-        <div className="relative w-full h-full">
+        <div className="relative w-full h-full" style={{aspectRatio: "1 / 1"}}>
           {/* Core explosion */}
-          <div className="absolute inset-0 rounded-full bg-orange-500 animate-pulse"></div>
-          <div className="absolute inset-1/4 rounded-full bg-yellow-400 animate-ping opacity-90"></div>
-          <div className="absolute inset-2/5 rounded-full bg-white animate-pulse"></div>
+          <div className="absolute inset-0 rounded-full bg-orange-500 animate-pulse" 
+               style={{aspectRatio: "1 / 1"}}></div>
+          <div className="absolute inset-1/4 rounded-full bg-yellow-400 animate-ping opacity-90"
+               style={{aspectRatio: "1 / 1"}}></div>
+          <div className="absolute inset-2/5 rounded-full bg-white animate-pulse"
+               style={{aspectRatio: "1 / 1"}}></div>
           
           {/* Shockwave effect */}
           <div className="absolute inset-0 rounded-full border-4 border-orange-300 animate-ping opacity-30"
-               style={{animationDuration: "0.8s"}}></div>
+               style={{animationDuration: "0.8s", aspectRatio: "1 / 1"}}></div>
           <div className="absolute inset-0 rounded-full border-2 border-yellow-200 animate-ping opacity-20"
-               style={{animationDuration: "1.2s"}}></div>
+               style={{animationDuration: "1.2s", aspectRatio: "1 / 1"}}></div>
           
           {/* 30 explosion fragments with consistent patterns */}
           {Array.from({ length: 30 }).map((_, i) => {
@@ -87,6 +95,7 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
                 style={{
                   width: `${fragmentSize}%`,
                   height: `${fragmentSize}%`,
+                  aspectRatio: "1 / 1", // Enforce circle aspect
                   top: `${yPos}%`,
                   left: `${xPos}%`,
                   animationDuration: `${speed}s`,
