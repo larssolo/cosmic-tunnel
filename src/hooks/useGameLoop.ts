@@ -70,12 +70,14 @@ export function useGameLoop({
     });
     
     // Update projectile positions
-    const updatedProjectiles = updateProjectiles(projectiles);
-    setProjectiles(updatedProjectiles);
+    setProjectiles(prev => {
+      const updatedProjectiles = updateProjectiles(prev);
+      return updatedProjectiles;
+    });
     
     // Check for projectile collisions with obstacles
     const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } = 
-      checkProjectileCollisions(obstacles, updatedProjectiles);
+      checkProjectileCollisions(obstacles, projectiles);
     
     // Handle obstacle destruction
     if (obstaclesHit) {
@@ -86,8 +88,10 @@ export function useGameLoop({
       // Update game statistics
       increaseMeteorHits();
       increaseMultiplier();
+      
+      // Log with correct multiplier value from ref
       console.log("Score multiplier increased to:", scoreMultiplierRef.current * 1.2);
-      console.log("Meteor hits:", parseInt(increaseMeteorHits.toString()) + 1);
+      console.log("Meteor hit registered");
       
       // Add bonus points
       increaseScore(50);

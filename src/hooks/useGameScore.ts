@@ -1,5 +1,4 @@
-
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere';
 
@@ -9,6 +8,14 @@ export function useGameScore(playSound: (type: SoundType) => void) {
   const [scoreMultiplier, setScoreMultiplier] = useState(1);
   const [meteorHits, setMeteorHits] = useState(0);
   
+  // Use ref to track current speed value for sound effects
+  const currentSpeed = useRef(speed);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    currentSpeed.current = speed;
+  }, [speed]);
+  
   // Basic score increment
   const increaseScore = useCallback((amount: number = 1) => {
     setScore(prev => {
@@ -16,14 +23,17 @@ export function useGameScore(playSound: (type: SoundType) => void) {
       
       // Increase speed at score milestones
       if (newScore > 0 && newScore % 500 === 0) {
-        setSpeed(prev => Math.min(prev + 0.1, 3.0));
-        console.log("Speed increased to:", speed + 0.1);
+        setSpeed(prev => {
+          const newSpeed = Math.min(prev + 0.1, 3.0);
+          console.log("Speed increased to:", newSpeed);
+          return newSpeed;
+        });
         playSound('speedUp');
       }
       
       return newScore;
     });
-  }, [scoreMultiplier, playSound, speed]);
+  }, [scoreMultiplier, playSound]);
   
   // Increase meteor hits counter
   const increaseMeteorHits = useCallback(() => {

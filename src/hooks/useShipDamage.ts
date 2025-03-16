@@ -16,12 +16,14 @@ export function useShipDamage(
   const handleShipHit = useCallback(() => {
     if (isInvulnerable) return;
     
-    setLives(prev => prev - 1);
+    // Update lives immediately for correct decision making
+    const newLives = lives - 1;
+    setLives(newLives);
     
-    if (lives - 1 <= 0) {
+    if (newLives <= 0) {
       // Game over when no lives left
       setGameOver(true);
-      playSound('crash');
+      playSound('gameOver');
     } else {
       // Set temporary invulnerability
       setIsInvulnerable(true);
