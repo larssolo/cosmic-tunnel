@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, Heart } from "lucide-react";
+import { Zap, Heart, User } from "lucide-react";
 
 interface GameUIProps {
   score: number;
@@ -11,6 +11,7 @@ interface GameUIProps {
   meteorHits: number;
   lives: number;
   isInvulnerable: boolean;
+  playerName?: string;
 }
 
 const GameUI: React.FC<GameUIProps> = ({ 
@@ -20,7 +21,8 @@ const GameUI: React.FC<GameUIProps> = ({
   scoreMultiplier, 
   meteorHits, 
   lives,
-  isInvulnerable
+  isInvulnerable,
+  playerName = ""
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   
@@ -56,6 +58,18 @@ const GameUI: React.FC<GameUIProps> = ({
   
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
+      {/* Player name display */}
+      {playerName && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm flex items-center gap-2"
+             style={{
+               boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
+               border: "1px solid rgba(155, 135, 245, 0.2)"
+             }}>
+          <User size={16} className="text-purple-300" />
+          <p className="font-bold">{playerName}</p>
+        </div>
+      )}
+      
       {/* Score display with meteor hits */}
       <div className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm"
            style={{

@@ -21,5 +21,12 @@ export interface GameState {
   projectiles: Projectile[];
   speed: number;
   meteorHits: number;
-  lives: number; // Added lives counter
+  lives: number;
+}
+
+export interface HighScore {
+  id?: string;
+  playerName: string;
+  score: number;
+  date: string;
 }

@@ -5,7 +5,10 @@ import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
+import HighScoreList from "./HighScoreList";
+import PlayerNameDialog from "./PlayerNameDialog";
 import useGameState from "@/hooks/useGameState";
+import { HighScoreService } from "@/services/HighScoreService";
 
 const Game = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -20,6 +23,11 @@ const Game = () => {
   
   // Add state for mobile detection
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Add state for player name
+  const [playerName, setPlayerName] = useState<string>("");
+  const [showNameDialog, setShowNameDialog] = useState(true);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
   
   const { 
     score,
@@ -45,6 +53,13 @@ const Game = () => {
     };
     
     setIsMobile(checkMobile());
+    
+    // Try to get previously saved player name
+    const savedName = localStorage.getItem("pilotName");
+    if (savedName) {
+      setPlayerName(savedName);
+      setShowNameDialog(false);
+    }
   }, []);
 
   // Optimize by memoizing handler functions
@@ -99,6 +114,7 @@ const Game = () => {
     // Reset explosion state when game restarts
     if (!gameOver) {
       setExplosionComplete(false);
+      setScoreSubmitted(false);
       if (explosionTimerRef.current) {
         clearTimeout(explosionTimerRef.current);
         explosionTimerRef.current = null;
@@ -112,6 +128,23 @@ const Game = () => {
       }
     };
   }, [gameOver]);
+  
+  // Submit score when game is over
+  useEffect(() => {
+    if (gameOver && explosionComplete && playerName && !scoreSubmitted && score > 0) {
+      const submitScore = async () => {
+        try {
+          await HighScoreService.addScore(playerName, score);
+          setScoreSubmitted(true);
+          console.log("Score submitted for:", playerName);
+        } catch (error) {
+          console.error("Failed to submit score:", error);
+        }
+      };
+      
+      submitScore();
+    }
+  }, [gameOver, explosionComplete, playerName, score, scoreSubmitted]);
 
   // Control ship with touch/mouse - memoized for better performance
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -124,19 +157,29 @@ const Game = () => {
 
   // Handle clicks/taps to shoot
   const handleClick = useCallback(() => {
-    if (!gameOver) {
+    if (!gameOver && playerName) {
       shootProjectile();
     }
-  }, [gameOver, shootProjectile]);
+  }, [gameOver, shootProjectile, playerName]);
 
   // Handle game restart
   const handleRestart = useCallback(() => {
     resetGame();
     setExplosionComplete(false);
+    setScoreSubmitted(false);
   }, [resetGame]);
+  
+  // Handle player name submission
+  const handleNameSubmit = useCallback((name: string) => {
+    setPlayerName(name);
+    localStorage.setItem("pilotName", name);
+    setShowNameDialog(false);
+  }, []);
 
   // Optimized game loop with frame rate control and RAF throttling
   useEffect(() => {
+    if (!playerName) return; // Don't start game until player name is set
+    
     const gameLoop = (timestamp: number) => {
       if (!lastUpdateRef.current) {
         lastUpdateRef.current = timestamp;
@@ -159,35 +202,45 @@ const Game = () => {
         cancelAnimationFrame(frameIdRef.current);
       }
     };
-  }, [updateGame]);
-
-  // Reducing excessive logging
-  // console.log("Game render - obstacles count:", obstacles.length);
+  }, [updateGame, playerName]);
 
   return (
-    <div 
-      ref={gameContainerRef}
-      className="relative w-full h-full overflow-hidden touch-none"
-      onPointerMove={handlePointerMove}
-      onClick={handleClick}
-    >
-      <Tunnel />
-      <Spaceship 
-        position={shipPosition} 
-        onShoot={shootProjectile} 
-        isExploding={gameOver}
-        isInvulnerable={isInvulnerable}
-      />
-      <Obstacles obstacles={obstacles} />
-      <Projectiles projectiles={projectiles} />
-      <GameUI 
-        score={score} 
-        gameOver={gameOver && explosionComplete} 
-        onRestart={handleRestart} 
-        scoreMultiplier={scoreMultiplier}
-        meteorHits={meteorHits}
-        lives={lives}
-        isInvulnerable={isInvulnerable}
+    <div className="relative w-full h-full flex md:flex-row flex-col">
+      {/* Game area */}
+      <div className="flex-1 relative overflow-hidden touch-none"
+           ref={gameContainerRef}
+           onPointerMove={handlePointerMove}
+           onClick={handleClick}>
+        <Tunnel />
+        <Spaceship 
+          position={shipPosition} 
+          onShoot={shootProjectile} 
+          isExploding={gameOver}
+          isInvulnerable={isInvulnerable}
+        />
+        <Obstacles obstacles={obstacles} />
+        <Projectiles projectiles={projectiles} />
+        <GameUI 
+          score={score} 
+          gameOver={gameOver && explosionComplete} 
+          onRestart={handleRestart} 
+          scoreMultiplier={scoreMultiplier}
+          meteorHits={meteorHits}
+          lives={lives}
+          isInvulnerable={isInvulnerable}
+          playerName={playerName}
+        />
+      </div>
+      
+      {/* High scores area */}
+      <div className="md:w-80 md:h-full w-full md:max-h-none max-h-48 bg-black/30 border-l border-purple-500/20 p-4 overflow-auto backdrop-blur-sm">
+        <HighScoreList />
+      </div>
+      
+      {/* Player name dialog */}
+      <PlayerNameDialog 
+        open={showNameDialog} 
+        onSubmit={handleNameSubmit} 
       />
     </div>
   );
