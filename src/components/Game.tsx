@@ -1,23 +1,25 @@
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Tunnel from "./Tunnel";
 import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
 import PlayerNameDialog from "./PlayerNameDialog";
-import GameController from "./GameController";
-import MobileControls from "./MobileControls";
-import ScoreSubmitter from "./ScoreSubmitter";
-import ExplosionHandler from "./ExplosionHandler";
 import useGameState from "@/hooks/useGameState";
+import { HighScoreService } from "@/services/HighScoreService";
+import { useToast } from "@/components/ui/use-toast";
 
 const Game = () => {
-  // Game container reference
   const gameContainerRef = useRef<HTMLDivElement>(null);
+  const frameIdRef = useRef<number>(0);
+  const lastUpdateRef = useRef<number>(0);
+  const FPS = 60;
+  const frameDelay = 1000 / FPS;
   
   // Add state to track if the explosion animation is complete
   const [explosionComplete, setExplosionComplete] = useState(false);
+  const explosionTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Add state for mobile detection
   const [isMobile, setIsMobile] = useState(false);
@@ -27,6 +29,8 @@ const Game = () => {
   const [showNameDialog, setShowNameDialog] = useState(true);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [gamesPlayed, setGamesPlayed] = useState(0);
+  
+  const { toast } = useToast();
   
   const { 
     score,
@@ -60,7 +64,126 @@ const Game = () => {
       setShowNameDialog(false);
     }
   }, []);
+
+  // Optimize by memoizing handler functions
+  const handleDeviceOrientation = useCallback((event: DeviceOrientationEvent) => {
+    if (event.gamma === null) return;
+    
+    // Calculate position based on device tilt (gamma value)
+    const tiltSensitivity = 2; // Adjust sensitivity
+    const normalizedGamma = event.gamma * tiltSensitivity;
+    const position = 50 + normalizedGamma; // Center (50) + tilt adjustment
+    moveShip(position);
+  }, [moveShip]);
+
+  // Set up device orientation handler for mobile devices
+  useEffect(() => {
+    if (!isMobile || gameOver) return;
+    
+    // Request device orientation permissions on iOS 13+
+    if (typeof DeviceOrientationEvent !== 'undefined' && 
+        typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as any).requestPermission()
+        .then((response: string) => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+          }
+        })
+        .catch(console.error);
+    } else {
+      // For non-iOS or older iOS
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
+    }
+    
+    return () => {
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+    };
+  }, [isMobile, gameOver, handleDeviceOrientation]);
   
+  // Set up explosion timer when game over occurs
+  useEffect(() => {
+    if (gameOver && !explosionComplete) {
+      // Clear any existing timer
+      if (explosionTimerRef.current) {
+        clearTimeout(explosionTimerRef.current);
+      }
+      
+      // Set a new timer to mark explosion as complete after animation
+      explosionTimerRef.current = setTimeout(() => {
+        setExplosionComplete(true);
+      }, 3500);
+    }
+    
+    // Reset explosion state when game restarts
+    if (!gameOver) {
+      setExplosionComplete(false);
+      setScoreSubmitted(false);
+      if (explosionTimerRef.current) {
+        clearTimeout(explosionTimerRef.current);
+        explosionTimerRef.current = null;
+      }
+    }
+    
+    // Clean up timer on unmount
+    return () => {
+      if (explosionTimerRef.current) {
+        clearTimeout(explosionTimerRef.current);
+      }
+    };
+  }, [gameOver]);
+  
+  // Submit score when game is over
+  useEffect(() => {
+    if (gameOver && explosionComplete && playerName && !scoreSubmitted && score > 0) {
+      const submitScore = async () => {
+        try {
+          await HighScoreService.addScore(playerName, score);
+          setScoreSubmitted(true);
+          console.log("Score submitted for:", playerName);
+          
+          // Increment games played count
+          setGamesPlayed(prev => prev + 1);
+          
+          // Check if player needs to re-enter name (after 3 games)
+          if (gamesPlayed >= 2) { // 2 + current game = 3 total
+            // Show toast notification
+            toast({
+              title: "Pilot Change Required",
+              description: "After 3 missions, please register a new pilot name",
+              duration: 5000,
+            });
+            
+            // Reset games played counter and prompt for new name after restart
+            setTimeout(() => {
+              setGamesPlayed(0);
+              localStorage.removeItem("pilotName");
+            }, 1000);
+          }
+        } catch (error) {
+          console.error("Failed to submit score:", error);
+        }
+      };
+      
+      submitScore();
+    }
+  }, [gameOver, explosionComplete, playerName, score, scoreSubmitted, gamesPlayed, toast]);
+
+  // Control ship with touch/mouse - memoized for better performance
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (gameContainerRef.current && !gameOver && !isMobile) {
+      const containerWidth = gameContainerRef.current.clientWidth;
+      const position = (e.clientX / containerWidth) * 100;
+      moveShip(position);
+    }
+  }, [gameOver, isMobile, moveShip]);
+
+  // Handle clicks/taps to shoot
+  const handleClick = useCallback(() => {
+    if (!gameOver && playerName) {
+      shootProjectile();
+    }
+  }, [gameOver, shootProjectile, playerName]);
+
   // Handle game restart
   const handleRestart = useCallback(() => {
     resetGame();
@@ -80,75 +203,41 @@ const Game = () => {
     setShowNameDialog(false);
   }, []);
 
-  // Handle explosion completion
-  const handleExplosionComplete = useCallback(() => {
-    setExplosionComplete(true);
-  }, []);
-
-  // Handle score submission
-  const handleScoreSubmitted = useCallback(() => {
-    setScoreSubmitted(true);
-  }, []);
-
-  // Handle games played increment
-  const handleGamesPlayedIncremented = useCallback(() => {
-    setGamesPlayed(prev => prev + 1);
-  }, []);
-
-  // Handle reset for new pilot
-  const handleResetForNewPilot = useCallback(() => {
-    setGamesPlayed(0);
-    localStorage.removeItem("pilotName");
-  }, []);
-
-  // Reset explosion state when game restarts
+  // Optimized game loop with frame rate control and RAF throttling
   useEffect(() => {
-    if (!gameOver) {
-      setExplosionComplete(false);
-      setScoreSubmitted(false);
-    }
-  }, [gameOver]);
+    if (!playerName) return; // Don't start game until player name is set
+    
+    const gameLoop = (timestamp: number) => {
+      if (!lastUpdateRef.current) {
+        lastUpdateRef.current = timestamp;
+      }
+      
+      const elapsed = timestamp - lastUpdateRef.current;
+      
+      if (elapsed > frameDelay) {
+        updateGame();
+        lastUpdateRef.current = timestamp - (elapsed % frameDelay);
+      }
+      
+      frameIdRef.current = requestAnimationFrame(gameLoop);
+    };
+    
+    frameIdRef.current = requestAnimationFrame(gameLoop);
+    
+    return () => {
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+      }
+    };
+  }, [updateGame, playerName]);
 
   return (
     <div className="relative w-full h-full">
-      {/* Hidden controller components */}
-      <GameController
-        playerName={playerName}
-        isMobile={isMobile}
-        gameOver={gameOver}
-        onMove={moveShip}
-        onShoot={shootProjectile}
-        onUpdateGame={updateGame}
-      />
-      
-      <MobileControls
-        isMobile={isMobile}
-        gameOver={gameOver}
-        onMove={moveShip}
-      />
-      
-      <ScoreSubmitter
-        gameOver={gameOver}
-        explosionComplete={explosionComplete}
-        playerName={playerName}
-        score={score}
-        scoreSubmitted={scoreSubmitted}
-        gamesPlayed={gamesPlayed}
-        onScoreSubmitted={handleScoreSubmitted}
-        onGamesPlayedIncremented={handleGamesPlayedIncremented}
-        onResetForNewPilot={handleResetForNewPilot}
-      />
-      
-      <ExplosionHandler
-        gameOver={gameOver}
-        explosionComplete={explosionComplete}
-        onExplosionComplete={handleExplosionComplete}
-      />
-      
       {/* Game area */}
       <div className="w-full h-full relative overflow-hidden touch-none"
            ref={gameContainerRef}
-           onClick={shootProjectile}>
+           onPointerMove={handlePointerMove}
+           onClick={handleClick}>
         <Tunnel />
         <Spaceship 
           position={shipPosition} 
