@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef } from 'react';
 
 type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere';
@@ -21,7 +20,7 @@ export const useSound = () => {
     audioRefs.current.shoot = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/lazercannon-37980.mp3');
     audioRefs.current.explosion = new Audio('https://assets.mixkit.co/active_storage/sfx/235/235-preview.mp3');
     audioRefs.current.gameOver = new Audio('https://assets.mixkit.co/active_storage/sfx/1204/1204-preview.mp3'); // Fixed game over sound
-    audioRefs.current.start = new Audio('https://assets.mixkit.co/active_storage/sfx/219/219-preview.mp3');
+    audioRefs.current.start = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/gamestart-272829.mp3');
     audioRefs.current.speedUp = new Audio('https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3');
     audioRefs.current.rumble = new Audio('https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3');
     // Using the provided crash sound
