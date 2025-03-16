@@ -6,6 +6,8 @@ import { Trophy } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+// This component is no longer used as we've integrated high scores into the GameUI
+// It's kept for reference or future use
 const HighScoreList: React.FC = () => {
   const [highScores, setHighScores] = useState<HighScore[]>([]);
   const [loading, setLoading] = useState(true);

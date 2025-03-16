@@ -5,10 +5,10 @@ import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
-import HighScoreList from "./HighScoreList";
 import PlayerNameDialog from "./PlayerNameDialog";
 import useGameState from "@/hooks/useGameState";
 import { HighScoreService } from "@/services/HighScoreService";
+import { useToast } from "@/components/ui/use-toast";
 
 const Game = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -24,10 +24,13 @@ const Game = () => {
   // Add state for mobile detection
   const [isMobile, setIsMobile] = useState(false);
   
-  // Add state for player name
+  // Add state for player name and game tracking
   const [playerName, setPlayerName] = useState<string>("");
   const [showNameDialog, setShowNameDialog] = useState(true);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
+  
+  const { toast } = useToast();
   
   const { 
     score,
@@ -137,6 +140,25 @@ const Game = () => {
           await HighScoreService.addScore(playerName, score);
           setScoreSubmitted(true);
           console.log("Score submitted for:", playerName);
+          
+          // Increment games played count
+          setGamesPlayed(prev => prev + 1);
+          
+          // Check if player needs to re-enter name (after 3 games)
+          if (gamesPlayed >= 2) { // 2 + current game = 3 total
+            // Show toast notification
+            toast({
+              title: "Pilot Change Required",
+              description: "After 3 missions, please register a new pilot name",
+              duration: 5000,
+            });
+            
+            // Reset games played counter and prompt for new name after restart
+            setTimeout(() => {
+              setGamesPlayed(0);
+              localStorage.removeItem("pilotName");
+            }, 1000);
+          }
         } catch (error) {
           console.error("Failed to submit score:", error);
         }
@@ -144,7 +166,7 @@ const Game = () => {
       
       submitScore();
     }
-  }, [gameOver, explosionComplete, playerName, score, scoreSubmitted]);
+  }, [gameOver, explosionComplete, playerName, score, scoreSubmitted, gamesPlayed, toast]);
 
   // Control ship with touch/mouse - memoized for better performance
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -167,7 +189,12 @@ const Game = () => {
     resetGame();
     setExplosionComplete(false);
     setScoreSubmitted(false);
-  }, [resetGame]);
+    
+    // Check if player needs to re-enter name
+    if (gamesPlayed >= 2) {
+      setShowNameDialog(true);
+    }
+  }, [resetGame, gamesPlayed]);
   
   // Handle player name submission
   const handleNameSubmit = useCallback((name: string) => {
@@ -205,9 +232,9 @@ const Game = () => {
   }, [updateGame, playerName]);
 
   return (
-    <div className="relative w-full h-full flex md:flex-row flex-col">
+    <div className="relative w-full h-full">
       {/* Game area */}
-      <div className="flex-1 relative overflow-hidden touch-none"
+      <div className="w-full h-full relative overflow-hidden touch-none"
            ref={gameContainerRef}
            onPointerMove={handlePointerMove}
            onClick={handleClick}>
@@ -230,11 +257,6 @@ const Game = () => {
           isInvulnerable={isInvulnerable}
           playerName={playerName}
         />
-      </div>
-      
-      {/* High scores area */}
-      <div className="md:w-80 md:h-full w-full md:max-h-none max-h-48 bg-black/30 border-l border-purple-500/20 p-4 overflow-auto backdrop-blur-sm">
-        <HighScoreList />
       </div>
       
       {/* Player name dialog */}

@@ -1,7 +1,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, Heart, User } from "lucide-react";
+import { Zap, Heart, User, Trophy } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { HighScoreService } from "@/services/HighScoreService";
+import { HighScore } from "@/types/gameTypes";
 
 interface GameUIProps {
   score: number;
@@ -25,6 +28,13 @@ const GameUI: React.FC<GameUIProps> = ({
   playerName = ""
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
+  
+  // Fetch high scores using react-query
+  const { data: highScores = [] } = useQuery({
+    queryKey: ['highScores'],
+    queryFn: HighScoreService.getTopScores,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
   
   // Hide instructions on game interaction
   const hideInstructions = () => {
@@ -70,7 +80,7 @@ const GameUI: React.FC<GameUIProps> = ({
         </div>
       )}
       
-      {/* Score display with meteor hits */}
+      {/* Score display with meteor hits and high scores */}
       <div className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm"
            style={{
              boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
@@ -82,6 +92,28 @@ const GameUI: React.FC<GameUIProps> = ({
         <p className="text-sm text-green-300 font-medium">
           Meteor Hit: {meteorHits}
         </p>
+        
+        {/* Top 5 High Scores - Compact Display */}
+        <div className="mt-2 pt-2 border-t border-purple-500/20">
+          <p className="text-xs flex items-center gap-1 mb-1 text-yellow-400">
+            <Trophy size={12} />
+            <span>Best Pilots</span>
+          </p>
+          {highScores.length > 0 ? (
+            <ul className="text-xs space-y-1">
+              {highScores.map((score, idx) => (
+                <li key={idx} className="flex justify-between">
+                  <span className={idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : idx === 2 ? "text-amber-600" : ""}>
+                    {score.playerName}
+                  </span>
+                  <span>{score.score}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-gray-400">No scores yet</p>
+          )}
+        </div>
       </div>
 
       {/* Lives display */}
