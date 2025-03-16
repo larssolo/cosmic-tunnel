@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { Obstacle, Projectile } from "@/types/gameTypes";
 
@@ -69,37 +68,51 @@ export function useGameLoop({
       return updated;
     });
     
-    // Update projectile positions
+    // Update projectile positions - Use functional update to avoid stale state
     setProjectiles(prev => {
       const updatedProjectiles = updateProjectiles(prev);
       return updatedProjectiles;
     });
     
-    // Check for projectile collisions with obstacles
-    const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } = 
-      checkProjectileCollisions(obstacles, projectiles);
-    
-    // Handle obstacle destruction
-    if (obstaclesHit) {
-      console.log("Obstacle hit by projectile!");
-      playSound('explosion');
-      playSound('rumble');
+    // Use latest state for collision detection - capture current values for consistent check
+    setProjectiles(currentProjectiles => {
+      setObstacles(currentObstacles => {
+        // Check for projectile collisions with obstacles using latest state
+        const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } = 
+          checkProjectileCollisions(currentObstacles, currentProjectiles);
+        
+        // Handle obstacle destruction
+        if (obstaclesHit) {
+          console.log("Obstacle hit by projectile!");
+          playSound('explosion');
+          playSound('rumble');
+          
+          // Update game statistics
+          increaseMeteorHits();
+          increaseMultiplier();
+          
+          // Log with correct multiplier value from ref
+          console.log("Score multiplier increased to:", scoreMultiplierRef.current * 1.2);
+          console.log("Meteor hit registered");
+          
+          // Add bonus points
+          increaseScore(50);
+          
+          // Return updated obstacles after collision
+          return collidedObstacles;
+        }
+        
+        // No hits, return original obstacles
+        return currentObstacles;
+      });
       
-      // Update game statistics
-      increaseMeteorHits();
-      increaseMultiplier();
+      // Check for projectile collisions again to get updated projectiles list
+      const { obstaclesHit, newProjectilesList } = 
+        checkProjectileCollisions(obstacles, currentProjectiles);
       
-      // Log with correct multiplier value from ref
-      console.log("Score multiplier increased to:", scoreMultiplierRef.current * 1.2);
-      console.log("Meteor hit registered");
-      
-      // Add bonus points
-      increaseScore(50);
-      
-      // Update game objects
-      setObstacles(collidedObstacles);
-      setProjectiles(newProjectilesList);
-    }
+      // Return updated projectiles if there were hits, otherwise keep current
+      return obstaclesHit ? newProjectilesList : currentProjectiles;
+    });
     
     // Check for ship collisions with obstacles
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOver);
