@@ -7,31 +7,40 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { User, Rocket } from "lucide-react";
 
-interface PlayerNameFormProps {
+interface PlayerNameDialogProps {
   open: boolean;
   onSubmit: (name: string) => void;
+  onClose?: () => void;
 }
 
-const PlayerNameDialog: React.FC<PlayerNameFormProps> = ({ open, onSubmit }) => {
+const PlayerNameDialog: React.FC<PlayerNameDialogProps> = ({ open, onSubmit, onClose }) => {
   const [isOpen, setIsOpen] = useState(open);
+  
+  const form = useForm({
+    defaultValues: {
+      playerName: localStorage.getItem('playerName') || ""
+    }
+  });
   
   useEffect(() => {
     setIsOpen(open);
   }, [open]);
   
-  const form = useForm({
-    defaultValues: {
-      playerName: ""
-    }
-  });
-  
   const handleSubmit = form.handleSubmit((data) => {
+    localStorage.setItem('playerName', data.playerName);
     onSubmit(data.playerName);
     setIsOpen(false);
   });
   
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open && onClose) {
+      onClose();
+    }
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-black/90 text-white border-purple-500/30 backdrop-blur-lg"
                     style={{
                       boxShadow: "0 0 20px rgba(155, 135, 245, 0.4)",

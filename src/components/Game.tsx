@@ -1,38 +1,20 @@
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import Tunnel from "./Tunnel";
-import Spaceship from "./Spaceship";
 import Obstacles from "./Obstacles";
+import Spaceship from "./Spaceship";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
-import PlayerNameDialog from "./PlayerNameDialog";
 import useGameState from "@/hooks/useGameState";
-import { HighScoreService } from "@/services/HighScoreService";
-import { useToast } from "@/components/ui/use-toast";
+import useMobile from "@/hooks/use-mobile";
+import PlayerNameDialog from "./PlayerNameDialog";
 
-const Game = () => {
+const Game: React.FC = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const frameIdRef = useRef<number>(0);
-  const lastUpdateRef = useRef<number>(0);
-  const FPS = 60;
-  const frameDelay = 1000 / FPS;
-  
-  // Add state to track if the explosion animation is complete
-  const [explosionComplete, setExplosionComplete] = useState(false);
-  const explosionTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Add state for mobile detection
-  const [isMobile, setIsMobile] = useState(false);
-  
-  // Add state for player name and game tracking
-  const [playerName, setPlayerName] = useState<string>("");
-  const [showNameDialog, setShowNameDialog] = useState(true);
-  const [scoreSubmitted, setScoreSubmitted] = useState(false);
-  const [gamesPlayed, setGamesPlayed] = useState(0);
-  
-  const { toast } = useToast();
-  
-  const { 
+  const gameLoopRef = useRef<number | null>(null);
+  const lastTimestampRef = useRef<number>(0);
+
+  const {
     score,
     gameOver,
     shipPosition,
@@ -42,227 +24,132 @@ const Game = () => {
     meteorHits,
     lives,
     isInvulnerable,
-    startGame,
+    playerName,
+    showNameDialog,
     resetGame,
     moveShip,
     shootProjectile,
-    updateGame
+    updateGame,
+    handleNameSubmit
   } = useGameState();
 
-  // Detect mobile device on component mount
+  const { isMobile } = useMobile();
+
+  // Handle mouse/touch movement for ship control
   useEffect(() => {
-    const checkMobile = () => {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (gameOver) return;
+
+    const handleMove = (clientX: number) => {
+      if (!gameContainerRef.current) return;
+      
+      const rect = gameContainerRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const position = (x / rect.width) * 100;
+      moveShip(position);
     };
-    
-    setIsMobile(checkMobile());
-    
-    // Try to get previously saved player name
-    const savedName = localStorage.getItem("pilotName");
-    if (savedName) {
-      setPlayerName(savedName);
-      setShowNameDialog(false);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isMobile) return; // Skip mouse events on mobile
+      handleMove(e.clientX);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      handleMove(e.touches[0].clientX);
+    };
+
+    if (!isMobile) {
+      window.addEventListener("mousemove", handleMouseMove);
     }
-  }, []);
+    window.addEventListener("touchmove", handleTouchMove);
 
-  // Optimize by memoizing handler functions
-  const handleDeviceOrientation = useCallback((event: DeviceOrientationEvent) => {
-    if (event.gamma === null) return;
-    
-    // Calculate position based on device tilt (gamma value)
-    const tiltSensitivity = 2; // Adjust sensitivity
-    const normalizedGamma = event.gamma * tiltSensitivity;
-    const position = 50 + normalizedGamma; // Center (50) + tilt adjustment
-    moveShip(position);
-  }, [moveShip]);
+    return () => {
+      if (!isMobile) {
+        window.removeEventListener("mousemove", handleMouseMove);
+      }
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [gameOver, moveShip, isMobile]);
 
-  // Set up device orientation handler for mobile devices
+  // Handle orientation for mobile controls
   useEffect(() => {
     if (!isMobile || gameOver) return;
-    
-    // Request device orientation permissions on iOS 13+
-    if (typeof DeviceOrientationEvent !== 'undefined' && 
-        typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      (DeviceOrientationEvent as any).requestPermission()
-        .then((response: string) => {
-          if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleDeviceOrientation);
-          }
-        })
-        .catch(console.error);
-    } else {
-      // For non-iOS or older iOS
-      window.addEventListener('deviceorientation', handleDeviceOrientation);
-    }
-    
-    return () => {
-      window.removeEventListener('deviceorientation', handleDeviceOrientation);
-    };
-  }, [isMobile, gameOver, handleDeviceOrientation]);
-  
-  // Set up explosion timer when game over occurs
-  useEffect(() => {
-    if (gameOver && !explosionComplete) {
-      // Clear any existing timer
-      if (explosionTimerRef.current) {
-        clearTimeout(explosionTimerRef.current);
-      }
-      
-      // Set a new timer to mark explosion as complete after animation
-      explosionTimerRef.current = setTimeout(() => {
-        setExplosionComplete(true);
-      }, 3500);
-    }
-    
-    // Reset explosion state when game restarts
-    if (!gameOver) {
-      setExplosionComplete(false);
-      setScoreSubmitted(false);
-      if (explosionTimerRef.current) {
-        clearTimeout(explosionTimerRef.current);
-        explosionTimerRef.current = null;
-      }
-    }
-    
-    // Clean up timer on unmount
-    return () => {
-      if (explosionTimerRef.current) {
-        clearTimeout(explosionTimerRef.current);
-      }
-    };
-  }, [gameOver]);
-  
-  // Submit score when game is over
-  useEffect(() => {
-    if (gameOver && explosionComplete && playerName && !scoreSubmitted && score > 0) {
-      const submitScore = async () => {
-        try {
-          await HighScoreService.addScore(playerName, score);
-          setScoreSubmitted(true);
-          console.log("Score submitted for:", playerName);
-          
-          // Increment games played count
-          setGamesPlayed(prev => prev + 1);
-          
-          // Check if player needs to re-enter name (after 3 games)
-          if (gamesPlayed >= 2) { // 2 + current game = 3 total
-            // Show toast notification
-            toast({
-              title: "Pilot Change Required",
-              description: "After 3 missions, please register a new pilot name",
-              duration: 5000,
-            });
-            
-            // Reset games played counter and prompt for new name after restart
-            setTimeout(() => {
-              setGamesPlayed(0);
-              localStorage.removeItem("pilotName");
-            }, 1000);
-          }
-        } catch (error) {
-          console.error("Failed to submit score:", error);
-        }
-      };
-      
-      submitScore();
-    }
-  }, [gameOver, explosionComplete, playerName, score, scoreSubmitted, gamesPlayed, toast]);
 
-  // Control ship with touch/mouse - memoized for better performance
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (gameContainerRef.current && !gameOver && !isMobile) {
-      const containerWidth = gameContainerRef.current.clientWidth;
-      const position = (e.clientX / containerWidth) * 100;
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.gamma === null) return;
+      
+      // Convert gamma (-90 to 90) to position (0 to 100)
+      // with a more sensitive range (-30 to 30 maps to 0-100)
+      const gamma = Math.max(-30, Math.min(30, e.gamma));
+      const position = ((gamma + 30) / 60) * 100;
       moveShip(position);
-    }
-  }, [gameOver, isMobile, moveShip]);
+    };
 
-  // Handle clicks/taps to shoot
-  const handleClick = useCallback(() => {
-    if (!gameOver && playerName) {
+    window.addEventListener("deviceorientation", handleOrientation);
+
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation);
+    };
+  }, [isMobile, gameOver, moveShip]);
+
+  // Set up game loop
+  useEffect(() => {
+    const FPS = 60;
+    const frameDelay = 1000 / FPS;
+
+    const gameLoop = (timestamp: number) => {
+      if (timestamp - lastTimestampRef.current >= frameDelay) {
+        updateGame();
+        lastTimestampRef.current = timestamp;
+      }
+      
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+
+    return () => {
+      if (gameLoopRef.current !== null) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [updateGame]);
+
+  // Handle click/tap to shoot
+  const handleShoot = () => {
+    if (!gameOver) {
       shootProjectile();
     }
-  }, [gameOver, shootProjectile, playerName]);
-
-  // Handle game restart
-  const handleRestart = useCallback(() => {
-    resetGame();
-    setExplosionComplete(false);
-    setScoreSubmitted(false);
-    
-    // Check if player needs to re-enter name
-    if (gamesPlayed >= 2) {
-      setShowNameDialog(true);
-    }
-  }, [resetGame, gamesPlayed]);
-  
-  // Handle player name submission
-  const handleNameSubmit = useCallback((name: string) => {
-    setPlayerName(name);
-    localStorage.setItem("pilotName", name);
-    setShowNameDialog(false);
-  }, []);
-
-  // Optimized game loop with frame rate control and RAF throttling
-  useEffect(() => {
-    if (!playerName) return; // Don't start game until player name is set
-    
-    const gameLoop = (timestamp: number) => {
-      if (!lastUpdateRef.current) {
-        lastUpdateRef.current = timestamp;
-      }
-      
-      const elapsed = timestamp - lastUpdateRef.current;
-      
-      if (elapsed > frameDelay) {
-        updateGame();
-        lastUpdateRef.current = timestamp - (elapsed % frameDelay);
-      }
-      
-      frameIdRef.current = requestAnimationFrame(gameLoop);
-    };
-    
-    frameIdRef.current = requestAnimationFrame(gameLoop);
-    
-    return () => {
-      if (frameIdRef.current) {
-        cancelAnimationFrame(frameIdRef.current);
-      }
-    };
-  }, [updateGame, playerName]);
+  };
 
   return (
-    <div className="relative w-full h-full">
-      {/* Game area */}
-      <div className="w-full h-full relative overflow-hidden touch-none"
-           ref={gameContainerRef}
-           onPointerMove={handlePointerMove}
-           onClick={handleClick}>
-        <Tunnel />
-        <Spaceship 
-          position={shipPosition} 
-          onShoot={shootProjectile} 
-          isExploding={gameOver}
-          isInvulnerable={isInvulnerable}
-        />
-        <Obstacles obstacles={obstacles} />
-        <Projectiles projectiles={projectiles} />
-        <GameUI 
-          score={score} 
-          gameOver={gameOver && explosionComplete} 
-          onRestart={handleRestart} 
-          scoreMultiplier={scoreMultiplier}
-          meteorHits={meteorHits}
-          lives={lives}
-          isInvulnerable={isInvulnerable}
-          playerName={playerName}
-        />
-      </div>
+    <div 
+      ref={gameContainerRef}
+      className="relative w-full h-full overflow-hidden bg-black"
+      onClick={handleShoot}
+    >
+      {/* Game world */}
+      <Tunnel />
+      <Obstacles obstacles={obstacles} />
+      <Projectiles projectiles={projectiles} />
+      <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isDead={gameOver} />
       
+      {/* Game UI */}
+      <GameUI 
+        score={score}
+        gameOver={gameOver}
+        onRestart={resetGame}
+        scoreMultiplier={scoreMultiplier}
+        meteorHits={meteorHits}
+        lives={lives}
+        isInvulnerable={isInvulnerable}
+        playerName={playerName}
+      />
+
       {/* Player name dialog */}
       <PlayerNameDialog 
         open={showNameDialog} 
-        onSubmit={handleNameSubmit} 
+        onSubmit={handleNameSubmit}
       />
     </div>
   );
