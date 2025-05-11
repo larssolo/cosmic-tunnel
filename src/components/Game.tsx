@@ -6,7 +6,7 @@ import Spaceship from "./Spaceship";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
 import useGameState from "@/hooks/useGameState";
-import useMobile from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import PlayerNameDialog from "./PlayerNameDialog";
 
 const Game: React.FC = () => {
@@ -33,7 +33,7 @@ const Game: React.FC = () => {
     handleNameSubmit
   } = useGameState();
 
-  const { isMobile } = useMobile();
+  const isMobile = useIsMobile();
 
   // Handle mouse/touch movement for ship control
   useEffect(() => {
