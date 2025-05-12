@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import Tunnel from "./Tunnel";
 import Obstacles from "./Obstacles";
@@ -132,7 +131,7 @@ const Game: React.FC = () => {
       <Tunnel />
       <Obstacles obstacles={obstacles} />
       <Projectiles projectiles={projectiles} />
-      <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isDead={gameOver} />
+      <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
       
       {/* Game UI */}
       <GameUI 

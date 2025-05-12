@@ -5,7 +5,6 @@ import SpaceshipExplosion from "./SpaceshipExplosion";
 
 interface SpaceshipProps {
   position: number;
-  onShoot: () => void;
   isExploding?: boolean;
   isInvulnerable?: boolean;
 }
@@ -13,7 +12,6 @@ interface SpaceshipProps {
 // Use memo to prevent unnecessary re-renders when props haven't changed
 const Spaceship: React.FC<SpaceshipProps> = memo(({ 
   position, 
-  onShoot, 
   isExploding = false, 
   isInvulnerable = false 
 }) => {
@@ -26,7 +24,6 @@ const Spaceship: React.FC<SpaceshipProps> = memo(({
         // Use will-change for better performance during position changes
         willChange: "left",
       }}
-      onClick={onShoot}
     >
       {isExploding ? (
         <SpaceshipExplosion />
