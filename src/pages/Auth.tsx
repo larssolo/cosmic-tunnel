@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import loginBackground from "@/assets/login-background.png";
+import loginBackground from "@/assets/login-background.jpg";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,12 +19,12 @@ const Auth = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast.error("Udfyld venligst alle felter");
+      toast.error("Please fill in all fields");
       return;
     }
 
     if (!isLogin && !playerName) {
-      toast.error("Indtast venligst dit spillernavn");
+      toast.error("Please enter your player name");
       return;
     }
 
@@ -36,14 +36,14 @@ const Auth = () => {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Velkommen tilbage!");
+          toast.success("Welcome back!");
         }
       } else {
         const { error } = await signUp(email, password, playerName);
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Konto oprettet! Velkommen til spillet!");
+          toast.success("Account created! Welcome to the game!");
         }
       }
     } catch (error: any) {
@@ -59,13 +59,13 @@ const Auth = () => {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${loginBackground})` }}
       />
-      <Card className="w-full max-w-md bg-space-dark/30 backdrop-blur-sm border-primary/20 relative z-10">
+      <Card className="w-full max-w-md bg-white/30 backdrop-blur-sm border-primary/20 relative z-10">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Cosmic Tunnel Flyer
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            {isLogin ? "Log ind for at fortsætte" : "Opret en konto for at spille"}
+            {isLogin ? "Sign in to continue" : "Create an account to play"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,12 +73,12 @@ const Auth = () => {
             {!isLogin && (
               <div className="space-y-2">
                 <Label htmlFor="playerName" className="text-foreground">
-                  Spillernavn
+                  Player Name
                 </Label>
                 <Input
                   id="playerName"
                   type="text"
-                  placeholder="Dit spillernavn"
+                  placeholder="Your player name"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   className="bg-background/50 border-primary/20 focus:border-primary"
@@ -94,7 +94,7 @@ const Auth = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="din@email.dk"
+                placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-background/50 border-primary/20 focus:border-primary"
@@ -104,7 +104,7 @@ const Auth = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-foreground">
-                Adgangskode
+                Password
               </Label>
               <Input
                 id="password"
@@ -122,7 +122,7 @@ const Auth = () => {
               className="w-full bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90"
               disabled={loading}
             >
-              {loading ? "Vent venligst..." : isLogin ? "Log ind" : "Opret konto"}
+              {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>
 
@@ -133,7 +133,7 @@ const Auth = () => {
               className="text-primary hover:text-primary/80"
               disabled={loading}
             >
-              {isLogin ? "Har du ikke en konto? Opret en" : "Har du allerede en konto? Log ind"}
+              {isLogin ? "Don't have an account? Create one" : "Already have an account? Sign in"}
             </Button>
           </div>
         </CardContent>
