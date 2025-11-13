@@ -124,7 +124,7 @@ const GameUI: React.FC<GameUIProps> = ({
       </div>
 
       {/* Lives display */}
-      <div className="absolute top-4 left-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm flex items-center gap-2"
+      <div className="absolute top-20 left-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm flex items-center gap-2"
            style={{
              boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
              border: "1px solid rgba(155, 135, 245, 0.2)"
