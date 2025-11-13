@@ -32,10 +32,11 @@ export const PowerUps = ({ powerUps }: PowerUpsProps) => {
             }}
           >
             <div
-              className="rounded-full p-3 backdrop-blur-sm shadow-lg animate-spin"
+              className="rounded-full p-3 backdrop-blur-sm shadow-lg"
               style={{
                 backgroundColor: `${config.color}33`,
                 boxShadow: `0 0 20px ${config.color}`,
+                animation: 'spin 2s linear infinite',
               }}
             >
               <IconComponent

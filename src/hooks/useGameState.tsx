@@ -233,8 +233,8 @@ const useGameState = () => {
     const scoreBoost = isPowerUpActive(PowerUpType.SCORE_BOOST) ? 2 : 1;
     setScore(prev => prev + Math.round(1 * scoreMultiplierRef.current * scoreBoost));
     
-    // Check for level progression every 60 frames
-    if (Math.floor(scoreRef.current / 10) % 60 === 0) {
+    // Check for level progression - only check occasionally to avoid constant checks
+    if (scoreRef.current > 0 && scoreRef.current % 100 === 0) {
       const newLevel = getLevelByScore(scoreRef.current);
       if (newLevel.level > currentLevel) {
         setCurrentLevel(newLevel.level);
@@ -246,8 +246,7 @@ const useGameState = () => {
           setLevelUpNotification(null);
         }, 3000);
         
-        // Apply level speed and frequency multipliers
-        setSpeed(prev => prev * newLevel.speedMultiplier);
+        // DON'T increase speed here - levels already have speed multipliers in config
       }
     }
     
@@ -255,18 +254,21 @@ const useGameState = () => {
     spawnPowerUp();
     updatePowerUps();
     
-    // Check for power-up collisions
+    // Check for power-up collisions - FIXED collision detection
     powerUps.forEach(powerUp => {
       const powerUpX = powerUp.x;
       const powerUpY = powerUp.y;
       const shipX = shipPosition;
+      const shipY = 85; // Ship is at 85% from top
       
-      // Simple collision detection
+      // Improved collision detection
       const distanceX = Math.abs(powerUpX - shipX);
-      const distanceY = Math.abs(powerUpY - 90); // Ship is at bottom
+      const distanceY = Math.abs(powerUpY - shipY);
       
-      if (distanceX < 5 && distanceY < 10) {
+      // Power-up collected when within range
+      if (distanceX < 8 && distanceY < 8) {
         // Power-up collected!
+        console.log(`Power-up collected: ${powerUp.type} at position (${powerUpX}, ${powerUpY})`);
         playSound('powerUpCollect');
         setPowerUpsCollected(prev => prev + 1);
         removePowerUp(powerUp.id);
@@ -286,19 +288,26 @@ const useGameState = () => {
             }
           }, config.duration);
         } else {
-          // Other power-ups
+          // Other power-ups (including slow motion)
+          console.log(`Activating power-up: ${powerUp.type} for ${config.duration}ms`);
           activatePowerUp(powerUp.type, config.duration);
         }
       }
     });
     
-    if (scoreRef.current > 0 && scoreRef.current % 500 === 0) {
-      setSpeed(prev => Math.min(prev + 0.1, 3.0));
+    // Gradual speed increase - REDUCED from every 500 to every 1000 points
+    if (scoreRef.current > 0 && scoreRef.current % 1000 === 0) {
+      setSpeed(prev => Math.min(prev + 0.05, 2.0)); // Reduced increment from 0.1 to 0.05, max from 3.0 to 2.0
       playSound('speedUp');
     }
     
     // Apply slow motion power-up to obstacle speed
     const slowMotion = isPowerUpActive(PowerUpType.SLOW_MOTION) ? 0.5 : 1.0;
+    
+    // Debug log for slow motion
+    if (slowMotion !== 1.0) {
+      console.log('Slow motion active! Multiplier:', slowMotion);
+    }
     
     const newObstacle = createObstacle();
     if (newObstacle) {

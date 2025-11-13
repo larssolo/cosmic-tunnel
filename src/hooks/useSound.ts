@@ -25,7 +25,7 @@ export const useSound = () => {
     audioRefs.current.gameOver = new Audio('https://assets.mixkit.co/active_storage/sfx/1204/1204-preview.mp3'); // Fixed game over sound
     audioRefs.current.start = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/gamestart-272829.mp3');
     audioRefs.current.speedUp = new Audio('https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3');
-    audioRefs.current.rumble = new Audio('https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3');
+    audioRefs.current.rumble = new Audio('https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3'); // Changed to working sound
     // Using the provided crash sound
     audioRefs.current.crash = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/game-over-classic-206486.mp3');
     // Adding the new atmosphere sound

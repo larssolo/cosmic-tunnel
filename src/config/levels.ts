@@ -15,8 +15,8 @@ export const LEVELS: Level[] = [
     level: 2,
     name: "Nebula Zone",
     requiredScore: 500,
-    speedMultiplier: 1.15,
-    obstacleFrequency: 1.1,
+    speedMultiplier: 1.1,
+    obstacleFrequency: 1.05,
     backgroundColor: "hsl(200, 60%, 10%)",
     tunnelColor: "hsl(200, 70%, 50%)",
     unlocked: false
@@ -25,8 +25,8 @@ export const LEVELS: Level[] = [
     level: 3,
     name: "Meteor Storm",
     requiredScore: 1500,
-    speedMultiplier: 1.3,
-    obstacleFrequency: 1.25,
+    speedMultiplier: 1.2,
+    obstacleFrequency: 1.15,
     backgroundColor: "hsl(30, 60%, 10%)",
     tunnelColor: "hsl(30, 70%, 50%)",
     unlocked: false
@@ -35,8 +35,8 @@ export const LEVELS: Level[] = [
     level: 4,
     name: "Black Hole Edge",
     requiredScore: 3000,
-    speedMultiplier: 1.5,
-    obstacleFrequency: 1.4,
+    speedMultiplier: 1.3,
+    obstacleFrequency: 1.25,
     backgroundColor: "hsl(0, 0%, 5%)",
     tunnelColor: "hsl(280, 50%, 40%)",
     unlocked: false
@@ -45,8 +45,8 @@ export const LEVELS: Level[] = [
     level: 5,
     name: "Supernova Sector",
     requiredScore: 5000,
-    speedMultiplier: 1.7,
-    obstacleFrequency: 1.6,
+    speedMultiplier: 1.4,
+    obstacleFrequency: 1.35,
     backgroundColor: "hsl(20, 80%, 10%)",
     tunnelColor: "hsl(20, 90%, 60%)",
     unlocked: false

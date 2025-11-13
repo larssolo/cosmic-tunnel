@@ -43,6 +43,6 @@ export const POWER_UP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
   }
 };
 
-export const POWER_UP_SPAWN_INTERVAL = 20000; // 20 seconds
-export const POWER_UP_SPEED = 1.5;
+export const POWER_UP_SPAWN_INTERVAL = 15000; // 15 seconds - reduced from 20
+export const POWER_UP_SPEED = 1.2; // Slightly slower for better visibility
 export const POWER_UP_SIZE = 30;
