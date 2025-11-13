@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import loginBackground from "@/assets/login-background.png";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -53,8 +54,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-space-darker to-space-dark p-4">
-      <Card className="w-full max-w-md bg-space-dark/80 backdrop-blur-sm border-primary/20">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${loginBackground})` }}
+      />
+      <Card className="w-full max-w-md bg-space-dark/30 backdrop-blur-sm border-primary/20 relative z-10">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Cosmic Tunnel Flyer
