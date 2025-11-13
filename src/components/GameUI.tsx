@@ -143,10 +143,10 @@ const GameUI: React.FC<GameUIProps> = ({
                boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
                border: "1px solid rgba(155, 135, 245, 0.2)"
              }}>
-          <p className="md:block hidden">Bevæg til venstre/højre for at styre rumskibet</p>
-          <p className="md:hidden">Vip telefonen til venstre/højre for at styre rumskibet</p>
+          <p className="md:block hidden">Move mouse left/right to control the spaceship</p>
+          <p className="md:hidden">Tilt your phone left/right to control the spaceship</p>
           <p className="flex items-center justify-center gap-1 mt-1">
-            <span>Klik på rumskibet for at skyde</span> 
+            <span>Click on spaceship to shoot</span> 
             <Zap size={16} className="text-yellow-300" />
           </p>
         </div>
