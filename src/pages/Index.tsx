@@ -42,8 +42,8 @@ const Index = () => {
 
   return (
     <div className="w-full h-screen overflow-hidden bg-black relative">
-      {/* Top bar with download and logout buttons */}
-      <div className="absolute top-4 right-4 z-50 flex gap-2">
+      {/* Bottom bar with download and logout buttons */}
+      <div className="absolute bottom-4 left-4 z-50 flex gap-2">
         <Button
           onClick={handleDownload}
           variant="outline"
