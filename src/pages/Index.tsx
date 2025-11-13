@@ -36,7 +36,7 @@ const Index = () => {
   return (
     <div className="w-full h-screen overflow-hidden bg-black relative">
       {/* Logout button positioned in middle-right */}
-      <div className="absolute top-1/2 -translate-y-1/2 right-4 z-50">
+      <div className="absolute top-[calc(50%-40px)] -translate-y-1/2 right-4 z-50">
         <Button
           onClick={handleSignOut}
           variant="outline"
