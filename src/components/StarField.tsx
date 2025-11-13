@@ -42,11 +42,43 @@ const StarField = () => {
       });
     }
 
+    // Create shooting stars
+    const shootingStars: Array<{
+      x: number;
+      y: number;
+      length: number;
+      speed: number;
+      angle: number;
+      alpha: number;
+      active: boolean;
+    }> = [];
+
+    const createShootingStar = () => {
+      const angle = Math.random() * Math.PI / 4 - Math.PI / 8; // -22.5 to 22.5 degrees
+      shootingStars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height / 2, // Upper half of screen
+        length: Math.random() * 80 + 40,
+        speed: Math.random() * 3 + 5,
+        angle,
+        alpha: 1,
+        active: true,
+      });
+    };
+
+    // Spawn shooting stars randomly
+    const spawnInterval = setInterval(() => {
+      if (Math.random() > 0.7) { // 30% chance every interval
+        createShootingStar();
+      }
+    }, 3000);
+
     // Animation loop
     let animationFrameId: number;
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Draw regular stars
       stars.forEach((star) => {
         // Update position
         star.x += star.vx;
@@ -71,6 +103,43 @@ const StarField = () => {
         ctx.fill();
       });
 
+      // Draw and update shooting stars
+      shootingStars.forEach((star, index) => {
+        if (!star.active) return;
+
+        // Update position
+        star.x += Math.cos(star.angle) * star.speed;
+        star.y += Math.sin(star.angle) * star.speed;
+        star.alpha -= 0.01;
+
+        // Remove if faded or off screen
+        if (star.alpha <= 0 || star.x > canvas.width + 100 || star.y > canvas.height + 100) {
+          shootingStars.splice(index, 1);
+          return;
+        }
+
+        // Draw shooting star with trail
+        const gradient = ctx.createLinearGradient(
+          star.x,
+          star.y,
+          star.x - Math.cos(star.angle) * star.length,
+          star.y - Math.sin(star.angle) * star.length
+        );
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${star.alpha})`);
+        gradient.addColorStop(0.5, `rgba(200, 220, 255, ${star.alpha * 0.5})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(star.x, star.y);
+        ctx.lineTo(
+          star.x - Math.cos(star.angle) * star.length,
+          star.y - Math.sin(star.angle) * star.length
+        );
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
       animationFrameId = requestAnimationFrame(animate);
     };
 
@@ -79,6 +148,7 @@ const StarField = () => {
     return () => {
       window.removeEventListener("resize", resizeCanvas);
       cancelAnimationFrame(animationFrameId);
+      clearInterval(spawnInterval);
     };
   }, []);
 
