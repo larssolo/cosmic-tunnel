@@ -15,6 +15,7 @@ interface GameUIProps {
   lives: number;
   isInvulnerable: boolean;
   playerName?: string;
+  currentLevel?: number;
 }
 
 const GameUI: React.FC<GameUIProps> = ({ 
@@ -25,7 +26,8 @@ const GameUI: React.FC<GameUIProps> = ({
   meteorHits, 
   lives,
   isInvulnerable,
-  playerName = ""
+  playerName = "",
+  currentLevel = 1
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   
@@ -68,6 +70,11 @@ const GameUI: React.FC<GameUIProps> = ({
   
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
+      {/* Level display */}
+      <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-purple-500/30 text-white">
+        <p className="text-lg font-bold text-purple-400">Level {currentLevel}</p>
+      </div>
+
       {/* Player name display */}
       {playerName && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm flex items-center gap-2"

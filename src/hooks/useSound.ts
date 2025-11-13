@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere';
+type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere' | 'levelUp' | 'powerUpCollect' | 'achievementUnlock';
 
 export const useSound = () => {
   const audioRefs = useRef<Record<SoundType, HTMLAudioElement | null>>({
@@ -11,7 +11,10 @@ export const useSound = () => {
     speedUp: null,
     rumble: null,
     crash: null,
-    atmosphere: null
+    atmosphere: null,
+    levelUp: null,
+    powerUpCollect: null,
+    achievementUnlock: null
   });
 
   // Initialize audio elements
@@ -53,6 +56,21 @@ export const useSound = () => {
     if (audioRefs.current.atmosphere) {
       audioRefs.current.atmosphere.volume = 0.6; // Increased volume for atmosphere sound
       audioRefs.current.atmosphere.loop = true; // Make atmosphere sound loop continuously
+    }
+    
+    // New sound effects
+    audioRefs.current.levelUp = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+    audioRefs.current.powerUpCollect = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
+    audioRefs.current.achievementUnlock = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
+    
+    if (audioRefs.current.levelUp) {
+      audioRefs.current.levelUp.volume = 0.7;
+    }
+    if (audioRefs.current.powerUpCollect) {
+      audioRefs.current.powerUpCollect.volume = 0.5;
+    }
+    if (audioRefs.current.achievementUnlock) {
+      audioRefs.current.achievementUnlock.volume = 0.8;
     }
 
     // Preload audio

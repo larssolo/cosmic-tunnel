@@ -30,3 +30,20 @@ export interface HighScore {
   score: number;
   date: string;
 }
+
+export interface LeaderboardEntry {
+  id: string;
+  playerName: string;
+  score: number;
+  meteorsHit: number;
+  highestLevel: number;
+  survivalTime: number;
+  date: string;
+}
+
+export enum LeaderboardType {
+  HIGH_SCORE = 'highScore',
+  METEORS = 'meteors',
+  SURVIVAL = 'survival',
+  LEVEL = 'level'
+}

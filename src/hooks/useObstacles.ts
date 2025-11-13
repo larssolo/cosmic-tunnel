@@ -30,7 +30,7 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     return null;
   }, [scoreRef]);
 
-  const updateObstacles = useCallback((obstacles: Obstacle[]) => {
+  const updateObstacles = useCallback((obstacles: Obstacle[], slowMotionMultiplier: number = 1.0) => {
     return obstacles
       .map(obstacle => {
         // Calculate the speed factor based on the game's current score
@@ -42,11 +42,12 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
         if (obstacle.isExploding) {
           // Remove if it's far below the screen
           if (obstacle.y > 110) return null;
-          return { ...obstacle, y: obstacle.y + speedRef.current! * 1.5 * speedFactor };
+          return { ...obstacle, y: obstacle.y + speedRef.current! * 1.5 * speedFactor * slowMotionMultiplier };
         }
         
         // Normal movement for non-exploding obstacles - start slower, get faster over time
-        return { ...obstacle, y: obstacle.y + (baseSpeed + speedRef.current! * speedFactor) };
+        // Apply slow motion multiplier
+        return { ...obstacle, y: obstacle.y + (baseSpeed + speedRef.current! * speedFactor) * slowMotionMultiplier };
       })
       // Filter out null values (removed obstacles)
       .filter(Boolean) as Obstacle[];

@@ -7,6 +7,10 @@ import GameUI from "./GameUI";
 import useGameState from "@/hooks/useGameState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import PlayerNameDialog from "./PlayerNameDialog";
+import { PowerUps } from "./PowerUps";
+import { ActivePowerUpIndicators } from "./ActivePowerUpIndicators";
+import { LevelUpNotification } from "./LevelUpNotification";
+import { AchievementUnlockedNotification } from "./AchievementUnlockedNotification";
 
 const Game: React.FC = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -25,6 +29,11 @@ const Game: React.FC = () => {
     isInvulnerable,
     playerName,
     showNameDialog,
+    currentLevel,
+    levelUpNotification,
+    powerUps,
+    activePowerUps,
+    achievementNotifications,
     resetGame,
     moveShip,
     shootProjectile,
@@ -130,6 +139,7 @@ const Game: React.FC = () => {
       {/* Game world */}
       <Tunnel />
       <Obstacles obstacles={obstacles} />
+      <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
       
@@ -143,7 +153,29 @@ const Game: React.FC = () => {
         lives={lives}
         isInvulnerable={isInvulnerable}
         playerName={playerName}
+        currentLevel={currentLevel}
       />
+
+      {/* Active power-ups indicator */}
+      <ActivePowerUpIndicators activePowerUps={activePowerUps} />
+
+      {/* Level up notification */}
+      {levelUpNotification && (
+        <LevelUpNotification 
+          level={levelUpNotification.level} 
+          name={levelUpNotification.name} 
+        />
+      )}
+
+      {/* Achievement notifications */}
+      {achievementNotifications.map((achievement, index) => (
+        <div key={achievement.id} style={{ top: `${4 + index * 6}rem` }} className="absolute right-0">
+          <AchievementUnlockedNotification
+            achievement={achievement}
+            onDismiss={() => {}}
+          />
+        </div>
+      ))}
 
       {/* Player name dialog */}
       <PlayerNameDialog 
