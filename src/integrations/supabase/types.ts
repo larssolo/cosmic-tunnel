@@ -14,7 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      high_scores: {
+        Row: {
+          created_at: string
+          id: string
+          level: number
+          meteors_destroyed: number
+          score: number
+          survival_time: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: number
+          meteors_destroyed?: number
+          score: number
+          survival_time?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: number
+          meteors_destroyed?: number
+          score?: number
+          survival_time?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "high_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          player_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          player_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          player_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      statistics: {
+        Row: {
+          highest_level: number
+          id: string
+          total_games: number
+          total_meteors: number
+          total_score: number
+          total_survival_time: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          highest_level?: number
+          id?: string
+          total_games?: number
+          total_meteors?: number
+          total_score?: number
+          total_survival_time?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          highest_level?: number
+          id?: string
+          total_games?: number
+          total_meteors?: number
+          total_score?: number
+          total_survival_time?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statistics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

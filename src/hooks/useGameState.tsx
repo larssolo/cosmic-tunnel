@@ -6,9 +6,10 @@ import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
 import { useSound } from "./useSound";
 import { usePowerUps } from "./usePowerUps";
-import { HighScoreService } from "@/services/HighScoreService";
+import { CloudHighScoreService } from "@/services/CloudHighScoreService";
+import { CloudAchievementService } from "@/services/CloudAchievementService";
+import { CloudStatisticsService } from "@/services/CloudStatisticsService";
 import { AchievementService } from "@/services/AchievementService";
-import { StatisticsService } from "@/services/StatisticsService";
 import { getLevelByScore, LEVELS } from "@/config/levels";
 import { POWER_UP_CONFIGS } from "@/config/powerUps";
 import { PowerUpType } from "@/types/powerUpTypes";
@@ -27,8 +28,6 @@ const useGameState = () => {
   const [meteorHits, setMeteorHits] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES); // Initialize with maximum lives
   const [isInvulnerable, setIsInvulnerable] = useState(false); // Add invulnerability state
-  const [playerName, setPlayerName] = useState<string>(localStorage.getItem('playerName') || "");
-  const [showNameDialog, setShowNameDialog] = useState(playerName === "");
   
   // New state for features
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -75,31 +74,29 @@ const useGameState = () => {
 
   // Handle score submission
   const submitHighScore = useCallback(async () => {
-    if (!gameOver || !playerName || score <= 0) return;
+    if (!gameOver || score <= 0) return;
     
     try {
-      console.log("Score submitted for:", playerName);
+      console.log("Score submitted");
       
       // Calculate survival time
       const survivalSeconds = Math.floor(survivalTime);
       
-      // Submit to leaderboards
-      await HighScoreService.addLeaderboardEntry(
-        playerName,
+      // Submit to cloud leaderboards
+      await CloudHighScoreService.saveHighScore(
         score,
-        meteorHits,
         currentLevel,
+        meteorHits,
         survivalSeconds
       );
       
-      // Update statistics
-      StatisticsService.updateStatistics({
+      // Update cloud statistics
+      await CloudStatisticsService.updateStatistics(
         score,
-        meteorsHit: meteorHits,
-        survivalTime: survivalSeconds,
-        powerUpsCollected,
-        highestLevel: currentLevel
-      });
+        meteorHits,
+        survivalSeconds,
+        currentLevel
+      );
       
       // Check and unlock achievements
       const gameStats: GameStats = {
@@ -115,6 +112,11 @@ const useGameState = () => {
       };
       
       const unlockedAchievements = AchievementService.checkAchievements(gameStats);
+      
+      // Unlock achievements in cloud
+      for (const achievement of unlockedAchievements) {
+        await CloudAchievementService.unlockAchievement(achievement.id);
+      }
       
       // Show achievement notifications
       if (unlockedAchievements.length > 0) {
@@ -132,7 +134,7 @@ const useGameState = () => {
     } catch (error) {
       console.error("Failed to submit high score:", error);
     }
-  }, [gameOver, playerName, score, meteorHits, currentLevel, survivalTime, powerUpsCollected, lives, consecutiveHits, timeWithoutHit, playSound]);
+  }, [gameOver, score, meteorHits, currentLevel, survivalTime, powerUpsCollected, lives, consecutiveHits, timeWithoutHit, playSound]);
 
   // Handle ship being hit
   const handleShipHit = useCallback(() => {
@@ -145,11 +147,7 @@ const useGameState = () => {
       gameOverRef.current = true;
       playSound('crash');
       // Submit high score when game is over
-      if (playerName) {
-        setTimeout(() => submitHighScore(), 1000);
-      } else {
-        setShowNameDialog(true);
-      }
+      setTimeout(() => submitHighScore(), 1000);
     } else {
       // Set temporary invulnerability
       setIsInvulnerable(true);
@@ -160,7 +158,7 @@ const useGameState = () => {
         setIsInvulnerable(false);
       }, 2000);
     }
-  }, [isInvulnerable, playSound, playerName, submitHighScore]);
+  }, [isInvulnerable, playSound, submitHighScore]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -193,11 +191,7 @@ const useGameState = () => {
     lastHitTimeRef.current = Date.now();
     playSound('start');
     playSound('atmosphere');
-    
-    if (!playerName) {
-      setShowNameDialog(true);
-    }
-  }, [resetObstacleTimer, resetProjectileTimer, resetPowerUps, playSound, playerName]);
+  }, [resetObstacleTimer, resetProjectileTimer, resetPowerUps, playSound]);
 
   const startGame = useCallback(() => {
     resetGame();
@@ -363,25 +357,10 @@ const useGameState = () => {
     currentLevel
   ]);
 
-  const handleNameSubmit = useCallback((name: string) => {
-    setPlayerName(name);
-    setShowNameDialog(false);
-    
-    // If game is over, submit the score now that we have a name
-    if (gameOverRef.current && score > 0) {
-      setTimeout(() => submitHighScore(), 500);
-    }
-  }, [score, submitHighScore]);
-
   useEffect(() => {
     startGame();
     playSound('atmosphere');
-    
-    // Check if we need to show the name dialog
-    if (!playerName) {
-      setShowNameDialog(true);
-    }
-  }, [startGame, playSound, playerName]);
+  }, [startGame, playSound]);
 
   return {
     score,
@@ -393,8 +372,6 @@ const useGameState = () => {
     meteorHits,
     lives,
     isInvulnerable,
-    playerName,
-    showNameDialog,
     currentLevel,
     levelUpNotification,
     powerUps,
@@ -406,7 +383,6 @@ const useGameState = () => {
     moveShip,
     shootProjectile,
     updateGame,
-    handleNameSubmit
   };
 };
 

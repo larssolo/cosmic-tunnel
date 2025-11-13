@@ -3,8 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap, Heart, User, Trophy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { HighScoreService } from "@/services/HighScoreService";
-import { HighScore } from "@/types/gameTypes";
+import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 
 interface GameUIProps {
   score: number;
@@ -14,7 +13,6 @@ interface GameUIProps {
   meteorHits: number;
   lives: number;
   isInvulnerable: boolean;
-  playerName?: string;
   currentLevel?: number;
 }
 
@@ -26,7 +24,6 @@ const GameUI: React.FC<GameUIProps> = ({
   meteorHits, 
   lives,
   isInvulnerable,
-  playerName = "",
   currentLevel = 1
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
@@ -34,7 +31,7 @@ const GameUI: React.FC<GameUIProps> = ({
   // Fetch high scores using react-query
   const { data: highScores = [] } = useQuery({
     queryKey: ['highScores'],
-    queryFn: HighScoreService.getTopScores,
+    queryFn: () => CloudHighScoreService.getHighScores(10),
     refetchInterval: 30000, // Refetch every 30 seconds
   });
   
@@ -74,18 +71,6 @@ const GameUI: React.FC<GameUIProps> = ({
       <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-purple-500/30 text-white">
         <p className="text-lg font-bold text-purple-400">Level {currentLevel}</p>
       </div>
-
-      {/* Player name display */}
-      {playerName && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm flex items-center gap-2"
-             style={{
-               boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
-               border: "1px solid rgba(155, 135, 245, 0.2)"
-             }}>
-          <User size={16} className="text-purple-300" />
-          <p className="font-bold">{playerName}</p>
-        </div>
-      )}
       
       {/* Score display with meteor hits and high scores */}
       <div className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm"
@@ -111,7 +96,7 @@ const GameUI: React.FC<GameUIProps> = ({
               {highScores.map((score, idx) => (
                 <li key={idx} className="flex justify-between">
                   <span className={idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : idx === 2 ? "text-amber-600" : ""}>
-                    {score.playerName}
+                    {score.player_name}
                   </span>
                   <span>{score.score}</span>
                 </li>

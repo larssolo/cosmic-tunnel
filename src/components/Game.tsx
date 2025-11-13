@@ -6,7 +6,6 @@ import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
 import useGameState from "@/hooks/useGameState";
 import { useIsMobile } from "@/hooks/use-mobile";
-import PlayerNameDialog from "./PlayerNameDialog";
 import { PowerUps } from "./PowerUps";
 import { ActivePowerUpIndicators } from "./ActivePowerUpIndicators";
 import { LevelUpNotification } from "./LevelUpNotification";
@@ -27,8 +26,6 @@ const Game: React.FC = () => {
     meteorHits,
     lives,
     isInvulnerable,
-    playerName,
-    showNameDialog,
     currentLevel,
     levelUpNotification,
     powerUps,
@@ -37,8 +34,7 @@ const Game: React.FC = () => {
     resetGame,
     moveShip,
     shootProjectile,
-    updateGame,
-    handleNameSubmit
+    updateGame
   } = useGameState();
 
   const isMobile = useIsMobile();
@@ -152,7 +148,6 @@ const Game: React.FC = () => {
         meteorHits={meteorHits}
         lives={lives}
         isInvulnerable={isInvulnerable}
-        playerName={playerName}
         currentLevel={currentLevel}
       />
 
@@ -176,12 +171,6 @@ const Game: React.FC = () => {
           />
         </div>
       ))}
-
-      {/* Player name dialog */}
-      <PlayerNameDialog 
-        open={showNameDialog} 
-        onSubmit={handleNameSubmit}
-      />
     </div>
   );
 };
