@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import loginBackground from "@/assets/login-background.mp4";
+import StarField from "@/components/StarField";
+import { PasswordStrengthMeter } from "@/components/PasswordStrengthMeter";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -97,6 +99,7 @@ const Auth = () => {
       >
         <source src={loginBackground} type="video/mp4" />
       </video>
+      <StarField />
       <Card className="w-full max-w-md bg-white/30 backdrop-blur-sm border-primary/20 relative z-10">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -171,6 +174,7 @@ const Auth = () => {
                   className="bg-background/50 border-primary/20 focus:border-primary"
                   disabled={loading}
                 />
+                {!isLogin && <PasswordStrengthMeter password={password} />}
               </div>
             )}
 
