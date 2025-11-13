@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Game from "@/components/Game";
 import { Button } from "@/components/ui/button";
-import { Download, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -16,16 +16,9 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  const handleDownload = () => {
-    toast.info("For at downloade projektet:", {
-      description: "1. Forbind din GitHub konto i Lovable\n2. Tryk på GitHub knappen øverst til højre\n3. Download projektet derfra",
-      duration: 8000,
-    });
-  };
-
   const handleSignOut = async () => {
     await signOut();
-    toast.success("Du er nu logget ud");
+    toast.success("Logged out successfully");
   };
 
   if (loading) {
@@ -42,17 +35,8 @@ const Index = () => {
 
   return (
     <div className="w-full h-screen overflow-hidden bg-black relative">
-      {/* Bottom bar with download and logout buttons */}
-      <div className="absolute bottom-4 left-4 z-50 flex gap-2">
-        <Button
-          onClick={handleDownload}
-          variant="outline"
-          size="sm"
-          className="bg-black/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 text-primary"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download Projekt
-        </Button>
+      {/* Logout button positioned under score list */}
+      <div className="absolute top-[420px] right-4 z-50">
         <Button
           onClick={handleSignOut}
           variant="outline"
@@ -60,7 +44,7 @@ const Index = () => {
           className="bg-black/50 backdrop-blur-sm border-primary/20 hover:bg-destructive/10 text-destructive"
         >
           <LogOut className="w-4 h-4 mr-2" />
-          Log ud
+          Logout
         </Button>
       </div>
       
