@@ -12,10 +12,10 @@ export const HighScoreService = {
       const scoresJson = localStorage.getItem(LOCAL_STORAGE_KEY);
       const scores: HighScore[] = scoresJson ? JSON.parse(scoresJson) : [];
       
-      // Sort by score (highest first) and return top 5
+      // Sort by score (highest first) and return top 10
       return scores
         .sort((a, b) => b.score - a.score)
-        .slice(0, 5);
+        .slice(0, 10);
     } catch (error) {
       console.error('Error fetching high scores:', error);
       return [];
@@ -40,8 +40,13 @@ export const HighScoreService = {
       // Add new score
       const updatedScores = [...currentScores, newScore];
       
-      // Save updated scores
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedScores));
+      // Sort by score (highest first) and keep only top 10
+      const top10Scores = updatedScores
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      
+      // Save updated scores (only top 10)
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(top10Scores));
       
       toast({
         title: "High Score Saved!",

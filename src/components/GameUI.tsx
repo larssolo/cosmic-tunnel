@@ -93,7 +93,7 @@ const GameUI: React.FC<GameUIProps> = ({
           Meteor Hit: {meteorHits}
         </p>
         
-        {/* Top 5 High Scores - Compact Display */}
+        {/* Top 10 High Scores - Compact Display */}
         <div className="mt-2 pt-2 border-t border-purple-500/20">
           <p className="text-xs flex items-center gap-1 mb-1 text-yellow-400">
             <Trophy size={12} />
