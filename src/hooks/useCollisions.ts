@@ -46,11 +46,19 @@ export function useCollisions() {
       const obstacle = updatedObstacles[i];
       const obstacleSizeHalf = obstacle.size / 2;
       
+      // For tunnel mode obstacles, use angle to calculate actual position
+      let obstacleX = obstacle.x;
+      if (obstacle.angle !== undefined) {
+        const tunnelRadius = 35;
+        const centerX = 50;
+        obstacleX = centerX + Math.cos(obstacle.angle) * tunnelRadius;
+      }
+      
       for (let j = 0; j < newProjectiles.length; j++) {
         const projectile = newProjectiles[j];
         
         // Calculate distance between projectile and obstacle
-        const xDiff = Math.abs(obstacle.x - projectile.x);
+        const xDiff = Math.abs(obstacleX - projectile.x);
         const yDiff = Math.abs(obstacle.y - (100 - projectile.y)); // Convert projectile y to same coordinate system
         
         // Simple distance-based collision detection

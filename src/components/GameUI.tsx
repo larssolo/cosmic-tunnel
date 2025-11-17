@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Zap, Heart, User, Trophy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
+import { CountdownTimer } from "./CountdownTimer";
 
 interface GameUIProps {
   score: number;
@@ -14,6 +15,8 @@ interface GameUIProps {
   lives: number;
   isInvulnerable: boolean;
   currentLevel?: number;
+  tunnelMode?: boolean;
+  countdownTime?: number;
 }
 
 const GameUI: React.FC<GameUIProps> = ({ 
@@ -24,7 +27,9 @@ const GameUI: React.FC<GameUIProps> = ({
   meteorHits, 
   lives,
   isInvulnerable,
-  currentLevel = 1
+  currentLevel = 1,
+  tunnelMode = false,
+  countdownTime = 0
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   
@@ -67,9 +72,13 @@ const GameUI: React.FC<GameUIProps> = ({
   
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
+      {/* Countdown Timer for Tunnel Mode */}
+      {tunnelMode && !gameOver && <CountdownTimer timeRemaining={countdownTime} />}
+      
       {/* Level display */}
       <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-purple-500/30 text-white">
         <p className="text-lg font-bold text-purple-400">Level {currentLevel}</p>
+        {tunnelMode && <p className="text-xs text-yellow-400 mt-1">Tunnel Mode</p>}
       </div>
       
       {/* Score display with meteor hits and high scores */}
@@ -143,10 +152,20 @@ const GameUI: React.FC<GameUIProps> = ({
                boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)",
                border: "1px solid rgba(155, 135, 245, 0.2)"
              }}>
-          <p className="md:block hidden">Move mouse left/right to control the spaceship</p>
-          <p className="md:hidden">Tilt your phone left/right to control the spaceship</p>
+          {tunnelMode ? (
+            <>
+              <p className="text-yellow-400 font-bold mb-1">🚀 TUNNEL MODE ACTIVATED!</p>
+              <p className="md:block hidden">Fly through the meteor tunnel! Small rocks = HIGH POINTS!</p>
+              <p className="md:hidden">Tilt to dodge! Small rocks = HIGH POINTS!</p>
+            </>
+          ) : (
+            <>
+              <p className="md:block hidden">Move mouse left/right to control the spaceship</p>
+              <p className="md:hidden">Tilt your phone left/right to control the spaceship</p>
+            </>
+          )}
           <p className="flex items-center justify-center gap-1 mt-1">
-            <span>Click on spaceship to shoot</span> 
+            <span>Click/tap to shoot</span> 
             <Zap size={16} className="text-yellow-300" />
           </p>
         </div>

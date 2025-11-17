@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import Tunnel from "./Tunnel";
+import TunnelMode from "./TunnelMode";
 import Obstacles from "./Obstacles";
+import TunnelObstacles from "./TunnelObstacles";
 import Spaceship from "./Spaceship";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
@@ -10,6 +12,8 @@ import { PowerUps } from "./PowerUps";
 import { ActivePowerUpIndicators } from "./ActivePowerUpIndicators";
 import { LevelUpNotification } from "./LevelUpNotification";
 import { AchievementUnlockedNotification } from "./AchievementUnlockedNotification";
+import { getLevelByScore } from "@/config/levels";
+import { GameMode } from "@/types/gameModeTypes";
 
 const Game: React.FC = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -31,6 +35,8 @@ const Game: React.FC = () => {
     powerUps,
     activePowerUps,
     achievementNotifications,
+    tunnelActive,
+    countdownTime,
     resetGame,
     moveShip,
     shootProjectile,
@@ -126,15 +132,29 @@ const Game: React.FC = () => {
     }
   };
 
+  // Determine current game mode
+  const currentLevelData = getLevelByScore(score);
+  const isTunnelMode = currentLevelData.gameMode === GameMode.TUNNEL && tunnelActive;
+
   return (
     <div 
       ref={gameContainerRef}
       className="relative w-full h-full overflow-hidden bg-black"
       onClick={handleShoot}
     >
-      {/* Game world */}
-      <Tunnel />
-      <Obstacles obstacles={obstacles} />
+      {/* Game world - conditional rendering based on mode */}
+      {isTunnelMode ? (
+        <>
+          <TunnelMode />
+          <TunnelObstacles obstacles={obstacles} />
+        </>
+      ) : (
+        <>
+          <Tunnel />
+          <Obstacles obstacles={obstacles} />
+        </>
+      )}
+      
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
@@ -149,6 +169,8 @@ const Game: React.FC = () => {
         lives={lives}
         isInvulnerable={isInvulnerable}
         currentLevel={currentLevel}
+        tunnelMode={isTunnelMode}
+        countdownTime={countdownTime}
       />
 
       {/* Active power-ups indicator */}

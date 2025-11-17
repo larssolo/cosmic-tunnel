@@ -5,6 +5,9 @@ export interface Obstacle {
   y: number;
   size: number;
   isExploding?: boolean;
+  obstacleType?: 'small' | 'medium' | 'large';
+  points?: number;
+  angle?: number;
 }
 
 export interface Projectile {

@@ -6,6 +6,7 @@ import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
 import { useSound } from "./useSound";
 import { usePowerUps } from "./usePowerUps";
+import { useTunnelMode } from "./useTunnelMode";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import { CloudAchievementService } from "@/services/CloudAchievementService";
 import { CloudStatisticsService } from "@/services/CloudStatisticsService";
@@ -14,6 +15,7 @@ import { getLevelByScore, LEVELS } from "@/config/levels";
 import { POWER_UP_CONFIGS } from "@/config/powerUps";
 import { PowerUpType } from "@/types/powerUpTypes";
 import { GameStats } from "@/types/achievementTypes";
+import { GameMode } from "@/types/gameModeTypes";
 
 const MAX_LIVES = 3;
 
@@ -71,6 +73,14 @@ const useGameState = () => {
   const { createObstacle, updateObstacles, resetObstacleTimer } = useObstacles(scoreRef, speedRef);
   const { createProjectile, updateProjectiles, resetProjectileTimer } = useProjectiles();
   const { checkShipCollision, checkProjectileCollisions } = useCollisions();
+  const { 
+    countdownTime, 
+    tunnelActive, 
+    startTunnelMode, 
+    stopTunnelMode,
+    createTunnelObstacle,
+    updateTunnelObstacles 
+  } = useTunnelMode(scoreRef);
 
   // Handle score submission
   const submitHighScore = useCallback(async () => {
@@ -235,6 +245,11 @@ const useGameState = () => {
         setLevelUpNotification({ level: newLevel.level, name: newLevel.name });
         playSound('levelUp');
         
+        // Start tunnel mode for Level 6
+        if (newLevel.level === 6 && newLevel.gameMode === GameMode.TUNNEL) {
+          startTunnelMode();
+        }
+        
         // Hide notification after 3 seconds
         setTimeout(() => {
           setLevelUpNotification(null);
@@ -242,6 +257,15 @@ const useGameState = () => {
         
         // DON'T increase speed here - levels already have speed multipliers in config
       }
+    }
+    
+    // Check if tunnel countdown expired
+    if (tunnelActive && countdownTime <= 0) {
+      stopTunnelMode();
+      setGameOver(true);
+      gameOverRef.current = true;
+      playSound('crash');
+      setTimeout(() => submitHighScore(), 1000);
     }
     
     // Spawn power-ups
@@ -303,15 +327,33 @@ const useGameState = () => {
       console.log('Slow motion active! Multiplier:', slowMotion);
     }
     
-    const newObstacle = createObstacle();
-    if (newObstacle) {
-      setObstacles(prev => [...prev, newObstacle]);
-    }
+    // Create and update obstacles based on game mode
+    const currentLevelData = getLevelByScore(scoreRef.current);
+    const isTunnelMode = currentLevelData.gameMode === GameMode.TUNNEL;
     
-    setObstacles(prev => {
-      const updated = updateObstacles(prev, slowMotion);
-      return updated;
-    });
+    if (isTunnelMode && tunnelActive) {
+      // Tunnel mode obstacles
+      const newTunnelObstacle = createTunnelObstacle();
+      if (newTunnelObstacle) {
+        setObstacles(prev => [...prev, newTunnelObstacle]);
+      }
+      
+      setObstacles(prev => {
+        const updated = updateTunnelObstacles(prev, slowMotion);
+        return updated;
+      });
+    } else {
+      // Standard mode obstacles
+      const newObstacle = createObstacle();
+      if (newObstacle) {
+        setObstacles(prev => [...prev, newObstacle]);
+      }
+      
+      setObstacles(prev => {
+        const updated = updateObstacles(prev, slowMotion);
+        return updated;
+      });
+    }
     
     const updatedProjectiles = updateProjectiles(projectiles);
     setProjectiles(updatedProjectiles);
@@ -325,7 +367,18 @@ const useGameState = () => {
       setMeteorHits(prev => prev + 1);
       setConsecutiveHits(prev => prev + 1);
       setScoreMultiplier(prev => prev * 1.2);
-      setScore(prev => prev + Math.round(50 * scoreMultiplierRef.current * scoreBoost));
+      
+      // Calculate score based on obstacle type (tunnel mode has inverted scoring)
+      let scoreGained = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
+      if (isTunnelMode && tunnelActive) {
+        // Find the destroyed obstacle and use its point value
+        const destroyedObstacles = collidedObstacles.filter(o => o.isExploding && !obstacles.find(orig => orig.id === o.id && orig.isExploding));
+        if (destroyedObstacles.length > 0 && destroyedObstacles[0].points) {
+          scoreGained = Math.round(destroyedObstacles[0].points * scoreMultiplierRef.current * scoreBoost);
+        }
+      }
+      
+      setScore(prev => prev + scoreGained);
       setObstacles(collidedObstacles);
       setProjectiles(newProjectilesList);
     }
@@ -378,6 +431,8 @@ const useGameState = () => {
     activePowerUps,
     achievementNotifications,
     survivalTime,
+    tunnelActive,
+    countdownTime,
     startGame,
     resetGame,
     moveShip,

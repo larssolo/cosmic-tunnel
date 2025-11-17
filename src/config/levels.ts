@@ -1,4 +1,5 @@
 import { Level } from "@/types/levelTypes";
+import { GameMode } from "@/types/gameModeTypes";
 
 export const LEVELS: Level[] = [
   {
@@ -59,7 +60,9 @@ export const LEVELS: Level[] = [
     obstacleFrequency: 1.8,
     backgroundColor: "hsl(270, 70%, 8%)",
     tunnelColor: "hsl(270, 80%, 55%)",
-    unlocked: false
+    unlocked: false,
+    gameMode: GameMode.TUNNEL,
+    countdownSeconds: 120
   },
   {
     level: 7,
