@@ -237,26 +237,23 @@ const useGameState = () => {
     const scoreBoost = isPowerUpActive(PowerUpType.SCORE_BOOST) ? 2 : 1;
     setScore(prev => prev + Math.round(1 * scoreMultiplierRef.current * scoreBoost));
     
-    // Check for level progression - only check occasionally to avoid constant checks
-    if (scoreRef.current > 0 && scoreRef.current % 100 === 0) {
-      const newLevel = getLevelByScore(scoreRef.current);
-      if (newLevel.level > currentLevel) {
-        setCurrentLevel(newLevel.level);
-        setLevelUpNotification({ level: newLevel.level, name: newLevel.name });
-        playSound('levelUp');
-        
-        // Start tunnel mode for Level 6
-        if (newLevel.level === 6 && newLevel.gameMode === GameMode.TUNNEL) {
-          startTunnelMode();
-        }
-        
-        // Hide notification after 3 seconds
-        setTimeout(() => {
-          setLevelUpNotification(null);
-        }, 3000);
-        
-        // DON'T increase speed here - levels already have speed multipliers in config
+    // Check for level progression on every update
+    const newLevel = getLevelByScore(scoreRef.current);
+    if (newLevel.level > currentLevel) {
+      setCurrentLevel(newLevel.level);
+      setLevelUpNotification({ level: newLevel.level, name: newLevel.name });
+      playSound('levelUp');
+      
+      // Start tunnel mode for Level 6
+      if (newLevel.level === 6 && newLevel.gameMode === GameMode.TUNNEL) {
+        console.log('Starting Level 6 Tunnel Mode!');
+        startTunnelMode();
       }
+      
+      // Hide notification after 3 seconds
+      setTimeout(() => {
+        setLevelUpNotification(null);
+      }, 3000);
     }
     
     // Check if tunnel countdown expired
