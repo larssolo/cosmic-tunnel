@@ -1,3 +1,5 @@
+import { GameMode } from "./gameModeTypes";
+
 export interface Level {
   level: number;
   name: string;
@@ -7,6 +9,8 @@ export interface Level {
   backgroundColor: string;
   tunnelColor: string;
   unlocked: boolean;
+  gameMode?: GameMode;
+  countdownSeconds?: number;
 }
 
 export interface LevelProgress {
