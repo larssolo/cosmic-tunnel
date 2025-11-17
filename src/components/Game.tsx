@@ -142,7 +142,7 @@ const Game: React.FC = () => {
     <div 
       ref={gameContainerRef}
       className={`relative w-full h-full overflow-hidden bg-black ${
-        tunnelTransition ? 'animate-tunnel-shake animate-tunnel-rotate animate-tunnel-zoom' : ''
+        tunnelTransition ? 'animate-tunnel-shake animate-tunnel-rotate' : ''
       }`}
       onClick={handleShoot}
     >
