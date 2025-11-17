@@ -113,6 +113,10 @@ export default {
 					'0%': { transform: 'rotate(0deg) scale(1)' },
 					'50%': { transform: 'rotate(5deg) scale(1.02)' },
 					'100%': { transform: 'rotate(0deg) scale(1)' }
+				},
+				'tunnel-zoom': {
+					'0%': { transform: 'scale(1)' },
+					'100%': { transform: 'scale(1.5)' }
 				}
 			},
 			animation: {
@@ -121,7 +125,8 @@ export default {
 				'ping': 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
 				'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
 				'tunnel-shake': 'tunnel-shake 0.5s ease-in-out',
-				'tunnel-rotate': 'tunnel-rotate 2.5s ease-in-out'
+				'tunnel-rotate': 'tunnel-rotate 2.5s ease-in-out',
+				'tunnel-zoom': 'tunnel-zoom 2.5s ease-in-out forwards'
 			},
 			perspective: {
 				'800px': '800px',
