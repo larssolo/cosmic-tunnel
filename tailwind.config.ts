@@ -96,13 +96,32 @@ export default {
 				pulse: {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.5' }
+				},
+				'tunnel-shake': {
+					'0%, 100%': { transform: 'translateX(0) translateY(0)' },
+					'10%': { transform: 'translateX(-5px) translateY(2px)' },
+					'20%': { transform: 'translateX(5px) translateY(-2px)' },
+					'30%': { transform: 'translateX(-5px) translateY(-2px)' },
+					'40%': { transform: 'translateX(5px) translateY(2px)' },
+					'50%': { transform: 'translateX(-5px) translateY(-2px)' },
+					'60%': { transform: 'translateX(5px) translateY(2px)' },
+					'70%': { transform: 'translateX(-5px) translateY(2px)' },
+					'80%': { transform: 'translateX(5px) translateY(-2px)' },
+					'90%': { transform: 'translateX(-5px) translateY(2px)' }
+				},
+				'tunnel-rotate': {
+					'0%': { transform: 'rotate(0deg) scale(1)' },
+					'50%': { transform: 'rotate(5deg) scale(1.02)' },
+					'100%': { transform: 'rotate(0deg) scale(1)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'ping': 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
-				'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+				'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'tunnel-shake': 'tunnel-shake 0.5s ease-in-out',
+				'tunnel-rotate': 'tunnel-rotate 2.5s ease-in-out'
 			},
 			perspective: {
 				'800px': '800px',
