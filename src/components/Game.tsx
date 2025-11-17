@@ -12,6 +12,7 @@ import { PowerUps } from "./PowerUps";
 import { ActivePowerUpIndicators } from "./ActivePowerUpIndicators";
 import { LevelUpNotification } from "./LevelUpNotification";
 import { AchievementUnlockedNotification } from "./AchievementUnlockedNotification";
+import { TunnelTransition } from "./TunnelTransition";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
 
@@ -37,6 +38,7 @@ const Game: React.FC = () => {
     achievementNotifications,
     tunnelActive,
     countdownTime,
+    tunnelTransition,
     resetGame,
     moveShip,
     shootProjectile,
@@ -139,7 +141,9 @@ const Game: React.FC = () => {
   return (
     <div 
       ref={gameContainerRef}
-      className="relative w-full h-full overflow-hidden bg-black"
+      className={`relative w-full h-full overflow-hidden bg-black ${
+        tunnelTransition ? 'animate-tunnel-shake animate-tunnel-rotate' : ''
+      }`}
       onClick={handleShoot}
     >
       {/* Game world - conditional rendering based on mode */}
@@ -193,6 +197,9 @@ const Game: React.FC = () => {
           />
         </div>
       ))}
+
+      {/* Tunnel transition overlay */}
+      <TunnelTransition isActive={tunnelTransition} />
     </div>
   );
 };

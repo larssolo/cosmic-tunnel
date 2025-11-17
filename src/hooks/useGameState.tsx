@@ -39,6 +39,7 @@ const useGameState = () => {
   const [timeWithoutHit, setTimeWithoutHit] = useState(0);
   const [powerUpsCollected, setPowerUpsCollected] = useState(0);
   const [achievementNotifications, setAchievementNotifications] = useState<any[]>([]);
+  const [tunnelTransition, setTunnelTransition] = useState(false);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
   
@@ -247,7 +248,14 @@ const useGameState = () => {
       // Start tunnel mode for Level 6
       if (newLevel.level === 6 && newLevel.gameMode === GameMode.TUNNEL) {
         console.log('Starting Level 6 Tunnel Mode!');
-        startTunnelMode();
+        setTunnelTransition(true);
+        playSound('speedUp'); // Use as transition sound
+        
+        // Start tunnel mode after transition animation
+        setTimeout(() => {
+          startTunnelMode();
+          setTunnelTransition(false);
+        }, 2500);
       }
       
       // Hide notification after 3 seconds
@@ -430,6 +438,7 @@ const useGameState = () => {
     survivalTime,
     tunnelActive,
     countdownTime,
+    tunnelTransition,
     startGame,
     resetGame,
     moveShip,
