@@ -388,7 +388,7 @@ const useGameState = () => {
       setProjectiles(newProjectilesList);
     }
     
-    const shipCollided = checkShipCollision(obstacles, shipPosition, gameOverRef.current);
+    const shipCollided = checkShipCollision(obstacles, shipPosition, gameOverRef.current, isTunnelMode && tunnelActive);
     if (shipCollided && !isInvulnerable) {
       setConsecutiveHits(0);
       lastHitTimeRef.current = Date.now();

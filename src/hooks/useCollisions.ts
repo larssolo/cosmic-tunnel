@@ -6,24 +6,30 @@ export function useCollisions() {
   const checkShipCollision = useCallback((
     obstacles: Obstacle[],
     shipPosition: number,
-    gameOver: boolean
+    gameOver: boolean,
+    isTunnelMode: boolean = false
   ) => {
     if (gameOver) return false;
     
-    const shipY = 80; // Ship position from bottom
-    const shipSize = 12; // Slightly increased ship collision size for better detection
+    const shipY = 85; // Ship position from top (percentage)
+    const shipSize = isTunnelMode ? 8 : 12; // Smaller hitbox in tunnel mode for fairness
     
     for (const obstacle of obstacles) {
       if (obstacle.isExploding) continue; // Exploding obstacles don't cause collisions
       
-      // Improved collision detection with slightly larger detection area
-      const xDiff = Math.abs(obstacle.x - shipPosition);
-      const yDiff = Math.abs(obstacle.y - shipY);
-      const combinedRadii = (obstacle.size + shipSize) / 2;
+      // Use obstacle's actual x position for collision
+      const obstacleX = obstacle.x;
       
-      // Slightly more generous collision bounds
-      if (xDiff <= combinedRadii && yDiff <= 12) {
-        console.log('Ship collision detected!');
+      const xDiff = Math.abs(obstacleX - shipPosition);
+      const yDiff = Math.abs(obstacle.y - shipY);
+      
+      // Collision radius based on obstacle size
+      const obstacleRadius = obstacle.size / 2;
+      const collisionThresholdX = obstacleRadius + shipSize / 2;
+      const collisionThresholdY = isTunnelMode ? 6 : 10; // Tighter Y collision in tunnel
+      
+      if (xDiff <= collisionThresholdX && yDiff <= collisionThresholdY) {
+        console.log('Ship collision detected!', { obstacleX, shipPosition, xDiff, yDiff });
         return true;
       }
     }
