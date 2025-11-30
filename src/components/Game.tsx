@@ -13,6 +13,7 @@ import { ActivePowerUpIndicators } from "./ActivePowerUpIndicators";
 import { LevelUpNotification } from "./LevelUpNotification";
 import { AchievementUnlockedNotification } from "./AchievementUnlockedNotification";
 import { TunnelTransition } from "./TunnelTransition";
+import { CyberOverlay } from "./CyberOverlay";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
 
@@ -197,6 +198,9 @@ const Game: React.FC = () => {
           />
         </div>
       ))}
+
+      {/* Cyber overlay for tunnel mode */}
+      <CyberOverlay isActive={isTunnelMode} />
 
       {/* Tunnel transition overlay */}
       <TunnelTransition isActive={tunnelTransition} />

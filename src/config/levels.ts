@@ -54,12 +54,12 @@ export const LEVELS: Level[] = [
   },
   {
     level: 6,
-    name: "Quantum Void",
+    name: "Cyber Wormhole",
     requiredScore: 7500,
     speedMultiplier: 1.9,
     obstacleFrequency: 1.8,
-    backgroundColor: "hsl(270, 70%, 8%)",
-    tunnelColor: "hsl(270, 80%, 55%)",
+    backgroundColor: "hsl(300, 100%, 5%)",
+    tunnelColor: "hsl(180, 100%, 50%)",
     unlocked: false,
     gameMode: GameMode.TUNNEL,
     countdownSeconds: 120

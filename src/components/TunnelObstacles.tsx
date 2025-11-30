@@ -6,40 +6,56 @@ interface TunnelObstaclesProps {
 }
 
 const TunnelObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
-  // Calculate position on tunnel perimeter
   const angle = obstacle.angle || 0;
-  const tunnelRadius = 35; // Percentage from center
+  const tunnelRadius = 35;
   const centerX = 50;
   const centerY = 50;
   
-  // Position obstacle on tunnel wall
   const x = centerX + Math.cos(angle) * tunnelRadius;
   const y = centerY + Math.sin(angle) * tunnelRadius;
   
-  // Scale obstacle based on depth (y position simulates depth)
   const depthScale = 0.5 + (obstacle.y / 100) * 0.5;
   const scaledSize = obstacle.size * depthScale;
   
-  // Determine color based on size (inverted scoring visual cue)
-  const getRockColor = () => {
+  // Cyber colors based on obstacle type
+  const getCyberStyle = () => {
     if (obstacle.obstacleType === 'small') {
-      return 'from-yellow-400 to-orange-500'; // High value - bright colors
+      return {
+        borderColor: '#00ffff',
+        shadowColor: '0 0 20px #00ffff, 0 0 40px #00ffff',
+        bgGradient: 'linear-gradient(135deg, rgba(0,255,255,0.3), rgba(0,255,255,0.1))',
+        glowColor: 'cyan'
+      };
     } else if (obstacle.obstacleType === 'medium') {
-      return 'from-orange-500 to-red-600'; // Medium value
+      return {
+        borderColor: '#ff00ff',
+        shadowColor: '0 0 20px #ff00ff, 0 0 40px #ff00ff',
+        bgGradient: 'linear-gradient(135deg, rgba(255,0,255,0.3), rgba(255,0,255,0.1))',
+        glowColor: 'magenta'
+      };
     } else {
-      return 'from-gray-600 to-gray-800'; // Low value - dark colors
+      return {
+        borderColor: '#ff0080',
+        shadowColor: '0 0 15px #ff0080, 0 0 30px #ff0080',
+        bgGradient: 'linear-gradient(135deg, rgba(255,0,128,0.3), rgba(255,0,128,0.1))',
+        glowColor: '#ff0080'
+      };
     }
   };
 
+  const style = getCyberStyle();
+  const rotation = (obstacle.id % 360) + obstacle.y * 2;
+  const isGlitching = obstacle.id % 7 === 0;
+
   return (
     <div
-      className={`absolute ${obstacle.isExploding ? 'animate-pulse' : ''}`}
+      className={`absolute ${obstacle.isExploding ? '' : ''} ${isGlitching ? 'animate-pulse' : ''}`}
       style={{
         width: `${scaledSize}%`,
         height: `${scaledSize}%`,
         left: `${x}%`,
         top: `${y}%`,
-        transform: "translate(-50%, -50%)",
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
         opacity: obstacle.isExploding ? "0.8" : "1",
         transition: "opacity 0.3s ease-out",
         zIndex: Math.floor((1 - obstacle.y / 100) * 100),
@@ -47,60 +63,127 @@ const TunnelObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
     >
       {!obstacle.isExploding ? (
         <div className="w-full h-full relative">
-          {/* Rock with color indicating value */}
+          {/* Wireframe cube/diamond shape */}
           <div 
-            className={`absolute inset-0 rounded-full bg-gradient-to-br ${getRockColor()}`}
+            className="absolute inset-0"
             style={{
-              boxShadow: `0 0 ${scaledSize * 2}px rgba(255, 165, 0, 0.5)`,
+              background: style.bgGradient,
+              border: `2px solid ${style.borderColor}`,
+              boxShadow: style.shadowColor,
+              clipPath: obstacle.obstacleType === 'small' 
+                ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' // Diamond
+                : obstacle.obstacleType === 'medium'
+                ? 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' // Hexagon
+                : 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' // Octagon
             }}
           />
           
-          {/* Texture details */}
-          <div className="absolute inset-[20%] rounded-full bg-black/30" />
-          <div className="absolute w-[30%] h-[30%] rounded-full bg-black/40"
-               style={{top: "15%", left: "25%"}} />
+          {/* Inner wireframe */}
+          <div 
+            className="absolute inset-[20%]"
+            style={{
+              border: `1px solid ${style.borderColor}`,
+              opacity: 0.6,
+              clipPath: obstacle.obstacleType === 'small' 
+                ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
+                : obstacle.obstacleType === 'medium'
+                ? 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
+                : 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)'
+            }}
+          />
           
-          {/* Point value indicator for small rocks */}
+          {/* Glitch lines for some obstacles */}
+          {isGlitching && (
+            <>
+              <div 
+                className="absolute w-full h-[2px] top-1/3"
+                style={{
+                  background: style.glowColor,
+                  transform: `translateX(${Math.sin(rotation) * 5}px)`,
+                  opacity: 0.8
+                }}
+              />
+              <div 
+                className="absolute w-full h-[2px] top-2/3"
+                style={{
+                  background: style.glowColor,
+                  transform: `translateX(${-Math.sin(rotation) * 3}px)`,
+                  opacity: 0.6
+                }}
+              />
+            </>
+          )}
+          
+          {/* Point value indicator for small (high value) obstacles */}
           {obstacle.obstacleType === 'small' && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-white font-bold text-xs animate-pulse">
+              <div 
+                className="font-bold text-xs"
+                style={{
+                  color: '#00ffff',
+                  textShadow: '0 0 10px #00ffff',
+                  fontFamily: 'monospace'
+                }}
+              >
                 {obstacle.points}
               </div>
             </div>
           )}
         </div>
       ) : (
-        // Explosion effect
+        // Cyber explosion effect
         <div className="relative w-full h-full">
-          <div className="absolute inset-0 rounded-full bg-orange-500 animate-pulse" />
-          <div className="absolute inset-1/4 rounded-full bg-yellow-400 animate-ping opacity-90" />
-          <div className="absolute inset-2/5 rounded-full bg-white animate-pulse" />
+          {/* Core explosion */}
+          <div 
+            className="absolute inset-0 animate-ping"
+            style={{
+              background: 'radial-gradient(circle, #00ffff, #ff00ff, transparent)',
+              clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+            }}
+          />
           
-          {/* Explosion fragments */}
-          {Array.from({ length: 12 }).map((_, i) => {
-            const angle = (i * 30);
-            const distance = 40 + (i % 3) * 15;
-            const fragmentSize = 2 + (i % 2);
+          {/* Glitch fragments */}
+          {Array.from({ length: 8 }).map((_, i) => {
+            const fragmentAngle = (i * 45) * Math.PI / 180;
+            const distance = 50 + (i % 3) * 20;
+            const fragmentSize = 3 + (i % 2) * 2;
             
-            const xPos = 50 + distance * Math.cos(angle * Math.PI / 180);
-            const yPos = 50 + distance * Math.sin(angle * Math.PI / 180);
+            const xPos = 50 + distance * Math.cos(fragmentAngle);
+            const yPos = 50 + distance * Math.sin(fragmentAngle);
             
             return (
               <div
                 key={i}
-                className="absolute rounded-full bg-orange-400 animate-ping"
+                className="absolute animate-ping"
                 style={{
-                  width: `${fragmentSize}%`,
-                  height: `${fragmentSize}%`,
+                  width: `${fragmentSize}px`,
+                  height: `${fragmentSize}px`,
                   left: `${xPos}%`,
                   top: `${yPos}%`,
                   transform: "translate(-50%, -50%)",
-                  animationDuration: "0.6s",
-                  animationDelay: `${i * 0.02}s`,
+                  background: i % 2 === 0 ? '#00ffff' : '#ff00ff',
+                  boxShadow: `0 0 10px ${i % 2 === 0 ? '#00ffff' : '#ff00ff'}`,
+                  animationDuration: "0.4s",
+                  animationDelay: `${i * 0.03}s`,
                 }}
               />
             );
           })}
+          
+          {/* Digital noise effect */}
+          <div 
+            className="absolute inset-0 animate-pulse"
+            style={{
+              background: `repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 255, 0.3) 2px,
+                rgba(0, 255, 255, 0.3) 4px
+              )`,
+              mixBlendMode: 'screen'
+            }}
+          />
         </div>
       )}
     </div>
