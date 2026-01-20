@@ -244,20 +244,33 @@ const useGameState = () => {
       setCurrentLevel(newLevel.level);
       setLevelUpNotification({ level: newLevel.level, name: newLevel.name });
       playSound('levelUp');
-      
+
       // Start tunnel mode for Level 6
       if (newLevel.level === 6 && newLevel.gameMode === GameMode.TUNNEL) {
         console.log('Starting Level 6 Tunnel Mode!');
         setTunnelTransition(true);
         playSound('speedUp'); // Use as transition sound
-        
+
         // Start tunnel mode after transition animation
         setTimeout(() => {
           startTunnelMode();
           setTunnelTransition(false);
         }, 2500);
       }
-      
+
+      // Stop tunnel mode if advancing to a level without tunnel mode
+      if (newLevel.gameMode !== GameMode.TUNNEL && tunnelActive) {
+        console.log(`Exiting Tunnel Mode - Advancing to Level ${newLevel.level}!`);
+        setTunnelTransition(true);
+        playSound('speedUp');
+
+        // Stop tunnel mode after transition animation
+        setTimeout(() => {
+          stopTunnelMode();
+          setTunnelTransition(false);
+        }, 2500);
+      }
+
       // Hide notification after 3 seconds
       setTimeout(() => {
         setLevelUpNotification(null);
