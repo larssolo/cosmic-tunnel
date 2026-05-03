@@ -83,33 +83,21 @@ const useGameState = () => {
     updateTunnelObstacles 
   } = useTunnelMode(scoreRef);
 
-  // Handle score submission
-  const submitHighScore = useCallback(async () => {
-    if (!gameOver || score <= 0) return;
-    
+  // Handle score submission — called from UI after player enters their name
+  const submitHighScore = useCallback(async (playerName: string) => {
+    if (score <= 0) return;
+
     try {
-      console.log("Score submitted");
-      
-      // Calculate survival time
       const survivalSeconds = Math.floor(survivalTime);
-      
-      // Submit to cloud leaderboards
+
       await CloudHighScoreService.saveHighScore(
+        playerName,
         score,
         currentLevel,
         meteorHits,
         survivalSeconds
       );
-      
-      // Update cloud statistics
-      await CloudStatisticsService.updateStatistics(
-        score,
-        meteorHits,
-        survivalSeconds,
-        currentLevel
-      );
-      
-      // Check and unlock achievements
+
       const gameStats: GameStats = {
         score,
         meteorsHit: meteorHits,
@@ -121,21 +109,14 @@ const useGameState = () => {
         consecutiveHits,
         timeWithoutHit
       };
-      
+
       const unlockedAchievements = AchievementService.checkAchievements(gameStats);
-      
-      // Unlock achievements in cloud
-      for (const achievement of unlockedAchievements) {
-        await CloudAchievementService.unlockAchievement(achievement.id);
-      }
-      
-      // Show achievement notifications
+
       if (unlockedAchievements.length > 0) {
         unlockedAchievements.forEach((achievement, index) => {
           setTimeout(() => {
             playSound('achievementUnlock');
             setAchievementNotifications(prev => [...prev, achievement]);
-            // Remove notification after 5 seconds
             setTimeout(() => {
               setAchievementNotifications(prev => prev.filter(a => a.id !== achievement.id));
             }, 5000);
@@ -145,7 +126,7 @@ const useGameState = () => {
     } catch (error) {
       console.error("Failed to submit high score:", error);
     }
-  }, [gameOver, score, meteorHits, currentLevel, survivalTime, powerUpsCollected, lives, consecutiveHits, timeWithoutHit, playSound]);
+  }, [score, meteorHits, currentLevel, survivalTime, powerUpsCollected, lives, consecutiveHits, timeWithoutHit, playSound]);
 
   // Handle ship being hit
   const handleShipHit = useCallback(() => {
@@ -157,8 +138,6 @@ const useGameState = () => {
       setGameOver(true);
       gameOverRef.current = true;
       playSound('crash');
-      // Submit high score when game is over
-      setTimeout(() => submitHighScore(), 1000);
     } else {
       // Set temporary invulnerability
       setIsInvulnerable(true);
@@ -283,7 +262,6 @@ const useGameState = () => {
       setGameOver(true);
       gameOverRef.current = true;
       playSound('crash');
-      setTimeout(() => submitHighScore(), 1000);
     }
     
     // Spawn power-ups
@@ -457,6 +435,7 @@ const useGameState = () => {
     moveShip,
     shootProjectile,
     updateGame,
+    submitHighScore,
   };
 };
 

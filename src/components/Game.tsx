@@ -43,7 +43,8 @@ const Game: React.FC = () => {
     resetGame,
     moveShip,
     shootProjectile,
-    updateGame
+    updateGame,
+    submitHighScore,
   } = useGameState();
 
   const isMobile = useIsMobile();
@@ -165,10 +166,11 @@ const Game: React.FC = () => {
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
       
       {/* Game UI */}
-      <GameUI 
+      <GameUI
         score={score}
         gameOver={gameOver}
         onRestart={resetGame}
+        onSubmitScore={submitHighScore}
         scoreMultiplier={scoreMultiplier}
         meteorHits={meteorHits}
         lives={lives}
