@@ -1,17 +1,17 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap, Heart, Trophy } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import { CountdownTimer } from "./CountdownTimer";
-import PlayerNameDialog from "./PlayerNameDialog";
 
 interface GameUIProps {
   score: number;
   gameOver: boolean;
   onRestart: () => void;
   onSubmitScore: (playerName: string) => Promise<void>;
+  playerName: string;
   scoreMultiplier: number;
   meteorHits: number;
   lives: number;
@@ -26,6 +26,7 @@ const GameUI: React.FC<GameUIProps> = ({
   gameOver,
   onRestart,
   onSubmitScore,
+  playerName,
   scoreMultiplier,
   meteorHits,
   lives,
@@ -35,8 +36,7 @@ const GameUI: React.FC<GameUIProps> = ({
   countdownTime = 0
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
-  const [showNameDialog, setShowNameDialog] = useState(false);
-  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const submittedRef = useRef(false);
   const queryClient = useQueryClient();
 
   const { data: highScores = [] } = useQuery({
@@ -60,28 +60,26 @@ const GameUI: React.FC<GameUIProps> = ({
   useEffect(() => {
     if (gameOver) {
       setShowInstructions(true);
-      setScoreSubmitted(false);
-      if (score > 0) {
-        setShowNameDialog(true);
+      if (score > 0 && !submittedRef.current) {
+        submittedRef.current = true;
+        onSubmitScore(playerName).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['highScores'] });
+        });
       }
+    } else {
+      submittedRef.current = false;
     }
-  }, [gameOver]);
+  }, [gameOver, score, playerName, onSubmitScore, queryClient]);
 
   const hideInstructions = () => setShowInstructions(false);
-
-  const handleNameSubmit = async (name: string) => {
-    setShowNameDialog(false);
-    setScoreSubmitted(true);
-    await onSubmitScore(name);
-    queryClient.invalidateQueries({ queryKey: ['highScores'] });
-  };
 
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
       {tunnelMode && !gameOver && <CountdownTimer timeRemaining={countdownTime} />}
 
-      {/* Level display */}
+      {/* Pilot + Level display */}
       <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-purple-500/30 text-white">
+        <p className="text-xs text-cyan-400">PILOT: {playerName}</p>
         <p className="text-lg font-bold text-purple-400">Level {currentLevel}</p>
         {tunnelMode && <p className="text-xs text-yellow-400 mt-1">Tunnel Mode</p>}
       </div>
@@ -99,7 +97,7 @@ const GameUI: React.FC<GameUIProps> = ({
           {highScores.length > 0 ? (
             <ul className="text-xs space-y-1">
               {highScores.map((entry, idx) => (
-                <li key={idx} className="flex justify-between gap-3">
+                <li key={entry.id} className="flex justify-between gap-3">
                   <span className={idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : idx === 2 ? "text-amber-600" : ""}>
                     {entry.player_name}
                   </span>
@@ -121,25 +119,54 @@ const GameUI: React.FC<GameUIProps> = ({
         ))}
       </div>
 
-      {/* Player name dialog */}
-      <div className="pointer-events-auto">
-        <PlayerNameDialog
-          open={showNameDialog}
-          onSubmit={handleNameSubmit}
-          onClose={() => setShowNameDialog(false)}
-        />
-      </div>
-
       {/* Game over screen */}
-      {gameOver && !showNameDialog && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center flex-col gap-4 pointer-events-auto backdrop-blur-sm">
-          <h2 className="text-6xl font-bold text-white"
-              style={{ textShadow: "0 0 10px rgba(155, 135, 245, 0.8)" }}>Game Over</h2>
-          <p className="text-2xl text-white">Final Score: {score}</p>
-          <p className="text-lg text-green-300">Meteor Hit: {meteorHits}</p>
-          <Button onClick={onRestart} className="mt-4 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600">
-            Play Again
-          </Button>
+      {gameOver && (
+        <div
+          className="absolute inset-0 bg-black/80 flex items-center justify-center flex-col gap-4 pointer-events-auto backdrop-blur-sm"
+          style={{ fontFamily: "'Press Start 2P', monospace" }}
+        >
+          <h2
+            className="text-3xl md:text-5xl"
+            style={{
+              color: "#ff00ff",
+              textShadow: "3px 3px 0 #00ffff, 6px 6px 0 #000",
+              letterSpacing: "0.05em",
+            }}
+          >
+            GAME OVER
+          </h2>
+          <p
+            className="text-sm md:text-lg mt-4"
+            style={{ color: "#ffff00", textShadow: "0 0 8px #ffff00" }}
+          >
+            PILOT: {playerName}
+          </p>
+          <p
+            className="text-base md:text-2xl"
+            style={{ color: "#00ffff", textShadow: "0 0 10px #00ffff" }}
+          >
+            SCORE: {String(score).padStart(6, "0")}
+          </p>
+          <p
+            className="text-xs md:text-sm"
+            style={{ color: "#00ff00", textShadow: "0 0 6px #00ff00" }}
+          >
+            METEORS: {meteorHits}
+          </p>
+          <button
+            onClick={onRestart}
+            className="mt-6 px-6 py-4 text-xs md:text-sm transition-transform hover:scale-105 active:scale-95"
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              backgroundColor: "#ff00ff",
+              color: "#fff",
+              border: "4px solid #ffff00",
+              textShadow: "2px 2px 0 #000",
+              boxShadow: "0 0 25px #ff00ff, 4px 4px 0 #000",
+            }}
+          >
+            ▶ PLAY AGAIN ◀
+          </button>
         </div>
       )}
 

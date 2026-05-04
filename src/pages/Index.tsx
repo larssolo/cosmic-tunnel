@@ -3,14 +3,14 @@ import Game from "@/components/Game";
 import StartScreen from "@/components/StartScreen";
 
 const Index = () => {
-  const [gameStarted, setGameStarted] = useState(false);
+  const [playerName, setPlayerName] = useState<string | null>(null);
 
   return (
     <div className="w-full h-screen overflow-hidden bg-black relative">
-      {gameStarted ? (
-        <Game />
+      {playerName ? (
+        <Game playerName={playerName} />
       ) : (
-        <StartScreen onStart={() => setGameStarted(true)} />
+        <StartScreen onStart={(name) => setPlayerName(name)} />
       )}
     </div>
   );

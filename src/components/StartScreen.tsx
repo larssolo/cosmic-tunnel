@@ -1,17 +1,50 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Rocket, Zap, MousePointer2, Smartphone } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import loginBackground from "@/assets/login-background.mp4";
 
 interface StartScreenProps {
-  onStart: () => void;
+  onStart: (playerName: string) => void;
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
+  const [playerName, setPlayerName] = useState(
+    localStorage.getItem("playerName") || ""
+  );
+  const [error, setError] = useState("");
+  const [blink, setBlink] = useState(true);
+
+  const { data: highScores = [] } = useQuery({
+    queryKey: ["highScores"],
+    queryFn: () => CloudHighScoreService.getHighScores(10),
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => setBlink((b) => !b), 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleStart = () => {
+    const name = playerName.trim().toUpperCase().slice(0, 12);
+    if (name.length < 2) {
+      setError("ENTER A NAME (MIN 2 CHARS)");
+      return;
+    }
+    localStorage.setItem("playerName", name);
+    onStart(name);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleStart();
+  };
+
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-4 overflow-hidden">
+    <div
+      className="absolute inset-0 flex items-center justify-center p-4 overflow-hidden"
+      style={{ fontFamily: "'Press Start 2P', monospace" }}
+    >
       <video
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover opacity-40"
         autoPlay
         loop
         muted
@@ -20,58 +53,156 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
         <source src={loginBackground} type="video/mp4" />
       </video>
 
-      <div className="absolute inset-0 bg-black/50" />
-
+      {/* CRT scanlines */}
       <div
-        className="relative z-10 max-w-lg w-full bg-black/60 backdrop-blur-md border border-purple-500/30 rounded-xl p-8 text-white text-center"
-        style={{ boxShadow: "0 0 30px rgba(155, 135, 245, 0.4)" }}
-      >
+        className="absolute inset-0 pointer-events-none z-20"
+        style={{
+          background:
+            "repeating-linear-gradient(0deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 1px, transparent 1px, transparent 3px)",
+        }}
+      />
+      <div className="absolute inset-0 bg-black/60 z-10" />
+
+      <div className="relative z-30 w-full max-w-2xl text-center">
+        {/* Title */}
         <h1
-          className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent"
-          style={{ textShadow: "0 0 20px rgba(155, 135, 245, 0.6)" }}
+          className="text-3xl md:text-5xl mb-2 leading-tight"
+          style={{
+            color: "#ff00ff",
+            textShadow:
+              "3px 3px 0 #00ffff, 6px 6px 0 #000, 0 0 20px #ff00ff",
+            letterSpacing: "0.05em",
+          }}
         >
-          Cosmic Tunnel
+          COSMIC
         </h1>
-        <p className="text-gray-300 mb-6">Pilot your spaceship through the cosmic tunnel</p>
+        <h1
+          className="text-3xl md:text-5xl mb-6 leading-tight"
+          style={{
+            color: "#00ffff",
+            textShadow:
+              "3px 3px 0 #ff00ff, 6px 6px 0 #000, 0 0 20px #00ffff",
+            letterSpacing: "0.05em",
+          }}
+        >
+          TUNNEL
+        </h1>
 
-        <div className="text-left space-y-3 mb-8 bg-black/40 rounded-lg p-4 border border-purple-500/20">
-          <p className="text-sm font-semibold text-purple-300 uppercase tracking-wider mb-2">
-            How to play
+        <p
+          className="text-xs md:text-sm mb-6"
+          style={{ color: "#ffff00", textShadow: "2px 2px 0 #000" }}
+        >
+          ★ INSERT COIN ★ 1 PLAYER ★
+        </p>
+
+        {/* High scores */}
+        <div
+          className="mb-6 p-4 border-4 mx-auto max-w-md"
+          style={{
+            borderColor: "#00ff00",
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            boxShadow: "0 0 20px #00ff00, inset 0 0 20px rgba(0,255,0,0.2)",
+          }}
+        >
+          <p
+            className="text-xs md:text-sm mb-3"
+            style={{ color: "#00ff00", textShadow: "0 0 8px #00ff00" }}
+          >
+            ► HIGH SCORES ◄
           </p>
-
-          <div className="flex items-start gap-3">
-            <MousePointer2 size={20} className="text-purple-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">
-              <span className="hidden md:inline">Move your mouse left/right to control the spaceship</span>
-              <span className="md:hidden">Tap and drag to control the spaceship</span>
+          {highScores.length > 0 ? (
+            <ol className="text-[10px] md:text-xs space-y-1.5">
+              {highScores.slice(0, 10).map((entry, idx) => {
+                const colors = ["#ffff00", "#ffffff", "#ff8800"];
+                const color = colors[idx] || "#00ffaa";
+                return (
+                  <li
+                    key={entry.id}
+                    className="flex justify-between gap-2"
+                    style={{ color, textShadow: `0 0 4px ${color}` }}
+                  >
+                    <span>
+                      {String(idx + 1).padStart(2, "0")}.{" "}
+                      {entry.player_name.toUpperCase().slice(0, 12).padEnd(12, ".")}
+                    </span>
+                    <span>{String(entry.score).padStart(6, "0")}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p
+              className="text-[10px] md:text-xs"
+              style={{ color: "#888" }}
+            >
+              NO SCORES YET — BE THE FIRST!
             </p>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Smartphone size={20} className="text-purple-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm md:hidden">Tilt your phone left/right for precise control</p>
-            <p className="text-sm hidden md:block">On mobile: tilt your phone left/right</p>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Zap size={20} className="text-yellow-300 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">Click or tap to shoot at meteors</p>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Rocket size={20} className="text-pink-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">Collect power-ups, avoid collisions, and fight your way through the levels</p>
-          </div>
+          )}
         </div>
 
-        <Button
-          onClick={onStart}
-          size="lg"
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-lg py-6"
+        {/* Name input */}
+        <div className="mb-4">
+          <label
+            className="block text-[10px] md:text-xs mb-2"
+            style={{ color: "#ff00ff", textShadow: "0 0 6px #ff00ff" }}
+          >
+            ENTER PILOT NAME:
+          </label>
+          <input
+            type="text"
+            value={playerName}
+            onChange={(e) => {
+              setPlayerName(e.target.value.toUpperCase().slice(0, 12));
+              setError("");
+            }}
+            onKeyDown={handleKeyDown}
+            maxLength={12}
+            placeholder="AAA"
+            className="w-48 md:w-64 text-center text-base md:text-xl py-2 px-3 outline-none"
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              backgroundColor: "#000",
+              color: "#00ffff",
+              border: "3px solid #00ffff",
+              boxShadow: "0 0 15px #00ffff",
+              textShadow: "0 0 8px #00ffff",
+              letterSpacing: "0.2em",
+            }}
+            autoFocus
+          />
+          {error && (
+            <p
+              className="text-[10px] mt-2"
+              style={{ color: "#ff0000", textShadow: "0 0 6px #ff0000" }}
+            >
+              ! {error} !
+            </p>
+          )}
+        </div>
+
+        {/* Start button */}
+        <button
+          onClick={handleStart}
+          className="px-6 py-4 text-sm md:text-base transition-transform hover:scale-105 active:scale-95"
+          style={{
+            fontFamily: "'Press Start 2P', monospace",
+            backgroundColor: "#ff00ff",
+            color: "#fff",
+            border: "4px solid #ffff00",
+            textShadow: "2px 2px 0 #000",
+            boxShadow: "0 0 25px #ff00ff, 4px 4px 0 #000",
+            opacity: blink ? 1 : 0.6,
+          }}
         >
-          <Rocket className="mr-2" />
-          Start Mission
-        </Button>
+          ▶ PRESS START ◀
+        </button>
+
+        <p
+          className="mt-6 text-[9px] md:text-[10px]"
+          style={{ color: "#888" }}
+        >
+          © 2026 LARSSOLO ARCADE
+        </p>
       </div>
     </div>
   );

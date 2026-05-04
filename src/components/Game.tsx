@@ -17,7 +17,11 @@ import { CyberOverlay } from "./CyberOverlay";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
 
-const Game: React.FC = () => {
+interface GameProps {
+  playerName: string;
+}
+
+const Game: React.FC<GameProps> = ({ playerName }) => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameLoopRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number>(0);
@@ -171,6 +175,7 @@ const Game: React.FC = () => {
         gameOver={gameOver}
         onRestart={resetGame}
         onSubmitScore={submitHighScore}
+        playerName={playerName}
         scoreMultiplier={scoreMultiplier}
         meteorHits={meteorHits}
         lives={lives}
