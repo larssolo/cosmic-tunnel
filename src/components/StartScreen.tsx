@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import loginBackground from "@/assets/login-background.mp4";
+import StarWarsCrawl from "./StarWarsCrawl";
 
 interface StartScreenProps {
   onStart: (playerName: string) => void;
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
+  const [showCrawl, setShowCrawl] = useState(true);
   const [playerName, setPlayerName] = useState(
     localStorage.getItem("playerName") || ""
   );
@@ -43,6 +45,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
       className="absolute inset-0 flex items-center justify-center p-4 overflow-hidden"
       style={{ fontFamily: "'Press Start 2P', monospace" }}
     >
+      {showCrawl && <StarWarsCrawl onDone={() => setShowCrawl(false)} />}
       <video
         className="absolute inset-0 w-full h-full object-cover opacity-40"
         autoPlay
