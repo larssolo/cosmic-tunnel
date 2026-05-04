@@ -46,6 +46,7 @@ const useGameState = () => {
   const lastHitTimeRef = useRef<number>(Date.now());
   const nextStormTimeRef = useRef<number>(Date.now() + 30000 + Math.random() * 30000);
   const stormActiveRef = useRef(false);
+  const stormWarningRef = useRef(false);
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
@@ -175,6 +176,7 @@ const useGameState = () => {
     setMeteorStormWarning(false);
     setMeteorStormActive(false);
     stormActiveRef.current = false;
+    stormWarningRef.current = false;
     nextStormTimeRef.current = Date.now() + 30000 + Math.random() * 30000;
     resetObstacleTimer();
     resetProjectileTimer();
@@ -336,9 +338,11 @@ const useGameState = () => {
     const currentLevelData = getLevelByScore(scoreRef.current);
     const isTunnelMode = currentLevelData.gameMode === GameMode.TUNNEL;
 
-    if (!isTunnelMode && timeSinceGameStart > 20 && currentTime >= nextStormTimeRef.current && !stormActiveRef.current && !meteorStormWarning) {
+    if (!isTunnelMode && timeSinceGameStart > 20 && currentTime >= nextStormTimeRef.current && !stormActiveRef.current && !stormWarningRef.current) {
+      stormWarningRef.current = true;
       setMeteorStormWarning(true);
       setTimeout(() => {
+        stormWarningRef.current = false;
         setMeteorStormWarning(false);
         setMeteorStormActive(true);
         stormActiveRef.current = true;
@@ -351,7 +355,7 @@ const useGameState = () => {
       }, 3000);
     }
 
-    const stormMultiplier = stormActiveRef.current ? 5 : 1;
+    const stormMultiplier = stormActiveRef.current ? 2.5 : 1;
 
     if (isTunnelMode && tunnelActive) {
       // Tunnel mode obstacles
