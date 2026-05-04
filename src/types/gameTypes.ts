@@ -16,6 +16,17 @@ export interface Projectile {
   y: number;
 }
 
+export interface Boss {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  direction: 1 | -1;
+  size: number;
+  isExploding?: boolean;
+}
+
 export interface GameState {
   score: number;
   gameOver: boolean;

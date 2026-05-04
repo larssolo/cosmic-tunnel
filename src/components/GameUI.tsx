@@ -21,6 +21,7 @@ interface GameUIProps {
   countdownTime?: number;
   meteorStormWarning?: boolean;
   meteorStormActive?: boolean;
+  bossDefeatedNotice?: boolean;
 }
 
 const GameUI: React.FC<GameUIProps> = ({
@@ -38,6 +39,7 @@ const GameUI: React.FC<GameUIProps> = ({
   countdownTime = 0,
   meteorStormWarning = false,
   meteorStormActive = false,
+  bossDefeatedNotice = false,
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   const submittedRef = useRef(false);
@@ -80,6 +82,22 @@ const GameUI: React.FC<GameUIProps> = ({
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
       {tunnelMode && !gameOver && <CountdownTimer timeRemaining={countdownTime} />}
+
+      {/* Boss Defeated Notice */}
+      {bossDefeatedNotice && !gameOver && (
+        <div
+          className="absolute inset-x-0 top-1/3 flex items-center justify-center z-50 pointer-events-none"
+        >
+          <div style={{ fontFamily: "'Press Start 2P', monospace", textAlign: "center" }}>
+            <p style={{ color: "#ffff00", fontSize: "clamp(16px, 3.5vw, 32px)", textShadow: "0 0 25px #ffff00, 0 0 50px #ff6600" }}>
+              ★ BOSS DEFEATED ★
+            </p>
+            <p style={{ color: "#00ff00", fontSize: "clamp(10px, 1.6vw, 16px)", marginTop: "0.6rem", textShadow: "0 0 10px #00ff00" }}>
+              +2000 BONUS
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Meteor Storm Warning */}
       {meteorStormWarning && !gameOver && (

@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -42,11 +42,15 @@ const useGameState = () => {
   const [tunnelTransition, setTunnelTransition] = useState(false);
   const [meteorStormWarning, setMeteorStormWarning] = useState(false);
   const [meteorStormActive, setMeteorStormActive] = useState(false);
+  const [boss, setBoss] = useState<Boss | null>(null);
+  const [bossDefeatedNotice, setBossDefeatedNotice] = useState(false);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
   const nextStormTimeRef = useRef<number>(Date.now() + 30000 + Math.random() * 30000);
   const stormActiveRef = useRef(false);
   const stormWarningRef = useRef(false);
+  const bossRef = useRef<Boss | null>(null);
+  const nextBossScoreRef = useRef<number>(3000);
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
@@ -74,7 +78,8 @@ const useGameState = () => {
     meteorHitsRef.current = meteorHits;
     livesRef.current = lives;
     gameOverRef.current = gameOver;
-  }, [score, speed, scoreMultiplier, meteorHits, lives, gameOver]);
+    bossRef.current = boss;
+  }, [score, speed, scoreMultiplier, meteorHits, lives, gameOver, boss]);
 
   const { createObstacle, updateObstacles, resetObstacleTimer } = useObstacles(scoreRef, speedRef);
   const { createProjectile, updateProjectiles, resetProjectileTimer } = useProjectiles();
@@ -178,6 +183,10 @@ const useGameState = () => {
     stormActiveRef.current = false;
     stormWarningRef.current = false;
     nextStormTimeRef.current = Date.now() + 30000 + Math.random() * 30000;
+    setBoss(null);
+    setBossDefeatedNotice(false);
+    bossRef.current = null;
+    nextBossScoreRef.current = 3000;
     resetObstacleTimer();
     resetProjectileTimer();
     resetPowerUps();
@@ -357,6 +366,48 @@ const useGameState = () => {
 
     const stormMultiplier = stormActiveRef.current ? 2.5 : 1;
 
+    // BOSS spawn — every 3000 score points in standard mode, when none active
+    if (!isTunnelMode && !bossRef.current && scoreRef.current >= nextBossScoreRef.current) {
+      const newBoss: Boss = {
+        id: Date.now(),
+        x: 50,
+        y: 15,
+        hp: 12,
+        maxHp: 12,
+        direction: Math.random() > 0.5 ? 1 : -1,
+        size: 18,
+      };
+      setBoss(newBoss);
+      bossRef.current = newBoss;
+      playSound('speedUp');
+    }
+
+    // BOSS movement + collisions
+    if (bossRef.current) {
+      const b = bossRef.current;
+      if (!b.isExploding) {
+        const bossSpeed = 0.4 * slowMotion;
+        let nextX = b.x + b.direction * bossSpeed;
+        let nextDir = b.direction;
+        if (nextX <= 15) { nextX = 15; nextDir = 1; }
+        if (nextX >= 85) { nextX = 85; nextDir = -1; }
+        const nextY = Math.min(b.y + 0.02 * slowMotion, 35);
+        const updated: Boss = { ...b, x: nextX, y: nextY, direction: nextDir as 1 | -1 };
+        setBoss(updated);
+        bossRef.current = updated;
+
+        // Ship collision with boss
+        const shipY = 85;
+        if (Math.abs(updated.x - shipPosition) < (updated.size / 2 + 6) && Math.abs(updated.y - shipY) < 12 && !isInvulnerable) {
+          handleShipHit();
+          // Knock boss back up
+          const bumped: Boss = { ...updated, y: 15 };
+          setBoss(bumped);
+          bossRef.current = bumped;
+        }
+      }
+    }
+
     if (isTunnelMode && tunnelActive) {
       // Tunnel mode obstacles
       const newTunnelObstacle = createTunnelObstacle();
@@ -368,13 +419,16 @@ const useGameState = () => {
         const updated = updateTunnelObstacles(prev, slowMotion);
         return updated;
       });
+    } else if (bossRef.current && !bossRef.current.isExploding) {
+      // Boss active — pause meteor spawn, but still update existing obstacles
+      setObstacles(prev => updateObstacles(prev, slowMotion));
     } else {
       // Standard mode obstacles
       const newObstacle = createObstacle(stormMultiplier);
       if (newObstacle) {
         setObstacles(prev => [...prev, newObstacle]);
       }
-      
+
       setObstacles(prev => {
         const updated = updateObstacles(prev, slowMotion);
         return updated;
@@ -408,7 +462,49 @@ const useGameState = () => {
       setObstacles(collidedObstacles);
       setProjectiles(newProjectilesList);
     }
-    
+
+    // Projectile-vs-Boss collision
+    if (bossRef.current && !bossRef.current.isExploding) {
+      const b = bossRef.current;
+      const hitRadius = b.size / 2;
+      const survivingProjectiles: typeof updatedProjectiles = [];
+      let hitsThisFrame = 0;
+      for (const p of updatedProjectiles) {
+        const xDiff = Math.abs(b.x - p.x);
+        const yDiff = Math.abs(b.y - (100 - p.y));
+        if (xDiff <= hitRadius && yDiff <= hitRadius) {
+          hitsThisFrame++;
+        } else {
+          survivingProjectiles.push(p);
+        }
+      }
+      if (hitsThisFrame > 0) {
+        playSound('explosion');
+        const newHp = b.hp - hitsThisFrame;
+        if (newHp <= 0) {
+          // Defeated!
+          const exploded: Boss = { ...b, hp: 0, isExploding: true };
+          setBoss(exploded);
+          bossRef.current = exploded;
+          setScore(prev => prev + 2000);
+          setBossDefeatedNotice(true);
+          spawnPowerUp();
+          playSound('levelUp');
+          nextBossScoreRef.current += 3000;
+          setTimeout(() => {
+            setBoss(null);
+            bossRef.current = null;
+          }, 1500);
+          setTimeout(() => setBossDefeatedNotice(false), 3000);
+        } else {
+          const damaged: Boss = { ...b, hp: newHp };
+          setBoss(damaged);
+          bossRef.current = damaged;
+        }
+        setProjectiles(survivingProjectiles);
+      }
+    }
+
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOverRef.current, isTunnelMode && tunnelActive);
     if (shipCollided && !isInvulnerable) {
       setConsecutiveHits(0);
@@ -462,6 +558,8 @@ const useGameState = () => {
     tunnelTransition,
     meteorStormWarning,
     meteorStormActive,
+    boss,
+    bossDefeatedNotice,
     startGame,
     resetGame,
     moveShip,

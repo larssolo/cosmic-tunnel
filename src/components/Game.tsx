@@ -6,6 +6,7 @@ import TunnelObstacles from "./TunnelObstacles";
 import Spaceship from "./Spaceship";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
+import Boss from "./Boss";
 import useGameState from "@/hooks/useGameState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PowerUps } from "./PowerUps";
@@ -46,6 +47,8 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     tunnelTransition,
     meteorStormWarning,
     meteorStormActive,
+    boss,
+    bossDefeatedNotice,
     resetGame,
     moveShip,
     shootProjectile,
@@ -169,6 +172,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
       
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
+      <Boss boss={boss} />
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
       
       {/* Game UI */}
@@ -187,6 +191,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
         countdownTime={countdownTime}
         meteorStormWarning={meteorStormWarning}
         meteorStormActive={meteorStormActive}
+        bossDefeatedNotice={bossDefeatedNotice}
       />
 
       {/* Active power-ups indicator */}
