@@ -109,7 +109,7 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
               lineHeight: 2.2,
             }}
           >
-            <p style={{ color: "#ff00ff" }}>── POWER-UPS ──</p>
+            <p style={{ color: "#ff00ff", textAlign: "center", fontSize: "clamp(8px, 1.4vw, 12px)" }}>── POWER-UPS ──</p>
             <p>🛡 SHIELD — temporary invincibility</p>
             <p>⚡ RAPID FIRE — faster shooting</p>
             <p>🐌 SLOW MO — meteors slow down</p>
