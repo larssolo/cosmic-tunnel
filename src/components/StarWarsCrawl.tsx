@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 interface StarWarsCrawlProps {
   onDone: () => void;
@@ -9,21 +9,16 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
 
   const finish = () => {
     setFading(true);
-    setTimeout(onDone, 1000);
+    setTimeout(onDone, 800);
   };
-
-  useEffect(() => {
-    const timer = setTimeout(finish, 13000);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div
-      className="absolute inset-0 z-40 flex flex-col items-center justify-end overflow-hidden cursor-pointer"
+      className="absolute inset-0 z-40 flex flex-col items-center justify-center overflow-hidden cursor-pointer"
       style={{
         background: "radial-gradient(ellipse at center, #0a0020 0%, #000 100%)",
         opacity: fading ? 0 : 1,
-        transition: "opacity 1s ease",
+        transition: "opacity 0.8s ease",
       }}
       onClick={finish}
     >
@@ -42,21 +37,7 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
         />
       ))}
 
-      {/* "A long time ago..." */}
-      <div
-        className="absolute top-12 text-center text-sm md:text-base px-8"
-        style={{
-          color: "#4fc3f7",
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: "clamp(8px, 1.5vw, 14px)",
-          animation: "fadeInOut 3s ease forwards",
-          letterSpacing: "0.05em",
-        }}
-      >
-        A long time ago, in a galaxy far, far away...
-      </div>
-
-      {/* 3D perspective crawl container */}
+      {/* 3D perspective crawl — animates in fast, then stays */}
       <div
         className="absolute inset-x-0 bottom-0"
         style={{
@@ -71,8 +52,7 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
             inset: 0,
             transformOrigin: "50% 100%",
             transform: "rotateX(25deg)",
-            animation: "crawl 13s linear forwards",
-            animationDelay: "2s",
+            animation: "crawlIn 5s ease-out forwards",
           }}
         >
           <div
@@ -85,25 +65,22 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
             }}
           >
             <p
-              className="text-xl md:text-3xl font-bold mb-6 leading-tight"
-              style={{ textShadow: "0 0 20px #FFE81F", fontSize: "clamp(14px, 3vw, 28px)" }}
+              style={{
+                textShadow: "0 0 20px #FFE81F",
+                fontSize: "clamp(14px, 3vw, 28px)",
+              }}
             >
               COSMIC TUNNEL
             </p>
 
             <p style={{ fontSize: "clamp(7px, 1.2vw, 11px)", lineHeight: 2.2, opacity: 0.9 }}>
-              The galaxy is under threat from an endless swarm of meteors hurtling through
-              the cosmic tunnel. Only the bravest pilots dare to enter.
+              The galaxy is under threat from an endless swarm of meteors
+              hurtling through the cosmic tunnel. Only the bravest pilots
+              dare to enter.
             </p>
 
-            <div
-              className="border-t border-b my-4 py-4"
-              style={{ borderColor: "#FFE81F55" }}
-            >
-              <p
-                className="mb-4"
-                style={{ fontSize: "clamp(8px, 1.4vw, 12px)", color: "#00ffff" }}
-              >
+            <div className="border-t border-b my-4 py-4" style={{ borderColor: "#FFE81F55" }}>
+              <p className="mb-4" style={{ fontSize: "clamp(8px, 1.4vw, 12px)", color: "#00ffff" }}>
                 ── HOW TO FLY ──
               </p>
               <div
@@ -131,7 +108,7 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
             </div>
 
             <p
-              className="mt-8 text-center"
+              className="mt-8"
               style={{ fontSize: "clamp(8px, 1.4vw, 12px)", color: "#00ff00", textShadow: "0 0 8px #00ff00" }}
             >
               May the stars guide your path, pilot.
@@ -140,32 +117,26 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
         </div>
       </div>
 
-      {/* Skip hint */}
+      {/* Click to continue */}
       <div
         className="absolute bottom-4 text-center w-full"
         style={{
           fontFamily: "'Press Start 2P', monospace",
           fontSize: "clamp(7px, 1vw, 10px)",
-          color: "#ffffff55",
+          color: "#ffffff88",
           animation: "blink 1.2s step-end infinite",
         }}
       >
-        CLICK / TAP TO SKIP
+        CLICK / TAP TO CONTINUE
       </div>
 
       <style>{`
-        @keyframes crawl {
-          from { transform: translateY(0); }
-          to   { transform: translateY(-220%); }
-        }
-        @keyframes fadeInOut {
-          0%   { opacity: 0; }
-          20%  { opacity: 1; }
-          70%  { opacity: 1; }
-          100% { opacity: 0; }
+        @keyframes crawlIn {
+          from { transform: translateY(60%); }
+          to   { transform: translateY(0%); }
         }
         @keyframes blink {
-          0%, 100% { opacity: 0.4; }
+          0%, 100% { opacity: 0.6; }
           50%      { opacity: 0; }
         }
       `}</style>

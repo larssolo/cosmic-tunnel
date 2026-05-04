@@ -10,9 +10,7 @@ interface StartScreenProps {
 
 const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const [showCrawl, setShowCrawl] = useState(true);
-  const [playerName, setPlayerName] = useState(
-    localStorage.getItem("playerName") || ""
-  );
+  const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
   const [blink, setBlink] = useState(true);
 
@@ -160,7 +158,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
             }}
             onKeyDown={handleKeyDown}
             maxLength={12}
-            placeholder="AAA"
+            placeholder="NAME"
             className="w-48 md:w-64 text-center text-base md:text-xl py-2 px-3 outline-none"
             style={{
               fontFamily: "'Press Start 2P', monospace",
@@ -204,7 +202,16 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
           className="mt-6 text-[9px] md:text-[10px]"
           style={{ color: "#888" }}
         >
-          © 2026 LARSSOLO ARCADE
+          © 2026{" "}
+          <a
+            href="http://www.larssohl.dk"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#00ffff", textDecoration: "underline", textShadow: "0 0 6px #00ffff" }}
+          >
+            LARS.SOHL
+          </a>{" "}
+          ARCADE
         </p>
       </div>
     </div>
