@@ -40,8 +40,12 @@ const useGameState = () => {
   const [powerUpsCollected, setPowerUpsCollected] = useState(0);
   const [achievementNotifications, setAchievementNotifications] = useState<any[]>([]);
   const [tunnelTransition, setTunnelTransition] = useState(false);
+  const [meteorStormWarning, setMeteorStormWarning] = useState(false);
+  const [meteorStormActive, setMeteorStormActive] = useState(false);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
+  const nextStormTimeRef = useRef<number>(Date.now() + 30000 + Math.random() * 30000);
+  const stormActiveRef = useRef(false);
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
@@ -168,6 +172,10 @@ const useGameState = () => {
     setPowerUpsCollected(0);
     setLevelUpNotification(null);
     setAchievementNotifications([]);
+    setMeteorStormWarning(false);
+    setMeteorStormActive(false);
+    stormActiveRef.current = false;
+    nextStormTimeRef.current = Date.now() + 30000 + Math.random() * 30000;
     resetObstacleTimer();
     resetProjectileTimer();
     resetPowerUps();
@@ -323,24 +331,42 @@ const useGameState = () => {
       console.log('Slow motion active! Multiplier:', slowMotion);
     }
     
-    // Create and update obstacles based on game mode
+    // Meteor storm event logic (only in standard mode, after 20s)
+    const timeSinceGameStart = (currentTime - gameStartTimeRef.current) / 1000;
     const currentLevelData = getLevelByScore(scoreRef.current);
     const isTunnelMode = currentLevelData.gameMode === GameMode.TUNNEL;
-    
+
+    if (!isTunnelMode && timeSinceGameStart > 20 && currentTime >= nextStormTimeRef.current && !stormActiveRef.current && !meteorStormWarning) {
+      setMeteorStormWarning(true);
+      setTimeout(() => {
+        setMeteorStormWarning(false);
+        setMeteorStormActive(true);
+        stormActiveRef.current = true;
+        setTimeout(() => {
+          setMeteorStormActive(false);
+          stormActiveRef.current = false;
+          spawnPowerUp();
+          nextStormTimeRef.current = Date.now() + 30000 + Math.random() * 30000;
+        }, 8000);
+      }, 3000);
+    }
+
+    const stormMultiplier = stormActiveRef.current ? 5 : 1;
+
     if (isTunnelMode && tunnelActive) {
       // Tunnel mode obstacles
       const newTunnelObstacle = createTunnelObstacle();
       if (newTunnelObstacle) {
         setObstacles(prev => [...prev, newTunnelObstacle]);
       }
-      
+
       setObstacles(prev => {
         const updated = updateTunnelObstacles(prev, slowMotion);
         return updated;
       });
     } else {
       // Standard mode obstacles
-      const newObstacle = createObstacle();
+      const newObstacle = createObstacle(stormMultiplier);
       if (newObstacle) {
         setObstacles(prev => [...prev, newObstacle]);
       }
@@ -430,6 +456,8 @@ const useGameState = () => {
     tunnelActive,
     countdownTime,
     tunnelTransition,
+    meteorStormWarning,
+    meteorStormActive,
     startGame,
     resetGame,
     moveShip,

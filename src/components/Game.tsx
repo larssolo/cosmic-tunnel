@@ -44,6 +44,8 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     tunnelActive,
     countdownTime,
     tunnelTransition,
+    meteorStormWarning,
+    meteorStormActive,
     resetGame,
     moveShip,
     shootProjectile,
@@ -183,6 +185,8 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
         currentLevel={currentLevel}
         tunnelMode={isTunnelMode}
         countdownTime={countdownTime}
+        meteorStormWarning={meteorStormWarning}
+        meteorStormActive={meteorStormActive}
       />
 
       {/* Active power-ups indicator */}

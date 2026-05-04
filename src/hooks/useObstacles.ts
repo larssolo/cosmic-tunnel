@@ -5,14 +5,14 @@ import { Obstacle } from "@/types/gameTypes";
 export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.RefObject<number>) {
   const lastObstacleTimeRef = useRef(Date.now());
 
-  const createObstacle = useCallback(() => {
+  const createObstacle = useCallback((spawnRateMultiplier: number = 1) => {
     const now = Date.now();
-    
+
     // Start with a longer interval and gradually decrease it based on score
     // Even longer base interval for slower obstacle generation at the beginning
     const baseInterval = 1500; // Starting with a longer delay (1.5 seconds)
     const minInterval = 400;   // Minimum interval (fastest spawn rate)
-    const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 8, minInterval);
+    const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 8, minInterval) / spawnRateMultiplier;
     
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
       console.log('Creating new obstacle with id:', now);

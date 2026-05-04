@@ -19,6 +19,8 @@ interface GameUIProps {
   currentLevel?: number;
   tunnelMode?: boolean;
   countdownTime?: number;
+  meteorStormWarning?: boolean;
+  meteorStormActive?: boolean;
 }
 
 const GameUI: React.FC<GameUIProps> = ({
@@ -33,7 +35,9 @@ const GameUI: React.FC<GameUIProps> = ({
   isInvulnerable,
   currentLevel = 1,
   tunnelMode = false,
-  countdownTime = 0
+  countdownTime = 0,
+  meteorStormWarning = false,
+  meteorStormActive = false,
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   const submittedRef = useRef(false);
@@ -76,6 +80,31 @@ const GameUI: React.FC<GameUIProps> = ({
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
       {tunnelMode && !gameOver && <CountdownTimer timeRemaining={countdownTime} />}
+
+      {/* Meteor Storm Warning */}
+      {meteorStormWarning && !gameOver && (
+        <div
+          className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at center, rgba(255,0,0,0.25) 0%, transparent 70%)", animation: "stormPulse 0.5s ease-in-out infinite alternate" }}
+        >
+          <div style={{ fontFamily: "'Press Start 2P', monospace", textAlign: "center" }}>
+            <p style={{ color: "#ff0000", fontSize: "clamp(14px, 3vw, 28px)", textShadow: "0 0 20px #ff0000, 0 0 40px #ff0000", animation: "stormPulse 0.4s ease-in-out infinite alternate" }}>
+              ⚠ METEOR STORM ⚠
+            </p>
+            <p style={{ color: "#ff6600", fontSize: "clamp(8px, 1.5vw, 14px)", marginTop: "0.5rem", textShadow: "0 0 10px #ff6600" }}>
+              INCOMING!
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Meteor Storm Active — red screen border pulse */}
+      {meteorStormActive && !gameOver && (
+        <div
+          className="absolute inset-0 pointer-events-none z-10"
+          style={{ boxShadow: "inset 0 0 60px rgba(255,0,0,0.4)", animation: "stormPulse 0.6s ease-in-out infinite alternate" }}
+        />
+      )}
 
       {/* Pilot + Level display */}
       <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-purple-500/30 text-white">
@@ -192,6 +221,12 @@ const GameUI: React.FC<GameUIProps> = ({
           </p>
         </div>
       )}
+      <style>{`
+        @keyframes stormPulse {
+          from { opacity: 0.6; }
+          to   { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };
