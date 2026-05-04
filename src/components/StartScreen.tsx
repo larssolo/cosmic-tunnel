@@ -9,7 +9,7 @@ interface StartScreenProps {
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
-  const [showCrawl, setShowCrawl] = useState(true);
+  const [showCrawl, setShowCrawl] = useState(false);
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
   const [blink, setBlink] = useState(true);
@@ -64,7 +64,13 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
       />
       <div className="absolute inset-0 bg-black/60 z-10" />
 
-      <div className="relative z-30 w-full max-w-2xl text-center">
+      <div
+        className="relative z-30 w-full max-w-2xl text-center"
+        style={{
+          opacity: showCrawl ? 0.15 : 1,
+          transition: "opacity 0.5s ease",
+        }}
+      >
         {/* Title */}
         <h1
           className="text-3xl md:text-5xl mb-2 leading-tight"
@@ -197,6 +203,23 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
         >
           ▶ PRESS START ◀
         </button>
+
+        <div className="mt-4">
+          <button
+            onClick={() => setShowCrawl(true)}
+            className="px-4 py-2 text-[10px] md:text-xs transition-transform hover:scale-105 active:scale-95"
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              backgroundColor: "transparent",
+              color: "#00ffff",
+              border: "2px solid #00ffff",
+              textShadow: "0 0 6px #00ffff",
+              boxShadow: "0 0 10px #00ffff66",
+            }}
+          >
+            ▸ PILOT INSTRUCTIONS ◂
+          </button>
+        </div>
 
         <p
           className="mt-6 text-[9px] md:text-[10px]"
