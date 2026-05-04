@@ -32,35 +32,35 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
         >
           Cosmic Tunnel
         </h1>
-        <p className="text-gray-300 mb-6">Pilot dit rumskib gennem den kosmiske tunnel</p>
+        <p className="text-gray-300 mb-6">Pilot your spaceship through the cosmic tunnel</p>
 
         <div className="text-left space-y-3 mb-8 bg-black/40 rounded-lg p-4 border border-purple-500/20">
           <p className="text-sm font-semibold text-purple-300 uppercase tracking-wider mb-2">
-            Sådan spiller du
+            How to play
           </p>
 
           <div className="flex items-start gap-3">
             <MousePointer2 size={20} className="text-purple-400 mt-0.5 flex-shrink-0" />
             <p className="text-sm">
-              <span className="hidden md:inline">Bevæg musen til venstre/højre for at styre rumskibet</span>
-              <span className="md:hidden">Tryk og træk for at styre rumskibet</span>
+              <span className="hidden md:inline">Move your mouse left/right to control the spaceship</span>
+              <span className="md:hidden">Tap and drag to control the spaceship</span>
             </p>
           </div>
 
           <div className="flex items-start gap-3">
             <Smartphone size={20} className="text-purple-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm md:hidden">Vip telefonen til siderne for præcis styring</p>
-            <p className="text-sm hidden md:block">På mobil: vip telefonen til siderne</p>
+            <p className="text-sm md:hidden">Tilt your phone left/right for precise control</p>
+            <p className="text-sm hidden md:block">On mobile: tilt your phone left/right</p>
           </div>
 
           <div className="flex items-start gap-3">
             <Zap size={20} className="text-yellow-300 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">Klik eller tryk for at skyde mod meteorer</p>
+            <p className="text-sm">Click or tap to shoot at meteors</p>
           </div>
 
           <div className="flex items-start gap-3">
             <Rocket size={20} className="text-pink-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">Saml power-ups, undgå sammenstød, og kæmp dig op gennem niveauerne</p>
+            <p className="text-sm">Collect power-ups, avoid collisions, and fight your way through the levels</p>
           </div>
         </div>
 
