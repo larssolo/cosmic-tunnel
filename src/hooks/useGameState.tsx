@@ -80,6 +80,8 @@ const useGameState = () => {
     resetPowerUps
   } = usePowerUps();
   
+  // Sync only the refs that updateGame can't update itself (scalar game state)
+  // wormhole/activeDimension/shipPosition are updated directly via refs in updateGame
   useEffect(() => {
     scoreRef.current = score;
     speedRef.current = speed;
@@ -87,11 +89,7 @@ const useGameState = () => {
     meteorHitsRef.current = meteorHits;
     livesRef.current = lives;
     gameOverRef.current = gameOver;
-    bossRef.current = boss;
-    wormholeRef.current = wormhole;
-    activeDimensionRef.current = activeDimension;
-    shipPositionRef.current = shipPosition;
-  }, [score, speed, scoreMultiplier, meteorHits, lives, gameOver, boss, wormhole, activeDimension, shipPosition]);
+  }, [score, speed, scoreMultiplier, meteorHits, lives, gameOver]);
 
   const { createObstacle, updateObstacles, resetObstacleTimer } = useObstacles(scoreRef, speedRef);
   const { createProjectile, updateProjectiles, resetProjectileTimer } = useProjectiles();
@@ -439,36 +437,35 @@ const useGameState = () => {
       setShipPosition(Math.max(10, Math.min(90, lerped)));
     }
 
-    // WORMHOLE portal spawn & update
+    // WORMHOLE portal spawn — spawn once, CSS animation handles fade, no per-frame setState
     if (!isTunnelMode && !wormholeRef.current && !activeDimensionRef.current && !bossRef.current && scoreRef.current >= nextWormholeScoreRef.current) {
       const newWH: Wormhole = {
         id: Date.now(),
         x: 20 + Math.random() * 60,
         y: 15 + Math.random() * 50,
         size: 10,
-        age: 0,
+        createdAt: Date.now(),
       };
       setWormhole(newWH);
       wormholeRef.current = newWH;
     }
 
-    // Age & auto-remove wormhole (300 frames ≈ 5s)
+    // Wormhole: only check collision + expiry (no per-frame state update)
     if (wormholeRef.current) {
       const wh = wormholeRef.current;
-      const aged: Wormhole = { ...wh, age: wh.age + 1 };
-      if (aged.age > 300) {
+      const age = currentTime - wh.createdAt;
+
+      if (age > 5000) {
+        // Portal expired
         setWormhole(null);
         wormholeRef.current = null;
         nextWormholeScoreRef.current = scoreRef.current + 2000 + Math.floor(Math.random() * 2000);
       } else {
-        setWormhole(aged);
-        wormholeRef.current = aged;
-
-        // Ship enters wormhole
-        const wX = aged.x, wY = aged.y, wR = aged.size / 2;
-        if (Math.abs(wX - shipPosition) < wR + 5 && Math.abs(wY - 85) < wR + 5) {
+        // Ship enters wormhole — check collision
+        const wR = wh.size / 2;
+        if (Math.abs(wh.x - shipPosition) < wR + 5 && Math.abs(wh.y - 85) < wR + 5) {
           const dimType = dimensionDimensions[Math.floor(Math.random() * 3)];
-          const dim: ActiveDimension = { type: dimType, timeLeft: 12000 };
+          const dim: ActiveDimension = { type: dimType, endTime: currentTime + 12000 };
           setActiveDimension(dim);
           activeDimensionRef.current = dim;
           setWormhole(null);
@@ -480,17 +477,12 @@ const useGameState = () => {
       }
     }
 
-    // Dimension timer countdown
+    // Dimension: check expiry only (DimensionOverlay handles its own countdown display)
     if (activeDimensionRef.current) {
-      const remaining = activeDimensionRef.current.timeLeft - (1000 / 60);
-      if (remaining <= 0) {
+      if (currentTime >= activeDimensionRef.current.endTime) {
         setActiveDimension(null);
         activeDimensionRef.current = null;
         iceTargetRef.current = shipPositionRef.current;
-      } else {
-        const updated: ActiveDimension = { ...activeDimensionRef.current, timeLeft: remaining };
-        setActiveDimension(updated);
-        activeDimensionRef.current = updated;
       }
     }
 

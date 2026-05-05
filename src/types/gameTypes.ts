@@ -34,12 +34,12 @@ export interface Wormhole {
   x: number;
   y: number;
   size: number;
-  age: number; // frames alive
+  createdAt: number; // timestamp — age derived at render time, no per-frame setState
 }
 
 export interface ActiveDimension {
   type: DimensionType;
-  timeLeft: number; // ms remaining
+  endTime: number; // timestamp when dimension expires — no per-frame setState
 }
 
 export interface GameState {

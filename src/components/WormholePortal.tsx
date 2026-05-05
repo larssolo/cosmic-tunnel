@@ -4,8 +4,6 @@ import { Wormhole } from "@/types/gameTypes";
 const WormholePortal: React.FC<{ wormhole: Wormhole | null }> = memo(({ wormhole }) => {
   if (!wormhole) return null;
 
-  const fadeOut = wormhole.age > 280; // fade after ~280 frames (~4.5s of 5s lifespan)
-
   return (
     <div
       className="absolute"
@@ -16,9 +14,9 @@ const WormholePortal: React.FC<{ wormhole: Wormhole | null }> = memo(({ wormhole
         top: `${wormhole.y}%`,
         transform: "translate(-50%, -50%)",
         zIndex: 6,
-        opacity: fadeOut ? 0.3 : 1,
-        transition: "opacity 0.8s ease",
         pointerEvents: "none",
+        // CSS handles the full 5s lifecycle: in → hold → fade out
+        animation: "wormholeLife 5s ease forwards",
       }}
     >
       {/* Outer ring */}
@@ -60,7 +58,15 @@ const WormholePortal: React.FC<{ wormhole: Wormhole | null }> = memo(({ wormhole
       >
         WORMHOLE
       </div>
-      <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
+      <style>{`
+        @keyframes wormholeLife {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+          10%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          75%  { opacity: 1; }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+      `}</style>
     </div>
   );
 });

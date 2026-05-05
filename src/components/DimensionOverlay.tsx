@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState, useEffect } from "react";
 import { ActiveDimension, DimensionType } from "@/types/gameTypes";
 
 const DIMENSION_CONFIG: Record<DimensionType, {
@@ -28,18 +28,25 @@ const DIMENSION_CONFIG: Record<DimensionType, {
 };
 
 const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo(({ dimension }) => {
+  // Internal countdown — updates once per second, no game-loop setState needed
+  const [secsLeft, setSecsLeft] = useState(0);
+
+  useEffect(() => {
+    if (!dimension) return;
+    const update = () => setSecsLeft(Math.max(0, Math.ceil((dimension.endTime - Date.now()) / 1000)));
+    update();
+    const id = setInterval(update, 500);
+    return () => clearInterval(id);
+  }, [dimension?.endTime]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!dimension) return null;
 
   const cfg = DIMENSION_CONFIG[dimension.type];
-  const secLeft = Math.ceil(dimension.timeLeft / 1000);
 
   return (
     <>
       {/* Background */}
-      <div
-        className="absolute inset-0"
-        style={{ background: cfg.bg, zIndex: 0 }}
-      />
+      <div className="absolute inset-0" style={{ background: cfg.bg, zIndex: 0 }} />
 
       {/* Grid lines */}
       <div
@@ -57,10 +64,7 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
       {/* Ambient glow */}
       <div
         className="absolute inset-0"
-        style={{
-          zIndex: 0,
-          background: `radial-gradient(ellipse at 50% 80%, ${cfg.accentColor}22 0%, transparent 70%)`,
-        }}
+        style={{ zIndex: 0, background: `radial-gradient(ellipse at 50% 80%, ${cfg.accentColor}22 0%, transparent 70%)` }}
       />
 
       {/* Top HUD bar */}
@@ -75,24 +79,11 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
           pointerEvents: "none",
         }}
       >
-        <span
-          style={{
-            color: cfg.accentColor,
-            fontSize: "clamp(8px, 1.5vw, 13px)",
-            textShadow: `0 0 12px ${cfg.accentColor}`,
-            animation: "dimPulse 0.8s ease-in-out infinite alternate",
-          }}
-        >
+        <span style={{ color: cfg.accentColor, fontSize: "clamp(8px, 1.5vw, 13px)", textShadow: `0 0 12px ${cfg.accentColor}`, animation: "dimPulse 0.8s ease-in-out infinite alternate" }}>
           {cfg.label}
         </span>
-        <span
-          style={{
-            color: "#ffffff",
-            fontSize: "clamp(7px, 1.2vw, 11px)",
-            textShadow: `0 0 8px ${cfg.accentColor}`,
-          }}
-        >
-          {secLeft}s
+        <span style={{ color: "#ffffff", fontSize: "clamp(7px, 1.2vw, 11px)", textShadow: `0 0 8px ${cfg.accentColor}` }}>
+          {secsLeft}s
         </span>
       </div>
 
@@ -101,9 +92,7 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
       {dimension.type === "lava_zone" && <LavaParticles />}
       {dimension.type === "ice_field" && <IceParticles />}
 
-      <style>{`
-        @keyframes dimPulse { from { opacity: 0.7; } to { opacity: 1; } }
-      `}</style>
+      <style>{`@keyframes dimPulse { from { opacity: 0.7; } to { opacity: 1; } }`}</style>
     </>
   );
 });

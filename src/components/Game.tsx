@@ -28,6 +28,8 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameLoopRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number>(0);
+  // Stable ref — always points to latest updateGame, so game loop never restarts
+  const updateGameRef = useRef<() => void>(() => {});
 
   const {
     score,
@@ -59,6 +61,9 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     updateGame,
     submitHighScore,
   } = useGameState();
+
+  // Always keep the ref current — no dep array needed on the game loop
+  updateGameRef.current = updateGame;
 
   const isMobile = useIsMobile();
 
@@ -119,17 +124,16 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     };
   }, [isMobile, gameOver, moveShip]);
 
-  // Set up game loop
+  // Set up game loop — empty deps so it NEVER restarts (updateGameRef is always current)
   useEffect(() => {
     const FPS = 60;
     const frameDelay = 1000 / FPS;
 
     const gameLoop = (timestamp: number) => {
       if (timestamp - lastTimestampRef.current >= frameDelay) {
-        updateGame();
+        updateGameRef.current();
         lastTimestampRef.current = timestamp;
       }
-      
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
 
@@ -140,7 +144,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [updateGame]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle click/tap to shoot
   const handleShoot = () => {
