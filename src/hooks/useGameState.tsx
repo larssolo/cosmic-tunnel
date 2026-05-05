@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile, Boss } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss, Wormhole, ActiveDimension, DimensionType } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -44,6 +44,8 @@ const useGameState = () => {
   const [meteorStormActive, setMeteorStormActive] = useState(false);
   const [boss, setBoss] = useState<Boss | null>(null);
   const [bossDefeatedNotice, setBossDefeatedNotice] = useState(false);
+  const [wormhole, setWormhole] = useState<Wormhole | null>(null);
+  const [activeDimension, setActiveDimension] = useState<ActiveDimension | null>(null);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
   const nextStormTimeRef = useRef<number>(Date.now() + 30000 + Math.random() * 30000);
@@ -51,6 +53,13 @@ const useGameState = () => {
   const stormWarningRef = useRef(false);
   const bossRef = useRef<Boss | null>(null);
   const nextBossScoreRef = useRef<number>(3000);
+  const wormholeRef = useRef<Wormhole | null>(null);
+  const activeDimensionRef = useRef<ActiveDimension | null>(null);
+  const nextWormholeScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
+  const dimensionDimensions: DimensionType[] = ['neon_city', 'lava_zone', 'ice_field'];
+  const shipPositionRef = useRef<number>(50);
+  // Ice field: target vs actual position for slippery controls
+  const iceTargetRef = useRef<number>(50);
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
@@ -79,7 +88,10 @@ const useGameState = () => {
     livesRef.current = lives;
     gameOverRef.current = gameOver;
     bossRef.current = boss;
-  }, [score, speed, scoreMultiplier, meteorHits, lives, gameOver, boss]);
+    wormholeRef.current = wormhole;
+    activeDimensionRef.current = activeDimension;
+    shipPositionRef.current = shipPosition;
+  }, [score, speed, scoreMultiplier, meteorHits, lives, gameOver, boss, wormhole, activeDimension, shipPosition]);
 
   const { createObstacle, updateObstacles, resetObstacleTimer } = useObstacles(scoreRef, speedRef);
   const { createProjectile, updateProjectiles, resetProjectileTimer } = useProjectiles();
@@ -187,6 +199,12 @@ const useGameState = () => {
     setBossDefeatedNotice(false);
     bossRef.current = null;
     nextBossScoreRef.current = 3000;
+    setWormhole(null);
+    setActiveDimension(null);
+    wormholeRef.current = null;
+    activeDimensionRef.current = null;
+    nextWormholeScoreRef.current = 1500 + Math.floor(Math.random() * 1500);
+    iceTargetRef.current = 50;
     resetObstacleTimer();
     resetProjectileTimer();
     resetPowerUps();
@@ -207,8 +225,13 @@ const useGameState = () => {
   }, [resetGame]);
 
   const moveShip = useCallback((position: number) => {
-    const clampedPosition = Math.max(10, Math.min(90, position));
-    setShipPosition(clampedPosition);
+    const clamped = Math.max(10, Math.min(90, position));
+    if (activeDimensionRef.current?.type === 'ice_field') {
+      // Ice: store target, actual position lerps in updateGame
+      iceTargetRef.current = clamped;
+    } else {
+      setShipPosition(clamped);
+    }
   }, []);
 
   const shootProjectile = useCallback(() => {
@@ -408,6 +431,69 @@ const useGameState = () => {
       }
     }
 
+    // Ice field: lerp ship toward target
+    if (activeDimensionRef.current?.type === 'ice_field') {
+      const cur = shipPositionRef.current;
+      const tgt = iceTargetRef.current;
+      const lerped = cur + (tgt - cur) * 0.04;
+      setShipPosition(Math.max(10, Math.min(90, lerped)));
+    }
+
+    // WORMHOLE portal spawn & update
+    if (!isTunnelMode && !wormholeRef.current && !activeDimensionRef.current && !bossRef.current && scoreRef.current >= nextWormholeScoreRef.current) {
+      const newWH: Wormhole = {
+        id: Date.now(),
+        x: 20 + Math.random() * 60,
+        y: 15 + Math.random() * 50,
+        size: 10,
+        age: 0,
+      };
+      setWormhole(newWH);
+      wormholeRef.current = newWH;
+    }
+
+    // Age & auto-remove wormhole (300 frames ≈ 5s)
+    if (wormholeRef.current) {
+      const wh = wormholeRef.current;
+      const aged: Wormhole = { ...wh, age: wh.age + 1 };
+      if (aged.age > 300) {
+        setWormhole(null);
+        wormholeRef.current = null;
+        nextWormholeScoreRef.current = scoreRef.current + 2000 + Math.floor(Math.random() * 2000);
+      } else {
+        setWormhole(aged);
+        wormholeRef.current = aged;
+
+        // Ship enters wormhole
+        const wX = aged.x, wY = aged.y, wR = aged.size / 2;
+        if (Math.abs(wX - shipPosition) < wR + 5 && Math.abs(wY - 85) < wR + 5) {
+          const dimType = dimensionDimensions[Math.floor(Math.random() * 3)];
+          const dim: ActiveDimension = { type: dimType, timeLeft: 12000 };
+          setActiveDimension(dim);
+          activeDimensionRef.current = dim;
+          setWormhole(null);
+          wormholeRef.current = null;
+          if (dimType === 'ice_field') iceTargetRef.current = shipPosition;
+          playSound('speedUp');
+          nextWormholeScoreRef.current = scoreRef.current + 2000 + Math.floor(Math.random() * 2000);
+        }
+      }
+    }
+
+    // Dimension timer countdown
+    if (activeDimensionRef.current) {
+      const remaining = activeDimensionRef.current.timeLeft - (1000 / 60);
+      if (remaining <= 0) {
+        setActiveDimension(null);
+        activeDimensionRef.current = null;
+        iceTargetRef.current = shipPositionRef.current;
+      } else {
+        const updated: ActiveDimension = { ...activeDimensionRef.current, timeLeft: remaining };
+        setActiveDimension(updated);
+        activeDimensionRef.current = updated;
+      }
+    }
+
     if (isTunnelMode && tunnelActive) {
       // Tunnel mode obstacles
       const newTunnelObstacle = createTunnelObstacle();
@@ -560,6 +646,8 @@ const useGameState = () => {
     meteorStormActive,
     boss,
     bossDefeatedNotice,
+    wormhole,
+    activeDimension,
     startGame,
     resetGame,
     moveShip,

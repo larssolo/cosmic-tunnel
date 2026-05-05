@@ -27,6 +27,21 @@ export interface Boss {
   isExploding?: boolean;
 }
 
+export type DimensionType = 'neon_city' | 'lava_zone' | 'ice_field';
+
+export interface Wormhole {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  age: number; // frames alive
+}
+
+export interface ActiveDimension {
+  type: DimensionType;
+  timeLeft: number; // ms remaining
+}
+
 export interface GameState {
   score: number;
   gameOver: boolean;

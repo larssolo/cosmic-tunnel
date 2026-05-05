@@ -7,6 +7,8 @@ import Spaceship from "./Spaceship";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
 import Boss from "./Boss";
+import WormholePortal from "./WormholePortal";
+import DimensionOverlay from "./DimensionOverlay";
 import useGameState from "@/hooks/useGameState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PowerUps } from "./PowerUps";
@@ -49,6 +51,8 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     meteorStormActive,
     boss,
     bossDefeatedNotice,
+    wormhole,
+    activeDimension,
     resetGame,
     moveShip,
     shootProjectile,
@@ -163,13 +167,19 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
           <TunnelMode />
           <TunnelObstacles obstacles={obstacles} />
         </>
+      ) : activeDimension ? (
+        <>
+          <DimensionOverlay dimension={activeDimension} />
+          <Obstacles obstacles={obstacles} dimension={activeDimension.type} />
+        </>
       ) : (
         <>
           <Tunnel />
           <Obstacles obstacles={obstacles} />
         </>
       )}
-      
+
+      <WormholePortal wormhole={wormhole} />
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
       <Boss boss={boss} />

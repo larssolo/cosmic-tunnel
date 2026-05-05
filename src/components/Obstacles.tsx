@@ -1,48 +1,80 @@
 
 import React, { memo } from "react";
-import { Obstacle } from "@/types/gameTypes";
+import { Obstacle, DimensionType } from "@/types/gameTypes";
 
 interface ObstaclesProps {
   obstacles: Obstacle[];
+  dimension?: DimensionType | null;
 }
 
 // Memoize individual obstacles to prevent unnecessary re-renders
-const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
+const ObstacleItem = memo(({ obstacle, dimension }: { obstacle: Obstacle; dimension?: DimensionType | null }) => {
+  // Dimension-specific styles
+  const getDimStyle = () => {
+    if (dimension === 'neon_city') {
+      return {
+        borderRadius: "4px",
+        background: "linear-gradient(135deg, #ff00ff 0%, #00ffff 100%)",
+        boxShadow: "0 0 20px #ff00ff, 0 0 40px #00ffff44",
+      };
+    }
+    if (dimension === 'lava_zone') {
+      return {
+        borderRadius: "50%",
+        background: "radial-gradient(circle, #ffff00 0%, #ff4400 60%, #660000 100%)",
+        boxShadow: "0 0 25px #ff4400, 0 0 50px #ff440044",
+      };
+    }
+    if (dimension === 'ice_field') {
+      return {
+        borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
+        background: "linear-gradient(135deg, #ffffff 0%, #00ccff 50%, #003366 100%)",
+        boxShadow: "0 0 20px #00ccff, 0 0 40px #00ccff44",
+      };
+    }
+    return null;
+  };
+
+  const dimStyle = getDimStyle();
+
   return (
     <div
-      className={`absolute rounded-full ${obstacle.isExploding ? 'animate-pulse' : ''}`}
+      className={`absolute ${!dimStyle ? 'rounded-full' : ''} ${obstacle.isExploding ? 'animate-pulse' : ''}`}
       style={{
         width: `${obstacle.size}%`,
         height: `${obstacle.size}%`,
-        aspectRatio: "1 / 1", // Enforce perfect circle aspect ratio
+        aspectRatio: "1 / 1",
         left: `${obstacle.x}%`,
         top: `${obstacle.y}%`,
         transform: "translate(-50%, -50%)",
         opacity: obstacle.isExploding ? "0.8" : "1",
-        transition: "opacity 0.3s ease-out"
+        transition: "opacity 0.3s ease-out",
       }}
     >
       {!obstacle.isExploding ? (
+        dimStyle ? (
+          <div className="w-full h-full" style={{ ...dimStyle, width: "100%", height: "100%" }} />
+        ) : (
         // Normal asteroid with consistent gradient appearance
         <div className="w-full h-full relative">
           {/* Base meteor shape - always perfectly round */}
-          <div 
+          <div
             className="absolute inset-0 rounded-full"
             style={{
               background: "linear-gradient(225deg, #7E69AB 0%, #1A1F2C 100%)",
               boxShadow: "0 0 15px rgba(126, 105, 171, 0.5)",
-              aspectRatio: "1 / 1" // Enforce circle aspect
+              aspectRatio: "1 / 1"
             }}
           ></div>
-          
+
           {/* Inner gradient for depth */}
           <div className="absolute inset-[15%] rounded-full opacity-70"
                style={{
                  background: "linear-gradient(45deg, #6E59A5 0%, #D6BCFA 100%)",
-                 aspectRatio: "1 / 1" // Enforce circle aspect
+                 aspectRatio: "1 / 1"
                }}></div>
-          
-          {/* Consistent crater patterns - fixed positioning relative to size */}
+
+          {/* Consistent crater patterns */}
           <div className="absolute w-[25%] h-[25%] rounded-full bg-gray-700 opacity-80"
                style={{top: "20%", left: "30%", aspectRatio: "1 / 1"}}></div>
           <div className="absolute w-[20%] h-[20%] rounded-full bg-gray-800 opacity-70"
@@ -50,6 +82,7 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
           <div className="absolute w-[15%] h-[15%] rounded-full bg-gray-700 opacity-60"
                style={{top: "40%", left: "55%", aspectRatio: "1 / 1"}}></div>
         </div>
+        )
       ) : (
         // Enhanced explosion effect with consistent fragment size and distribution
         <div className="relative w-full h-full" style={{aspectRatio: "1 / 1"}}>
@@ -138,12 +171,11 @@ const ObstacleItem = memo(({ obstacle }: { obstacle: Obstacle }) => {
 });
 
 // Memoize the entire Obstacles component
-const Obstacles: React.FC<ObstaclesProps> = memo(({ obstacles }) => {
-  console.log('Rendering obstacles:', obstacles.length);
+const Obstacles: React.FC<ObstaclesProps> = memo(({ obstacles, dimension }) => {
   return (
     <>
       {obstacles.map((obstacle) => (
-        <ObstacleItem key={obstacle.id} obstacle={obstacle} />
+        <ObstacleItem key={obstacle.id} obstacle={obstacle} dimension={dimension} />
       ))}
     </>
   );
