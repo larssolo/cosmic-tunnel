@@ -8,16 +8,22 @@ import { useSound } from "./useSound";
 import { usePowerUps } from "./usePowerUps";
 import { useTunnelMode } from "./useTunnelMode";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
-import { CloudAchievementService } from "@/services/CloudAchievementService";
-import { CloudStatisticsService } from "@/services/CloudStatisticsService";
 import { AchievementService } from "@/services/AchievementService";
-import { getLevelByScore, LEVELS } from "@/config/levels";
+import { getLevelByScore } from "@/config/levels";
 import { POWER_UP_CONFIGS } from "@/config/powerUps";
 import { PowerUpType } from "@/types/powerUpTypes";
 import { GameStats } from "@/types/achievementTypes";
 import { GameMode } from "@/types/gameModeTypes";
 
 const MAX_LIVES = 3;
+
+const BOSS_BY_LEVEL: Record<number, { type: BossType; name: string; hp: number; size: number }> = {
+  5:  { type: 'crusher',     name: 'THE CRUSHER',  hp: 14, size: 22 },
+  7:  { type: 'mothership',  name: 'MOTHERSHIP',   hp: 16, size: 24 },
+  10: { type: 'laser_beast', name: 'LASER BEAST',  hp: 20, size: 22 },
+};
+
+const DIMENSION_TYPES: DimensionType[] = ['neon_city', 'lava_zone', 'ice_field'];
 
 const useGameState = () => {
   const [score, setScore] = useState(0);
@@ -52,14 +58,15 @@ const useGameState = () => {
   const stormActiveRef = useRef(false);
   const stormWarningRef = useRef(false);
   const bossRef = useRef<Boss | null>(null);
-  const defeatedBossLevelsRef = useRef<Set<number>>(new Set());
+  const defeatedBossTypesRef = useRef<Set<BossType>>(new Set());
   const [bossLasers, setBossLasers] = useState<BossLaser[]>([]);
   const bossLasersRef = useRef<BossLaser[]>([]);
+  const lastLaserHitRef = useRef<number>(0);
   const wormholeRef = useRef<Wormhole | null>(null);
   const activeDimensionRef = useRef<ActiveDimension | null>(null);
   const nextWormholeScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
-  const dimensionDimensions: DimensionType[] = ['neon_city', 'lava_zone', 'ice_field'];
   const shipPositionRef = useRef<number>(50);
+  const nextSpeedIncreaseRef = useRef<number>(1000);
   // Ice field: target vs actual position for slippery controls
   const iceTargetRef = useRef<number>(50);
   
@@ -198,7 +205,7 @@ const useGameState = () => {
     setBoss(null);
     setBossDefeatedNotice(false);
     bossRef.current = null;
-    defeatedBossLevelsRef.current = new Set();
+    defeatedBossTypesRef.current = new Set();
     setBossLasers([]);
     bossLasersRef.current = [];
     setWormhole(null);
@@ -212,6 +219,7 @@ const useGameState = () => {
     resetPowerUps();
     scoreRef.current = 0;
     speedRef.current = 0.5;
+    nextSpeedIncreaseRef.current = 1000;
     scoreMultiplierRef.current = 1;
     meteorHitsRef.current = 0;
     livesRef.current = MAX_LIVES;
@@ -270,7 +278,6 @@ const useGameState = () => {
 
       // Start tunnel mode for Level 6
       if (newLevel.level === 6 && newLevel.gameMode === GameMode.TUNNEL) {
-        console.log('Starting Level 6 Tunnel Mode!');
         setTunnelTransition(true);
         playSound('speedUp'); // Use as transition sound
 
@@ -283,7 +290,6 @@ const useGameState = () => {
 
       // Stop tunnel mode if advancing to a level without tunnel mode
       if (newLevel.gameMode !== GameMode.TUNNEL && tunnelActive) {
-        console.log(`Exiting Tunnel Mode - Advancing to Level ${newLevel.level}!`);
         setTunnelTransition(true);
         playSound('speedUp');
 
@@ -326,7 +332,6 @@ const useGameState = () => {
       // Power-up collected when within range
       if (distanceX < 8 && distanceY < 8) {
         // Power-up collected!
-        console.log(`Power-up collected: ${powerUp.type} at position (${powerUpX}, ${powerUpY})`);
         playSound('powerUpCollect');
         setPowerUpsCollected(prev => prev + 1);
         removePowerUp(powerUp.id);
@@ -347,15 +352,15 @@ const useGameState = () => {
           }, config.duration);
         } else {
           // Other power-ups (including slow motion)
-          console.log(`Activating power-up: ${powerUp.type} for ${config.duration}ms`);
           activatePowerUp(powerUp.type, config.duration);
         }
       }
     });
     
-    // Gradual speed increase - REDUCED from every 500 to every 1000 points
-    if (scoreRef.current > 0 && scoreRef.current % 1000 === 0) {
-      setSpeed(prev => Math.min(prev + 0.05, 2.0)); // Reduced increment from 0.1 to 0.05, max from 3.0 to 2.0
+    // Gradual speed increase every 1000 score points (threshold-based so jumps can't skip it)
+    if (scoreRef.current >= nextSpeedIncreaseRef.current) {
+      nextSpeedIncreaseRef.current += 1000;
+      setSpeed(prev => Math.min(prev + 0.05, 2.0));
       playSound('speedUp');
     }
     
@@ -364,7 +369,6 @@ const useGameState = () => {
     
     // Debug log for slow motion
     if (slowMotion !== 1.0) {
-      console.log('Slow motion active! Multiplier:', slowMotion);
     }
     
     // Meteor storm event logic (only in standard mode, after 20s)
@@ -392,12 +396,7 @@ const useGameState = () => {
     const stormMultiplier = stormActiveRef.current ? 2.5 : 1;
 
     // BOSS spawn — at specific level milestones (5, 7, 10), each only once per run
-    const BOSS_BY_LEVEL: Record<number, { type: BossType; name: string; hp: number; size: number }> = {
-      5:  { type: 'crusher',     name: 'THE CRUSHER',  hp: 14, size: 22 },
-      7:  { type: 'mothership',  name: 'MOTHERSHIP',   hp: 16, size: 24 },
-      10: { type: 'laser_beast', name: 'LASER BEAST',  hp: 20, size: 22 },
-    };
-    if (!isTunnelMode && !bossRef.current && BOSS_BY_LEVEL[currentLevel] && !defeatedBossLevelsRef.current.has(currentLevel)) {
+    if (!isTunnelMode && !bossRef.current && BOSS_BY_LEVEL[currentLevel] && !defeatedBossTypesRef.current.has(BOSS_BY_LEVEL[currentLevel].type)) {
       const cfg = BOSS_BY_LEVEL[currentLevel];
       const newBoss: Boss = {
         id: Date.now(),
@@ -491,8 +490,9 @@ const useGameState = () => {
         const elapsed = nowL - l.startedAt;
         if (elapsed >= l.duration) continue;
         surviving.push(l);
-        // Damage only during firing phase (after 600ms charge)
-        if (elapsed >= 600 && !isInvulnerable && Math.abs(l.x - shipPosition) < 4) {
+        // Damage only during firing phase (after 600ms charge) — rate-limited to once per invuln window
+        if (elapsed >= 600 && !isInvulnerable && Math.abs(l.x - shipPosition) < 4 && nowL - lastLaserHitRef.current > 2100) {
+          lastLaserHitRef.current = nowL;
           handleShipHit();
         }
       }
@@ -537,7 +537,7 @@ const useGameState = () => {
         // Ship enters wormhole — check collision
         const wR = wh.size / 2;
         if (Math.abs(wh.x - shipPosition) < wR + 5 && Math.abs(wh.y - 85) < wR + 5) {
-          const dimType = dimensionDimensions[Math.floor(Math.random() * 3)];
+          const dimType = DIMENSION_TYPES[Math.floor(Math.random() * 3)];
           const dim: ActiveDimension = { type: dimType, endTime: currentTime + 12000 };
           setActiveDimension(dim);
           activeDimensionRef.current = dim;
@@ -597,7 +597,7 @@ const useGameState = () => {
       playSound('rumble');
       setMeteorHits(prev => prev + 1);
       setConsecutiveHits(prev => prev + 1);
-      setScoreMultiplier(prev => prev * 1.2);
+      setScoreMultiplier(prev => Math.min(prev * 1.2, 8));
       
       // Calculate score based on obstacle type (tunnel mode has inverted scoring)
       let scoreGained = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
@@ -641,7 +641,7 @@ const useGameState = () => {
           setBossDefeatedNotice(true);
           spawnPowerUp();
           playSound('levelUp');
-          defeatedBossLevelsRef.current.add(currentLevel);
+          defeatedBossTypesRef.current.add(b.type);
           // Clear any in-flight lasers
           setBossLasers([]);
           bossLasersRef.current = [];

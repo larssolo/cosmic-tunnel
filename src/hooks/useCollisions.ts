@@ -29,7 +29,6 @@ export function useCollisions() {
       const collisionThresholdY = isTunnelMode ? 6 : 10; // Tighter Y collision in tunnel
       
       if (xDiff <= collisionThresholdX && yDiff <= collisionThresholdY) {
-        console.log('Ship collision detected!', { obstacleX, shipPosition, xDiff, yDiff });
         return true;
       }
     }
@@ -69,7 +68,6 @@ export function useCollisions() {
         
         // Simple distance-based collision detection
         if (xDiff <= obstacleSizeHalf && yDiff <= obstacleSizeHalf) {
-          console.log('Projectile hit obstacle!');
           obstaclesHit = true;
           updatedObstacles[i] = { ...obstacle, isExploding: true };
           projectilesToRemove.push(j);

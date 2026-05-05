@@ -15,7 +15,6 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 6, minInterval) / spawnRateMultiplier;
     
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
-      console.log('Creating new obstacle with id:', now);
       const newObstacle: Obstacle = {
         id: now,
         x: Math.random() * 80 + 10, // 10% to 90% of screen width
