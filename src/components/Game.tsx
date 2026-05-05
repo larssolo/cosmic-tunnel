@@ -221,7 +221,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
 
       {/* Achievement notifications */}
       {achievementNotifications.map((achievement, index) => (
-        <div key={achievement.id} style={{ top: `${4 + index * 6}rem` }} className="absolute right-0">
+        <div key={achievement.id} style={{ top: `${1 + index * 7.5}rem` }} className="absolute right-0 z-50">
           <AchievementUnlockedNotification
             achievement={achievement}
             onDismiss={() => {}}
