@@ -11,8 +11,8 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     // Start with a longer interval and gradually decrease it based on score
     // Even longer base interval for slower obstacle generation at the beginning
     const baseInterval = 1500; // Starting with a longer delay (1.5 seconds)
-    const minInterval = 400;   // Minimum interval (fastest spawn rate)
-    const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 8, minInterval) / spawnRateMultiplier;
+    const minInterval = 220;   // Tight enough to keep meteors on-screen at max flight speed
+    const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 6, minInterval) / spawnRateMultiplier;
     
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
       console.log('Creating new obstacle with id:', now);
