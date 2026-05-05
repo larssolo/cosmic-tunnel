@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile, Boss, Wormhole, ActiveDimension, DimensionType } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -52,7 +52,9 @@ const useGameState = () => {
   const stormActiveRef = useRef(false);
   const stormWarningRef = useRef(false);
   const bossRef = useRef<Boss | null>(null);
-  const nextBossScoreRef = useRef<number>(3000);
+  const defeatedBossLevelsRef = useRef<Set<number>>(new Set());
+  const [bossLasers, setBossLasers] = useState<BossLaser[]>([]);
+  const bossLasersRef = useRef<BossLaser[]>([]);
   const wormholeRef = useRef<Wormhole | null>(null);
   const activeDimensionRef = useRef<ActiveDimension | null>(null);
   const nextWormholeScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
@@ -196,7 +198,9 @@ const useGameState = () => {
     setBoss(null);
     setBossDefeatedNotice(false);
     bossRef.current = null;
-    nextBossScoreRef.current = 3000;
+    defeatedBossLevelsRef.current = new Set();
+    setBossLasers([]);
+    bossLasersRef.current = [];
     setWormhole(null);
     setActiveDimension(null);
     wormholeRef.current = null;
@@ -387,23 +391,32 @@ const useGameState = () => {
 
     const stormMultiplier = stormActiveRef.current ? 2.5 : 1;
 
-    // BOSS spawn — every 3000 score points in standard mode, when none active
-    if (!isTunnelMode && !bossRef.current && scoreRef.current >= nextBossScoreRef.current) {
+    // BOSS spawn — at specific level milestones (5, 7, 10), each only once per run
+    const BOSS_BY_LEVEL: Record<number, { type: BossType; name: string; hp: number; size: number }> = {
+      5:  { type: 'crusher',     name: 'THE CRUSHER',  hp: 14, size: 22 },
+      7:  { type: 'mothership',  name: 'MOTHERSHIP',   hp: 16, size: 24 },
+      10: { type: 'laser_beast', name: 'LASER BEAST',  hp: 20, size: 22 },
+    };
+    if (!isTunnelMode && !bossRef.current && BOSS_BY_LEVEL[currentLevel] && !defeatedBossLevelsRef.current.has(currentLevel)) {
+      const cfg = BOSS_BY_LEVEL[currentLevel];
       const newBoss: Boss = {
         id: Date.now(),
+        type: cfg.type,
+        name: cfg.name,
         x: 50,
-        y: 15,
-        hp: 12,
-        maxHp: 12,
+        y: 18,
+        hp: cfg.hp,
+        maxHp: cfg.hp,
         direction: Math.random() > 0.5 ? 1 : -1,
-        size: 18,
+        size: cfg.size,
+        lastAttackAt: Date.now(),
       };
       setBoss(newBoss);
       bossRef.current = newBoss;
       playSound('speedUp');
     }
 
-    // BOSS movement + collisions
+    // BOSS movement + attacks + collisions
     if (bossRef.current) {
       const b = bossRef.current;
       if (!b.isExploding) {
@@ -412,20 +425,80 @@ const useGameState = () => {
         let nextDir = b.direction;
         if (nextX <= 15) { nextX = 15; nextDir = 1; }
         if (nextX >= 85) { nextX = 85; nextDir = -1; }
-        const nextY = Math.min(b.y + 0.02 * slowMotion, 35);
-        const updated: Boss = { ...b, x: nextX, y: nextY, direction: nextDir as 1 | -1 };
+        const nextY = Math.min(b.y + 0.005 * slowMotion, 28);
+
+        // Attack timing
+        const now = Date.now();
+        const attackInterval = b.type === 'crusher' ? 1800 : b.type === 'mothership' ? 1400 : 3200;
+        let nextAttackAt = b.lastAttackAt ?? now;
+        if (now - nextAttackAt >= attackInterval) {
+          nextAttackAt = now;
+          if (b.type === 'crusher') {
+            // Wave of 3 large boulders
+            const wave: Obstacle[] = [-12, 0, 12].map((dx, i) => ({
+              id: now + i,
+              x: Math.max(8, Math.min(92, nextX + dx)),
+              y: nextY + 5,
+              size: 13 + Math.random() * 3,
+            }));
+            setObstacles(prev => [...prev, ...wave]);
+            playSound('rumble');
+          } else if (b.type === 'mothership') {
+            // Spawn fast small minion
+            const minion: Obstacle = {
+              id: now,
+              x: nextX + (Math.random() - 0.5) * 10,
+              y: nextY + 3,
+              size: 5 + Math.random() * 2,
+            };
+            setObstacles(prev => [...prev, minion]);
+          } else {
+            // Laser beast: emit a charging+firing laser at ship's column
+            const laser: BossLaser = {
+              id: now,
+              x: shipPositionRef.current,
+              startedAt: now,
+              duration: 1500,
+            };
+            setBossLasers(prev => {
+              const next = [...prev, laser];
+              bossLasersRef.current = next;
+              return next;
+            });
+          }
+        }
+
+        const updated: Boss = { ...b, x: nextX, y: nextY, direction: nextDir as 1 | -1, lastAttackAt: nextAttackAt };
         setBoss(updated);
         bossRef.current = updated;
 
-        // Ship collision with boss
+        // Ship collision with boss body
         const shipY = 85;
         if (Math.abs(updated.x - shipPosition) < (updated.size / 2 + 6) && Math.abs(updated.y - shipY) < 12 && !isInvulnerable) {
           handleShipHit();
-          // Knock boss back up
           const bumped: Boss = { ...updated, y: 15 };
           setBoss(bumped);
           bossRef.current = bumped;
         }
+      }
+    }
+
+    // Boss laser cleanup + ship-vs-laser collision
+    if (bossLasersRef.current.length > 0) {
+      const nowL = Date.now();
+      const surviving: BossLaser[] = [];
+      for (const l of bossLasersRef.current) {
+        const elapsed = nowL - l.startedAt;
+        if (elapsed >= l.duration) continue;
+        surviving.push(l);
+        // Damage only during firing phase (after 600ms charge)
+        if (elapsed >= 600 && !isInvulnerable && Math.abs(l.x - shipPosition) < 4) {
+          handleShipHit();
+        }
+      }
+      if (surviving.length !== bossLasersRef.current.length) {
+        bossLasersRef.current = surviving;
+        setBossLasers(surviving);
       }
     }
 
@@ -564,11 +637,14 @@ const useGameState = () => {
           const exploded: Boss = { ...b, hp: 0, isExploding: true };
           setBoss(exploded);
           bossRef.current = exploded;
-          setScore(prev => prev + 2000);
+          setScore(prev => prev + 3000);
           setBossDefeatedNotice(true);
           spawnPowerUp();
           playSound('levelUp');
-          nextBossScoreRef.current += 3000;
+          defeatedBossLevelsRef.current.add(currentLevel);
+          // Clear any in-flight lasers
+          setBossLasers([]);
+          bossLasersRef.current = [];
           setTimeout(() => {
             setBoss(null);
             bossRef.current = null;
@@ -637,6 +713,7 @@ const useGameState = () => {
     meteorStormWarning,
     meteorStormActive,
     boss,
+    bossLasers,
     bossDefeatedNotice,
     wormhole,
     activeDimension,

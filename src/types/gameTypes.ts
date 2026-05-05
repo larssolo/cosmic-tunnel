@@ -16,8 +16,12 @@ export interface Projectile {
   y: number;
 }
 
+export type BossType = 'crusher' | 'mothership' | 'laser_beast';
+
 export interface Boss {
   id: number;
+  type: BossType;
+  name: string;
   x: number;
   y: number;
   hp: number;
@@ -25,6 +29,14 @@ export interface Boss {
   direction: 1 | -1;
   size: number;
   isExploding?: boolean;
+  lastAttackAt?: number;
+}
+
+export interface BossLaser {
+  id: number;
+  x: number;       // column
+  startedAt: number;
+  duration: number; // ms
 }
 
 export type DimensionType = 'neon_city' | 'lava_zone' | 'ice_field';

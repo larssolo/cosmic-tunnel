@@ -52,6 +52,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     meteorStormWarning,
     meteorStormActive,
     boss,
+    bossLasers,
     bossDefeatedNotice,
     wormhole,
     activeDimension,
@@ -186,7 +187,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
       <WormholePortal wormhole={wormhole} />
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
-      <Boss boss={boss} />
+      <Boss boss={boss} lasers={bossLasers} />
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
       
       {/* Game UI */}
