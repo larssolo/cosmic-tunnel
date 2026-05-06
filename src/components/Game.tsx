@@ -19,6 +19,7 @@ import { LevelUpNotification } from "./LevelUpNotification";
 import { AchievementUnlockedNotification } from "./AchievementUnlockedNotification";
 import { TunnelTransition } from "./TunnelTransition";
 import { CyberOverlay } from "./CyberOverlay";
+import VoidEntity from "./VoidEntity";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
 
@@ -62,6 +63,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     bonusRoundEndTime,
     wormhole,
     activeDimension,
+    voidEntity,
     resetGame,
     moveShip,
     shootProjectile,
@@ -190,6 +192,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
         </>
       )}
 
+      <VoidEntity voidEntity={voidEntity} />
       <WormholePortal wormhole={wormhole} />
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />

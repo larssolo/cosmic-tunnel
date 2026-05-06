@@ -81,6 +81,18 @@ export interface ActiveDimension {
   endTime: number; // timestamp when dimension expires — no per-frame setState
 }
 
+export interface VoidCore {
+  id: number;
+  x: number; // % from left
+  destroyed: boolean;
+}
+
+export interface VoidEntity {
+  startedAt: number;   // timestamp when void began rising
+  duration: number;    // ms until game over (60s)
+  cores: VoidCore[];
+}
+
 export interface GameState {
   score: number;
   gameOver: boolean;
