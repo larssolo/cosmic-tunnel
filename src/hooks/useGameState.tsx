@@ -365,9 +365,7 @@ const useGameState = () => {
           activatePowerUp(powerUp.type, config.duration);
           setIsInvulnerable(true);
           setTimeout(() => {
-            if (!isPowerUpActive(PowerUpType.SHIELD)) {
-              setIsInvulnerable(false);
-            }
+            setIsInvulnerable(false);
           }, config.duration);
         } else {
           // Other power-ups (including slow motion)
