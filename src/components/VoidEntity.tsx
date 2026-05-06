@@ -121,10 +121,10 @@ const VoidEntityComponent: React.FC<Props> = ({ voidEntity }) => {
         );
       })}
 
-      {/* Top HUD — countdown + message */}
+      {/* Top HUD — countdown + message (positioned below the score bar) */}
       <div
         className="absolute left-0 right-0 pointer-events-none"
-        style={{ top: "8px", zIndex: 60, textAlign: "center", fontFamily: "'Press Start 2P', monospace" }}
+        style={{ top: "52px", zIndex: 60, textAlign: "center", fontFamily: "'Press Start 2P', monospace" }}
       >
         <p
           style={{
