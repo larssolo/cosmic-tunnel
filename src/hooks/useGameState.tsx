@@ -924,7 +924,9 @@ const useGameState = () => {
     powerUps,
     removePowerUp,
     activatePowerUp,
-    currentLevel
+    currentLevel,
+    tunnelActive,
+    countdownTime
   ]);
 
   useEffect(() => {
