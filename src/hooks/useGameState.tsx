@@ -520,6 +520,12 @@ const useGameState = () => {
       }
     }
 
+    // Move projectiles ONCE at the start of this frame; all subsequent collision
+    // checks share `liveProjectiles` so a projectile can only ever be consumed once.
+    const movedProjectiles = updateProjectiles(projectiles);
+    let liveProjectiles = movedProjectiles;
+    const consumedProjectileIds = new Set<number>();
+
     // UFO INVADERS — spawn, move (zigzag), shoot, collide
     if (!isTunnelMode && !bossRef.current && ufosRef.current.length === 0 && currentTime >= nextUfoTimeRef.current) {
       const fromLeft = Math.random() > 0.5;
@@ -589,20 +595,19 @@ const useGameState = () => {
     }
 
     // Projectile-vs-UFO collisions
-    if (ufosRef.current.length > 0 && projectiles.length > 0) {
+    if (ufosRef.current.length > 0 && liveProjectiles.length > 0) {
       const survivingUfos: Ufo[] = [];
-      const survivingProjectileIds = new Set(projectiles.map((p) => p.id));
       let hitCount = 0;
       for (const u of ufosRef.current) {
         const uy = u.baseY + Math.sin(u.phase) * 6;
         let killed = false;
-        for (const p of projectiles) {
-          if (!survivingProjectileIds.has(p.id)) continue;
+        for (const p of liveProjectiles) {
+          if (consumedProjectileIds.has(p.id)) continue;
           const xDiff = Math.abs(u.x - p.x);
           const yDiff = Math.abs(uy - (100 - p.y));
           if (xDiff <= u.size / 2 && yDiff <= u.size / 4 + 3) {
             killed = true;
-            survivingProjectileIds.delete(p.id);
+            consumedProjectileIds.add(p.id);
             hitCount++;
             break;
           }
@@ -614,7 +619,6 @@ const useGameState = () => {
         setScore((prev) => prev + 500 * hitCount);
         ufosRef.current = survivingUfos;
         setUfos(survivingUfos);
-        setProjectiles((prev) => prev.filter((p) => survivingProjectileIds.has(p.id)));
         if (survivingUfos.length === 0) {
           nextUfoTimeRef.current = currentTime + 8000 + Math.random() * 10000;
         }
@@ -652,15 +656,15 @@ const useGameState = () => {
       if (currentTime - s.spawnedAt > 12000) {
         setBonusStar(null);
         bonusStarRef.current = null;
-      } else if (projectiles.length > 0) {
+      } else if (liveProjectiles.length > 0) {
         let hits = 0;
-        const survivingIds = new Set(projectiles.map((p) => p.id));
-        for (const p of projectiles) {
+        for (const p of liveProjectiles) {
+          if (consumedProjectileIds.has(p.id)) continue;
           const xDiff = Math.abs(s.x - p.x);
           const yDiff = Math.abs(s.y - (100 - p.y));
           if (xDiff <= 3 && yDiff <= 3) {
             hits++;
-            survivingIds.delete(p.id);
+            consumedProjectileIds.add(p.id);
           }
         }
         if (hits > 0) {
@@ -682,7 +686,6 @@ const useGameState = () => {
             setBonusStar(damaged);
             bonusStarRef.current = damaged;
           }
-          setProjectiles((prev) => prev.filter((p) => survivingIds.has(p.id)));
         }
       }
     }
@@ -777,56 +780,56 @@ const useGameState = () => {
       });
     }
     
-    const updatedProjectiles = updateProjectiles(projectiles);
-    setProjectiles(updatedProjectiles);
-    
-    const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } = 
-      checkProjectileCollisions(obstacles, updatedProjectiles);
-    
+    // Filter to only projectiles not already consumed by UFO/bonus star this frame
+    const projectilesForMeteorCheck = liveProjectiles.filter((p) => !consumedProjectileIds.has(p.id));
+    const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } =
+      checkProjectileCollisions(obstacles, projectilesForMeteorCheck);
+
     if (obstaclesHit) {
       playSound('explosion');
       playSound('rumble');
       setMeteorHits(prev => prev + 1);
       setConsecutiveHits(prev => prev + 1);
       setScoreMultiplier(prev => Math.min(prev * 1.2, 8));
-      
+
       // Calculate score based on obstacle type (tunnel mode has inverted scoring)
       let scoreGained = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
       if (bonusRoundEndTimeRef.current) {
         scoreGained = Math.round(500 * scoreBoost);
       } else if (isTunnelMode && tunnelActive) {
-        // Find the destroyed obstacle and use its point value
         const destroyedObstacles = collidedObstacles.filter(o => o.isExploding && !obstacles.find(orig => orig.id === o.id && orig.isExploding));
         if (destroyedObstacles.length > 0 && destroyedObstacles[0].points) {
           scoreGained = Math.round(destroyedObstacles[0].points * scoreMultiplierRef.current * scoreBoost);
         }
       }
-      
+
       setScore(prev => prev + scoreGained);
       setObstacles(collidedObstacles);
-      setProjectiles(newProjectilesList);
+      // Mark projectiles consumed by meteors
+      const survivingIdsAfterMeteor = new Set(newProjectilesList.map((p) => p.id));
+      for (const p of projectilesForMeteorCheck) {
+        if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
+      }
     }
 
     // Projectile-vs-Boss collision
     if (bossRef.current && !bossRef.current.isExploding) {
       const b = bossRef.current;
       const hitRadius = b.size / 2;
-      const survivingProjectiles: typeof updatedProjectiles = [];
       let hitsThisFrame = 0;
-      for (const p of updatedProjectiles) {
+      for (const p of liveProjectiles) {
+        if (consumedProjectileIds.has(p.id)) continue;
         const xDiff = Math.abs(b.x - p.x);
         const yDiff = Math.abs(b.y - (100 - p.y));
         if (xDiff <= hitRadius && yDiff <= hitRadius) {
           hitsThisFrame++;
-        } else {
-          survivingProjectiles.push(p);
+          consumedProjectileIds.add(p.id);
         }
       }
       if (hitsThisFrame > 0) {
         playSound('explosion');
         const newHp = b.hp - hitsThisFrame;
         if (newHp <= 0) {
-          // Defeated!
           const exploded: Boss = { ...b, hp: 0, isExploding: true };
           setBoss(exploded);
           bossRef.current = exploded;
@@ -835,7 +838,6 @@ const useGameState = () => {
           spawnPowerUp();
           playSound('levelUp');
           defeatedBossTypesRef.current.add(b.type);
-          // Clear any in-flight lasers
           setBossLasers([]);
           bossLasersRef.current = [];
           setTimeout(() => {
@@ -848,8 +850,14 @@ const useGameState = () => {
           setBoss(damaged);
           bossRef.current = damaged;
         }
-        setProjectiles(survivingProjectiles);
       }
+    }
+
+    // Apply all projectile changes for this frame in ONE setState
+    if (consumedProjectileIds.size > 0) {
+      setProjectiles(liveProjectiles.filter((p) => !consumedProjectileIds.has(p.id)));
+    } else {
+      setProjectiles(liveProjectiles);
     }
 
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOverRef.current, isTunnelMode && tunnelActive);
