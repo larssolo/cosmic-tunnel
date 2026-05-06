@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType, Ufo, UfoBullet } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType, Ufo, UfoBullet, BonusStar } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -68,6 +68,10 @@ const useGameState = () => {
   const ufoBulletsRef = useRef<UfoBullet[]>([]);
   const nextUfoTimeRef = useRef<number>(Date.now() + 12000 + Math.random() * 8000);
   const lastUfoHitRef = useRef<number>(0);
+  const [bonusStar, setBonusStar] = useState<BonusStar | null>(null);
+  const [bonusRoundEndTime, setBonusRoundEndTime] = useState<number | null>(null);
+  const bonusStarRef = useRef<BonusStar | null>(null);
+  const bonusRoundEndTimeRef = useRef<number | null>(null);
   const wormholeRef = useRef<Wormhole | null>(null);
   const activeDimensionRef = useRef<ActiveDimension | null>(null);
   const nextWormholeScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
@@ -220,6 +224,10 @@ const useGameState = () => {
     ufoBulletsRef.current = [];
     nextUfoTimeRef.current = Date.now() + 12000 + Math.random() * 8000;
     lastUfoHitRef.current = 0;
+    setBonusStar(null);
+    setBonusRoundEndTime(null);
+    bonusStarRef.current = null;
+    bonusRoundEndTimeRef.current = null;
     setWormhole(null);
     setActiveDimension(null);
     wormholeRef.current = null;
@@ -615,6 +623,74 @@ const useGameState = () => {
       }
     }
 
+    // BONUS STAR — rare spawn (~0.05% chance per frame ≈ once every ~30s)
+    if (
+      !isTunnelMode &&
+      !bossRef.current &&
+      !bonusStarRef.current &&
+      !bonusRoundEndTimeRef.current &&
+      timeSinceGameStart > 15 &&
+      Math.random() < 0.0005
+    ) {
+      const star: BonusStar = {
+        id: currentTime,
+        x: 20 + Math.random() * 60,
+        y: 25 + Math.random() * 35,
+        hp: 15,
+        maxHp: 15,
+        spawnedAt: currentTime,
+      };
+      setBonusStar(star);
+      bonusStarRef.current = star;
+    }
+
+    // Bonus star: auto-despawn after 12s, or take projectile damage
+    if (bonusStarRef.current) {
+      const s = bonusStarRef.current;
+      if (currentTime - s.spawnedAt > 12000) {
+        setBonusStar(null);
+        bonusStarRef.current = null;
+      } else if (projectiles.length > 0) {
+        let hits = 0;
+        const survivingIds = new Set(projectiles.map((p) => p.id));
+        for (const p of projectiles) {
+          const xDiff = Math.abs(s.x - p.x);
+          const yDiff = Math.abs(s.y - (100 - p.y));
+          if (xDiff <= 3 && yDiff <= 3) {
+            hits++;
+            survivingIds.delete(p.id);
+          }
+        }
+        if (hits > 0) {
+          playSound('shoot');
+          const newHp = s.hp - hits;
+          if (newHp <= 0) {
+            // BONUS ROUND TRIGGERED!
+            playSound('levelUp');
+            playSound('powerUpCollect');
+            setBonusStar(null);
+            bonusStarRef.current = null;
+            const endAt = currentTime + 15000;
+            setBonusRoundEndTime(endAt);
+            bonusRoundEndTimeRef.current = endAt;
+            // Clear active obstacles so the round starts clean with coins
+            setObstacles([]);
+          } else {
+            const damaged: BonusStar = { ...s, hp: newHp };
+            setBonusStar(damaged);
+            bonusStarRef.current = damaged;
+          }
+          setProjectiles((prev) => prev.filter((p) => survivingIds.has(p.id)));
+        }
+      }
+    }
+
+    // Bonus round timer — auto-end
+    if (bonusRoundEndTimeRef.current && currentTime >= bonusRoundEndTimeRef.current) {
+      setBonusRoundEndTime(null);
+      bonusRoundEndTimeRef.current = null;
+    }
+
     // Ice field: lerp ship toward target
     if (activeDimensionRef.current?.type === 'ice_field') {
       const cur = shipPositionRef.current;
@@ -714,7 +790,9 @@ const useGameState = () => {
       
       // Calculate score based on obstacle type (tunnel mode has inverted scoring)
       let scoreGained = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
-      if (isTunnelMode && tunnelActive) {
+      if (bonusRoundEndTimeRef.current) {
+        scoreGained = Math.round(500 * scoreBoost);
+      } else if (isTunnelMode && tunnelActive) {
         // Find the destroyed obstacle and use its point value
         const destroyedObstacles = collidedObstacles.filter(o => o.isExploding && !obstacles.find(orig => orig.id === o.id && orig.isExploding));
         if (destroyedObstacles.length > 0 && destroyedObstacles[0].points) {
@@ -774,9 +852,18 @@ const useGameState = () => {
 
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOverRef.current, isTunnelMode && tunnelActive);
     if (shipCollided && !isInvulnerable) {
-      setConsecutiveHits(0);
-      lastHitTimeRef.current = Date.now();
-      handleShipHit();
+      if (bonusRoundEndTimeRef.current) {
+        // During bonus round, touching a coin = collect (+500), no damage
+        playSound('powerUpCollect');
+        setScore((prev) => prev + 500);
+        // Pop the touched obstacle by clearing all near-ship obstacles
+        const shipY = 85;
+        setObstacles((prev) => prev.filter((o) => Math.abs(o.x - shipPosition) > 8 || Math.abs(o.y - shipY) > 8));
+      } else {
+        setConsecutiveHits(0);
+        lastHitTimeRef.current = Date.now();
+        handleShipHit();
+      }
     }
   }, [
     createObstacle, 
@@ -830,6 +917,8 @@ const useGameState = () => {
     bossDefeatedNotice,
     ufos,
     ufoBullets,
+    bonusStar,
+    bonusRoundEndTime,
     wormhole,
     activeDimension,
     startGame,

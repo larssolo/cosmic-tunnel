@@ -8,6 +8,7 @@ import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
 import Boss from "./Boss";
 import Ufos from "./Ufos";
+import BonusStar from "./BonusStar";
 import WormholePortal from "./WormholePortal";
 import DimensionOverlay from "./DimensionOverlay";
 import useGameState from "@/hooks/useGameState";
@@ -57,6 +58,8 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     bossDefeatedNotice,
     ufos,
     ufoBullets,
+    bonusStar,
+    bonusRoundEndTime,
     wormhole,
     activeDimension,
     resetGame,
@@ -178,12 +181,12 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
       ) : activeDimension ? (
         <>
           <DimensionOverlay dimension={activeDimension} />
-          <Obstacles obstacles={obstacles} dimension={activeDimension.type} />
+          <Obstacles obstacles={obstacles} dimension={activeDimension.type} bonusRound={!!bonusRoundEndTime} />
         </>
       ) : (
         <>
           <Tunnel />
-          <Obstacles obstacles={obstacles} />
+          <Obstacles obstacles={obstacles} bonusRound={!!bonusRoundEndTime} />
         </>
       )}
 
@@ -192,6 +195,28 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
       <Projectiles projectiles={projectiles} />
       <Boss boss={boss} lasers={bossLasers} />
       <Ufos ufos={ufos} bullets={ufoBullets} />
+      <BonusStar star={bonusStar} />
+      {bonusRoundEndTime && (
+        <div
+          className="absolute top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+          style={{ fontFamily: "'Press Start 2P', monospace", textAlign: "center" }}
+        >
+          <p
+            style={{
+              color: "#ffff00",
+              fontSize: "clamp(14px, 2.5vw, 24px)",
+              textShadow: "0 0 16px #ffff00, 0 0 32px #ffaa00, 3px 3px 0 #000",
+              animation: "bonusRoundPulse 0.5s ease-in-out infinite alternate",
+            }}
+          >
+            ★ BONUS ROUND ★
+          </p>
+          <p style={{ color: "#ffaa00", fontSize: "clamp(8px, 1.4vw, 12px)", marginTop: "0.4rem", textShadow: "0 0 8px #ffaa00" }}>
+            COLLECT THE COINS!
+          </p>
+          <style>{`@keyframes bonusRoundPulse { from { transform: scale(0.95); } to { transform: scale(1.08); } }`}</style>
+        </div>
+      )}
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
       
       {/* Game UI */}

@@ -5,10 +5,47 @@ import { Obstacle, DimensionType } from "@/types/gameTypes";
 interface ObstaclesProps {
   obstacles: Obstacle[];
   dimension?: DimensionType | null;
+  bonusRound?: boolean;
 }
 
 // Memoize individual obstacles to prevent unnecessary re-renders
-const ObstacleItem = memo(({ obstacle, dimension }: { obstacle: Obstacle; dimension?: DimensionType | null }) => {
+const ObstacleItem = memo(({ obstacle, dimension, bonusRound }: { obstacle: Obstacle; dimension?: DimensionType | null; bonusRound?: boolean }) => {
+  if (bonusRound && !obstacle.isExploding) {
+    return (
+      <div
+        className="absolute"
+        style={{
+          width: `${obstacle.size}%`,
+          height: `${obstacle.size}%`,
+          aspectRatio: "1 / 1",
+          left: `${obstacle.x}%`,
+          top: `${obstacle.y}%`,
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-full animate-pulse"
+          style={{
+            background: "radial-gradient(circle at 35% 35%, #ffffaa 0%, #ffdd00 40%, #aa6600 100%)",
+            boxShadow: "0 0 14px #ffdd00, 0 0 28px #ffaa00, inset 0 0 6px #ffffff",
+            border: "1px solid #ffaa00",
+          }}
+        />
+        <div
+          className="absolute inset-[28%] flex items-center justify-center"
+          style={{
+            color: "#aa6600",
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "60%",
+            textShadow: "0 0 4px #ffffaa",
+          }}
+        >
+          $
+        </div>
+      </div>
+    );
+  }
+
   // Dimension-specific styles
   const getDimStyle = () => {
     if (dimension === 'neon_city') {
@@ -171,11 +208,11 @@ const ObstacleItem = memo(({ obstacle, dimension }: { obstacle: Obstacle; dimens
 });
 
 // Memoize the entire Obstacles component
-const Obstacles: React.FC<ObstaclesProps> = memo(({ obstacles, dimension }) => {
+const Obstacles: React.FC<ObstaclesProps> = memo(({ obstacles, dimension, bonusRound }) => {
   return (
     <>
       {obstacles.map((obstacle) => (
-        <ObstacleItem key={obstacle.id} obstacle={obstacle} dimension={dimension} />
+        <ObstacleItem key={obstacle.id} obstacle={obstacle} dimension={dimension} bonusRound={bonusRound} />
       ))}
     </>
   );

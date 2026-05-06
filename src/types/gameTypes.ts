@@ -57,6 +57,15 @@ export interface UfoBullet {
   vy: number;        // % per frame, downward
 }
 
+export interface BonusStar {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  spawnedAt: number;
+}
+
 export type DimensionType = 'neon_city' | 'lava_zone' | 'ice_field';
 
 export interface Wormhole {
