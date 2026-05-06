@@ -802,33 +802,42 @@ const useGameState = () => {
     
     // Filter to only projectiles not already consumed by UFO/bonus star this frame
     const projectilesForMeteorCheck = liveProjectiles.filter((p) => !consumedProjectileIds.has(p.id));
-    const { obstaclesHit, updatedObstacles: collidedObstacles, newProjectilesList } =
+    const { hitCount: meteorHitCount, updatedObstacles: collidedObstacles, destroyedObstacles, newProjectilesList } =
       checkProjectileCollisions(obstacles, projectilesForMeteorCheck);
 
-    if (obstaclesHit) {
+    if (meteorHitCount > 0) {
       playSound('explosion');
       playSound('rumble');
-      setMeteorHits(prev => prev + 1);
-      setConsecutiveHits(prev => prev + 1);
-      setScoreMultiplier(prev => Math.min(prev * 1.2, 8));
+      setMeteorHits(prev => prev + meteorHitCount);
+      setConsecutiveHits(prev => prev + meteorHitCount);
+      setScoreMultiplier(prev => Math.min(prev * Math.pow(1.2, meteorHitCount), 8));
 
-      // Calculate score based on obstacle type (tunnel mode has inverted scoring)
-      let scoreGained = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
+      // Per-hit base score
+      let scorePerHit = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
       if (bonusRoundEndTimeRef.current) {
-        scoreGained = Math.round(500 * scoreBoost);
+        scorePerHit = Math.round(500 * scoreBoost);
       } else if (isTunnelMode && tunnelActive) {
-        const destroyedObstacles = collidedObstacles.filter(o => o.isExploding && !obstacles.find(orig => orig.id === o.id && orig.isExploding));
-        if (destroyedObstacles.length > 0 && destroyedObstacles[0].points) {
-          scoreGained = Math.round(destroyedObstacles[0].points * scoreMultiplierRef.current * scoreBoost);
+        // Tunnel mode obstacles can have variable point values per obstacle
+        const totalTunnelScore = destroyedObstacles.reduce((sum, o) => {
+          const pts = o.points ?? 50;
+          return sum + Math.round(pts * scoreMultiplierRef.current * scoreBoost);
+        }, 0);
+        setScore(prev => prev + totalTunnelScore);
+        setObstacles(collidedObstacles);
+        const survivingIdsAfterMeteor = new Set(newProjectilesList.map((p) => p.id));
+        for (const p of projectilesForMeteorCheck) {
+          if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
         }
+        scorePerHit = 0; // already added
       }
 
-      setScore(prev => prev + scoreGained);
-      setObstacles(collidedObstacles);
-      // Mark projectiles consumed by meteors
-      const survivingIdsAfterMeteor = new Set(newProjectilesList.map((p) => p.id));
-      for (const p of projectilesForMeteorCheck) {
-        if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
+      if (scorePerHit > 0) {
+        setScore(prev => prev + scorePerHit * meteorHitCount);
+        setObstacles(collidedObstacles);
+        const survivingIdsAfterMeteor = new Set(newProjectilesList.map((p) => p.id));
+        for (const p of projectilesForMeteorCheck) {
+          if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
+        }
       }
     }
 

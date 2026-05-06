@@ -40,51 +40,52 @@ export function useCollisions() {
     obstacles: Obstacle[],
     projectiles: Projectile[]
   ) => {
-    let obstaclesHit = false;
+    let hitCount = 0;
     const updatedObstacles = [...obstacles];
     const newProjectiles = [...projectiles];
-    let projectilesToRemove: number[] = [];
-    
+    const projectilesToRemove: number[] = [];
+    const destroyedObstacles: Obstacle[] = [];
+
     for (let i = 0; i < updatedObstacles.length; i++) {
-      if (updatedObstacles[i].isExploding) continue; // Skip already exploding obstacles
-      
+      if (updatedObstacles[i].isExploding) continue;
+
       const obstacle = updatedObstacles[i];
       const obstacleSizeHalf = obstacle.size / 2;
-      
-      // For tunnel mode obstacles, use angle to calculate actual position
+
       let obstacleX = obstacle.x;
       if (obstacle.angle !== undefined) {
         const tunnelRadius = 35;
         const centerX = 50;
         obstacleX = centerX + Math.cos(obstacle.angle) * tunnelRadius;
       }
-      
+
       for (let j = 0; j < newProjectiles.length; j++) {
+        if (projectilesToRemove.includes(j)) continue;
         const projectile = newProjectiles[j];
-        
-        // Calculate distance between projectile and obstacle
+
         const xDiff = Math.abs(obstacleX - projectile.x);
-        const yDiff = Math.abs(obstacle.y - (100 - projectile.y)); // Convert projectile y to same coordinate system
-        
-        // Simple distance-based collision detection
+        const yDiff = Math.abs(obstacle.y - (100 - projectile.y));
+
         if (xDiff <= obstacleSizeHalf && yDiff <= obstacleSizeHalf) {
-          obstaclesHit = true;
+          hitCount++;
           updatedObstacles[i] = { ...obstacle, isExploding: true };
+          destroyedObstacles.push(updatedObstacles[i]);
           projectilesToRemove.push(j);
           break;
         }
       }
     }
-    
-    // Remove projectiles that hit obstacles
-    const newProjectilesList = projectilesToRemove.length > 0 
+
+    const newProjectilesList = projectilesToRemove.length > 0
       ? newProjectiles.filter((_, index) => !projectilesToRemove.includes(index))
       : newProjectiles;
-    
+
     return {
-      obstaclesHit,
+      hitCount,
+      obstaclesHit: hitCount > 0,
       updatedObstacles,
-      newProjectilesList
+      destroyedObstacles,
+      newProjectilesList,
     };
   }, []);
 
