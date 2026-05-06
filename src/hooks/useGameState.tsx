@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType, Ufo, UfoBullet } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -62,6 +62,12 @@ const useGameState = () => {
   const [bossLasers, setBossLasers] = useState<BossLaser[]>([]);
   const bossLasersRef = useRef<BossLaser[]>([]);
   const lastLaserHitRef = useRef<number>(0);
+  const [ufos, setUfos] = useState<Ufo[]>([]);
+  const [ufoBullets, setUfoBullets] = useState<UfoBullet[]>([]);
+  const ufosRef = useRef<Ufo[]>([]);
+  const ufoBulletsRef = useRef<UfoBullet[]>([]);
+  const nextUfoTimeRef = useRef<number>(Date.now() + 12000 + Math.random() * 8000);
+  const lastUfoHitRef = useRef<number>(0);
   const wormholeRef = useRef<Wormhole | null>(null);
   const activeDimensionRef = useRef<ActiveDimension | null>(null);
   const nextWormholeScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
@@ -208,6 +214,12 @@ const useGameState = () => {
     defeatedBossTypesRef.current = new Set();
     setBossLasers([]);
     bossLasersRef.current = [];
+    setUfos([]);
+    setUfoBullets([]);
+    ufosRef.current = [];
+    ufoBulletsRef.current = [];
+    nextUfoTimeRef.current = Date.now() + 12000 + Math.random() * 8000;
+    lastUfoHitRef.current = 0;
     setWormhole(null);
     setActiveDimension(null);
     wormholeRef.current = null;
@@ -502,6 +514,107 @@ const useGameState = () => {
       }
     }
 
+    // UFO INVADERS — spawn, move (zigzag), shoot, collide
+    if (!isTunnelMode && !bossRef.current && ufosRef.current.length === 0 && currentTime >= nextUfoTimeRef.current) {
+      const fromLeft = Math.random() > 0.5;
+      const newUfo: Ufo = {
+        id: currentTime,
+        x: fromLeft ? -8 : 108,
+        baseY: 18 + Math.random() * 25,
+        size: 9,
+        vx: (fromLeft ? 1 : -1) * (0.35 + Math.random() * 0.2),
+        phase: Math.random() * Math.PI * 2,
+        spawnedAt: currentTime,
+      };
+      setUfos([newUfo]);
+      ufosRef.current = [newUfo];
+      nextUfoTimeRef.current = currentTime + 999999; // re-armed when UFO leaves/dies
+    }
+
+    if (ufosRef.current.length > 0) {
+      const updatedUfos: Ufo[] = [];
+      for (const u of ufosRef.current) {
+        if (u.isExploding) continue; // drop after explosion frame
+        const nextX = u.x + u.vx * slowMotion;
+        const nextPhase = u.phase + 0.08 * slowMotion;
+        // Chance to fire — every 60-100 frames
+        if (Math.random() < 0.012 && currentTime - u.spawnedAt > 400) {
+          const ufoY = u.baseY + Math.sin(nextPhase) * 6;
+          const bullet: UfoBullet = {
+            id: currentTime + Math.floor(Math.random() * 1000),
+            x: nextX,
+            y: ufoY + 4,
+            vy: 0.9,
+          };
+          ufoBulletsRef.current = [...ufoBulletsRef.current, bullet];
+          setUfoBullets(ufoBulletsRef.current);
+        }
+        // Off-screen exit
+        if (nextX < -12 || nextX > 112) {
+          continue;
+        }
+        updatedUfos.push({ ...u, x: nextX, phase: nextPhase });
+      }
+      if (updatedUfos.length !== ufosRef.current.length) {
+        // UFO left screen → schedule next
+        if (updatedUfos.length === 0) {
+          nextUfoTimeRef.current = currentTime + 8000 + Math.random() * 10000;
+        }
+      }
+      ufosRef.current = updatedUfos;
+      setUfos(updatedUfos);
+    }
+
+    // UFO bullets: move, hit ship, cleanup
+    if (ufoBulletsRef.current.length > 0) {
+      const survivingBullets: UfoBullet[] = [];
+      const shipY = 85;
+      for (const b of ufoBulletsRef.current) {
+        const ny = b.y + b.vy * slowMotion;
+        if (ny > 100) continue;
+        if (!isInvulnerable && Math.abs(b.x - shipPosition) < 4 && Math.abs(ny - shipY) < 5) {
+          handleShipHit();
+          continue; // bullet absorbed
+        }
+        survivingBullets.push({ ...b, y: ny });
+      }
+      ufoBulletsRef.current = survivingBullets;
+      setUfoBullets(survivingBullets);
+    }
+
+    // Projectile-vs-UFO collisions
+    if (ufosRef.current.length > 0 && projectiles.length > 0) {
+      const survivingUfos: Ufo[] = [];
+      const survivingProjectileIds = new Set(projectiles.map((p) => p.id));
+      let hitCount = 0;
+      for (const u of ufosRef.current) {
+        const uy = u.baseY + Math.sin(u.phase) * 6;
+        let killed = false;
+        for (const p of projectiles) {
+          if (!survivingProjectileIds.has(p.id)) continue;
+          const xDiff = Math.abs(u.x - p.x);
+          const yDiff = Math.abs(uy - (100 - p.y));
+          if (xDiff <= u.size / 2 && yDiff <= u.size / 4 + 3) {
+            killed = true;
+            survivingProjectileIds.delete(p.id);
+            hitCount++;
+            break;
+          }
+        }
+        if (!killed) survivingUfos.push(u);
+      }
+      if (hitCount > 0) {
+        playSound('explosion');
+        setScore((prev) => prev + 500 * hitCount);
+        ufosRef.current = survivingUfos;
+        setUfos(survivingUfos);
+        setProjectiles((prev) => prev.filter((p) => survivingProjectileIds.has(p.id)));
+        if (survivingUfos.length === 0) {
+          nextUfoTimeRef.current = currentTime + 8000 + Math.random() * 10000;
+        }
+      }
+    }
+
     // Ice field: lerp ship toward target
     if (activeDimensionRef.current?.type === 'ice_field') {
       const cur = shipPositionRef.current;
@@ -715,6 +828,8 @@ const useGameState = () => {
     boss,
     bossLasers,
     bossDefeatedNotice,
+    ufos,
+    ufoBullets,
     wormhole,
     activeDimension,
     startGame,

@@ -39,6 +39,24 @@ export interface BossLaser {
   duration: number; // ms
 }
 
+export interface Ufo {
+  id: number;
+  x: number;
+  baseY: number;
+  size: number;
+  vx: number;        // horizontal velocity (% per frame)
+  phase: number;     // sine phase for zigzag y
+  spawnedAt: number;
+  isExploding?: boolean;
+}
+
+export interface UfoBullet {
+  id: number;
+  x: number;
+  y: number;
+  vy: number;        // % per frame, downward
+}
+
 export type DimensionType = 'neon_city' | 'lava_zone' | 'ice_field';
 
 export interface Wormhole {

@@ -7,6 +7,7 @@ import Spaceship from "./Spaceship";
 import Projectiles from "./Projectiles";
 import GameUI from "./GameUI";
 import Boss from "./Boss";
+import Ufos from "./Ufos";
 import WormholePortal from "./WormholePortal";
 import DimensionOverlay from "./DimensionOverlay";
 import useGameState from "@/hooks/useGameState";
@@ -54,6 +55,8 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
     boss,
     bossLasers,
     bossDefeatedNotice,
+    ufos,
+    ufoBullets,
     wormhole,
     activeDimension,
     resetGame,
@@ -188,6 +191,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
       <Boss boss={boss} lasers={bossLasers} />
+      <Ufos ufos={ufos} bullets={ufoBullets} />
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
       
       {/* Game UI */}
