@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType, Ufo, UfoBullet, BonusStar } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType, Ufo, UfoBullet, BonusStar, VoidEntity, VoidCore } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -71,6 +71,8 @@ const useGameState = () => {
   const [bonusRoundEndTime, setBonusRoundEndTime] = useState<number | null>(null);
   const bonusStarRef = useRef<BonusStar | null>(null);
   const bonusRoundEndTimeRef = useRef<number | null>(null);
+  const [voidEntity, setVoidEntity] = useState<VoidEntity | null>(null);
+  const voidEntityRef = useRef<VoidEntity | null>(null);
   const wormholeRef = useRef<Wormhole | null>(null);
   const activeDimensionRef = useRef<ActiveDimension | null>(null);
   const nextWormholeScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
@@ -226,6 +228,8 @@ const useGameState = () => {
     setBonusRoundEndTime(null);
     bonusStarRef.current = null;
     bonusRoundEndTimeRef.current = null;
+    setVoidEntity(null);
+    voidEntityRef.current = null;
     setWormhole(null);
     setActiveDimension(null);
     wormholeRef.current = null;
@@ -865,6 +869,85 @@ const useGameState = () => {
       }
     }
 
+    // THE VOID AWAKENS — trigger after 5 minutes of survival
+    const VOID_TRIGGER_SECONDS = 300; // 5 minutes
+    const VOID_DURATION_MS = 60000;   // 60 seconds to survive
+    if (!voidEntityRef.current && timeSinceGameStart >= VOID_TRIGGER_SECONDS && !isTunnelMode) {
+      const cores: VoidCore[] = [
+        { id: 0, x: 20, destroyed: false },
+        { id: 1, x: 50, destroyed: false },
+        { id: 2, x: 80, destroyed: false },
+      ];
+      const newVoid: VoidEntity = {
+        startedAt: currentTime,
+        duration: VOID_DURATION_MS,
+        riseY: 0,
+        cores,
+      };
+      setVoidEntity(newVoid);
+      voidEntityRef.current = newVoid;
+      playSound('speedUp');
+    }
+
+    if (voidEntityRef.current) {
+      const ve = voidEntityRef.current;
+      const voidElapsed = currentTime - ve.startedAt;
+      const voidProgress = Math.min(voidElapsed / VOID_DURATION_MS, 1);
+      const newRiseY = voidProgress * 85;
+
+      // Check if the void has consumed the ship (ship at y=85%, void top at 100-newRiseY% from top)
+      const voidTopPct = 100 - newRiseY;
+      if (voidTopPct <= 86 && !isInvulnerable) {
+        handleShipHit();
+      }
+
+      // Projectile vs void cores
+      if (liveProjectiles.length > 0) {
+        let coreHits = 0;
+        const updatedCores = ve.cores.map(core => {
+          if (core.destroyed) return core;
+          const coreY = voidTopPct + 10 + (core.id % 3) * 8;
+          for (const p of liveProjectiles) {
+            if (consumedProjectileIds.has(p.id)) continue;
+            if (Math.abs(core.x - p.x) < 5 && Math.abs(coreY - (100 - p.y)) < 5) {
+              consumedProjectileIds.add(p.id);
+              coreHits++;
+              return { ...core, destroyed: true };
+            }
+          }
+          return core;
+        });
+        if (coreHits > 0) {
+          playSound('explosion');
+          setScore(prev => prev + 1000 * coreHits);
+          const updated: VoidEntity = { ...ve, riseY: newRiseY, cores: updatedCores };
+          setVoidEntity(updated);
+          voidEntityRef.current = updated;
+        } else {
+          // Update riseY without cores change
+          const updated: VoidEntity = { ...ve, riseY: newRiseY };
+          setVoidEntity(updated);
+          voidEntityRef.current = updated;
+        }
+      } else {
+        const updated: VoidEntity = { ...ve, riseY: newRiseY };
+        setVoidEntity(updated);
+        voidEntityRef.current = updated;
+      }
+
+      // Void duration expired — game over, final score bonus
+      if (voidElapsed >= VOID_DURATION_MS) {
+        const survivedCores = ve.cores.filter(c => !c.destroyed).length;
+        if (survivedCores === 0) {
+          // All cores destroyed — bonus!
+          setScore(prev => prev + 5000);
+        }
+        setGameOver(true);
+        gameOverRef.current = true;
+        playSound('crash');
+      }
+    }
+
     // Apply all projectile changes for this frame in ONE setState
     if (consumedProjectileIds.size > 0) {
       setProjectiles(liveProjectiles.filter((p) => !consumedProjectileIds.has(p.id)));
@@ -950,6 +1033,7 @@ const useGameState = () => {
     bonusRoundEndTime,
     wormhole,
     activeDimension,
+    voidEntity,
     startGame,
     resetGame,
     moveShip,
