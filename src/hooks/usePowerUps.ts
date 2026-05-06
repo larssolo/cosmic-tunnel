@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { PowerUp, PowerUpType, ActivePowerUp } from "@/types/powerUpTypes";
 import { POWER_UP_SPAWN_INTERVAL, POWER_UP_SPEED } from "@/config/powerUps";
 
@@ -7,12 +7,12 @@ let powerUpIdCounter = 0;
 export const usePowerUps = () => {
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([]);
-  const [lastSpawnTime, setLastSpawnTime] = useState(Date.now());
+  const lastSpawnTimeRef = useRef<number>(Date.now());
 
   // Spawn a new power-up
   const spawnPowerUp = useCallback(() => {
     const now = Date.now();
-    if (now - lastSpawnTime < POWER_UP_SPAWN_INTERVAL) return;
+    if (now - lastSpawnTimeRef.current < POWER_UP_SPAWN_INTERVAL) return;
 
     const types = Object.values(PowerUpType);
     const randomType = types[Math.floor(Math.random() * types.length)];
@@ -26,8 +26,8 @@ export const usePowerUps = () => {
     };
 
     setPowerUps(prev => [...prev, newPowerUp]);
-    setLastSpawnTime(now);
-  }, [lastSpawnTime]);
+    lastSpawnTimeRef.current = now;
+  }, []);
 
   // Update power-up positions
   const updatePowerUps = useCallback(() => {
@@ -73,7 +73,7 @@ export const usePowerUps = () => {
   const resetPowerUps = useCallback(() => {
     setPowerUps([]);
     setActivePowerUps([]);
-    setLastSpawnTime(Date.now());
+    lastSpawnTimeRef.current = Date.now();
   }, []);
 
   return {
