@@ -883,7 +883,6 @@ const useGameState = () => {
       const newVoid: VoidEntity = {
         startedAt: currentTime,
         duration: VOID_DURATION_MS,
-        riseY: 0,
         cores,
       };
       setVoidEntity(newVoid);
@@ -905,7 +904,7 @@ const useGameState = () => {
         handleShipHit();
       }
 
-      // Projectile vs void cores
+      // Projectile vs void cores — only setState when a core is actually destroyed
       if (liveProjectiles.length > 0) {
         let coreHits = 0;
         const updatedCores = ve.cores.map(core => {
@@ -924,19 +923,10 @@ const useGameState = () => {
         if (coreHits > 0) {
           playSound('explosion');
           setScore(prev => prev + 1000 * coreHits);
-          const updated: VoidEntity = { ...ve, riseY: newRiseY, cores: updatedCores };
-          setVoidEntity(updated);
-          voidEntityRef.current = updated;
-        } else {
-          // Update riseY without cores change
-          const updated: VoidEntity = { ...ve, riseY: newRiseY };
+          const updated: VoidEntity = { ...ve, cores: updatedCores };
           setVoidEntity(updated);
           voidEntityRef.current = updated;
         }
-      } else {
-        const updated: VoidEntity = { ...ve, riseY: newRiseY };
-        setVoidEntity(updated);
-        voidEntityRef.current = updated;
       }
 
       // Void duration expired — game over, final score bonus

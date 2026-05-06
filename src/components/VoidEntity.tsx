@@ -11,15 +11,16 @@ const VoidEntityComponent: React.FC<Props> = ({ voidEntity }) => {
   const [tick, setTick] = useState(0);
   const rafRef = useRef<number | null>(null);
 
+  const isActive = !!voidEntity;
   useEffect(() => {
-    if (!voidEntity) return;
+    if (!isActive) return;
     const animate = () => {
       setTick(t => t + 1);
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [voidEntity]);
+  }, [isActive]); // only restart when void appears/disappears, not on every state update
 
   if (!voidEntity) return null;
 

@@ -90,7 +90,6 @@ export interface VoidCore {
 export interface VoidEntity {
   startedAt: number;   // timestamp when void began rising
   duration: number;    // ms until game over (60s)
-  riseY: number;       // current top of the void wave (% from bottom, 0=bottom edge, 100=full screen)
   cores: VoidCore[];
 }
 
