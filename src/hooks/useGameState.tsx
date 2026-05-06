@@ -771,29 +771,21 @@ const useGameState = () => {
     }
 
     if (isTunnelMode && tunnelActive) {
-      // Tunnel mode obstacles
+      // Tunnel mode obstacles — single setState to avoid stale-prev race
       const newTunnelObstacle = createTunnelObstacle();
-      if (newTunnelObstacle) {
-        setObstacles(prev => [...prev, newTunnelObstacle]);
-      }
-
       setObstacles(prev => {
-        const updated = updateTunnelObstacles(prev, slowMotion);
-        return updated;
+        const withNew = newTunnelObstacle ? [...prev, newTunnelObstacle] : prev;
+        return updateTunnelObstacles(withNew, slowMotion);
       });
     } else if (bossRef.current && !bossRef.current.isExploding) {
       // Boss active — pause meteor spawn, but still update existing obstacles
       setObstacles(prev => updateObstacles(prev, slowMotion));
     } else {
-      // Standard mode obstacles
+      // Standard mode obstacles — single setState to avoid stale-prev race
       const newObstacle = createObstacle(stormMultiplier);
-      if (newObstacle) {
-        setObstacles(prev => [...prev, newObstacle]);
-      }
-
       setObstacles(prev => {
-        const updated = updateObstacles(prev, slowMotion);
-        return updated;
+        const withNew = newObstacle ? [...prev, newObstacle] : prev;
+        return updateObstacles(withNew, slowMotion);
       });
     }
     
