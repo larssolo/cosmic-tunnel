@@ -929,11 +929,10 @@ const useGameState = () => {
         }
       }
 
-      // Void duration expired — game over, final score bonus
-      if (voidElapsed >= VOID_DURATION_MS) {
+      // Void duration expired — game over, final score bonus (guard prevents firing 60x/sec)
+      if (voidElapsed >= VOID_DURATION_MS && !gameOverRef.current) {
         const survivedCores = ve.cores.filter(c => !c.destroyed).length;
         if (survivedCores === 0) {
-          // All cores destroyed — bonus!
           setScore(prev => prev + 5000);
         }
         setGameOver(true);
