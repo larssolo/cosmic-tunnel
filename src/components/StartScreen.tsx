@@ -22,7 +22,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
 
   // Start menu music when screen mounts, stop when game starts
   useEffect(() => {
-    const audio = new Audio('REPLACE_WITH_MENU_MUSIC_URL');
+    const audio = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.wav');
     audio.volume = 0.5;
     audio.loop = true;
     menuMusicRef.current = audio;

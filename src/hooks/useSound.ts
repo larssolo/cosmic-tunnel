@@ -78,18 +78,18 @@ export const useSound = () => {
       audioRefs.current.achievementUnlock.volume = 0.8;
     }
 
-    // Menu / start screen music — replace URL with your Epidemic Sound download
-    audioRefs.current.menuMusic = new Audio('REPLACE_WITH_MENU_MUSIC_URL');
+    // Menu / start screen music
+    audioRefs.current.menuMusic = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.wav');
     if (audioRefs.current.menuMusic) {
       audioRefs.current.menuMusic.volume = 0.5;
       audioRefs.current.menuMusic.loop = true;
     }
 
-    // Void Awakens event sounds — replace URLs with your Epidemic Sound downloads
-    audioRefs.current.voidSpawn = new Audio('REPLACE_WITH_VOID_SPAWN_URL');
-    audioRefs.current.voidCoreHit = new Audio('REPLACE_WITH_VOID_CORE_HIT_URL');
-    audioRefs.current.voidCountdown = new Audio('REPLACE_WITH_VOID_COUNTDOWN_URL');
-    audioRefs.current.voidAllCores = new Audio('REPLACE_WITH_VOID_ALL_CORES_URL');
+    // Void Awakens event sounds
+    audioRefs.current.voidSpawn = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/IMPACT_Sub_Boom_Tonal_Deep_Space.wav');
+    audioRefs.current.voidCoreHit = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/DroneReactor_BW.43983.wav');
+    audioRefs.current.voidCountdown = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/BEEPTimer_Digital%20Timer%20Beeping%20Bomb%20Clock_GENHD1-07734.wav');
+    audioRefs.current.voidAllCores = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/8-Bit%20135%20MIX%20Loop%20Version%201.mp3');
     if (audioRefs.current.voidSpawn) audioRefs.current.voidSpawn.volume = 0.9;
     if (audioRefs.current.voidCoreHit) audioRefs.current.voidCoreHit.volume = 0.8;
     if (audioRefs.current.voidCountdown) {
