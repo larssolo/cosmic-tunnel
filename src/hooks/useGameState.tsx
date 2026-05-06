@@ -62,6 +62,7 @@ const useGameState = () => {
   const [bossLasers, setBossLasers] = useState<BossLaser[]>([]);
   const bossLasersRef = useRef<BossLaser[]>([]);
   const lastLaserHitRef = useRef<number>(0);
+  const lastVoidHitRef = useRef<number>(0);
   const [ufos, setUfos] = useState<Ufo[]>([]);
   const [ufoBullets, setUfoBullets] = useState<UfoBullet[]>([]);
   const ufosRef = useRef<Ufo[]>([]);
@@ -230,6 +231,7 @@ const useGameState = () => {
     bonusRoundEndTimeRef.current = null;
     setVoidEntity(null);
     voidEntityRef.current = null;
+    lastVoidHitRef.current = 0;
     setWormhole(null);
     setActiveDimension(null);
     wormholeRef.current = null;
@@ -896,8 +898,10 @@ const useGameState = () => {
       const newRiseY = voidProgress * 85;
 
       // Check if the void has consumed the ship (ship at y=85%, void top at 100-newRiseY% from top)
+      // Rate-limited to once per 2100ms — same window as the invulnerability period
       const voidTopPct = 100 - newRiseY;
-      if (voidTopPct <= 86 && !isInvulnerable) {
+      if (voidTopPct <= 86 && !isInvulnerable && currentTime - lastVoidHitRef.current > 2100) {
+        lastVoidHitRef.current = currentTime;
         handleShipHit();
       }
 
