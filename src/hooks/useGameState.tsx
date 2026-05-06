@@ -232,6 +232,7 @@ const useGameState = () => {
     activeDimensionRef.current = null;
     nextWormholeScoreRef.current = 1500 + Math.floor(Math.random() * 1500);
     iceTargetRef.current = 50;
+    stopTunnelMode();
     resetObstacleTimer();
     resetProjectileTimer();
     resetPowerUps();
