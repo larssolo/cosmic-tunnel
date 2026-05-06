@@ -186,7 +186,7 @@ const useGameState = () => {
         setIsInvulnerable(false);
       }, 2000);
     }
-  }, [isInvulnerable, playSound, submitHighScore]);
+  }, [isInvulnerable, playSound]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -385,10 +385,6 @@ const useGameState = () => {
     
     // Apply slow motion power-up to obstacle speed
     const slowMotion = isPowerUpActive(PowerUpType.SLOW_MOTION) ? 0.5 : 1.0;
-    
-    // Debug log for slow motion
-    if (slowMotion !== 1.0) {
-    }
     
     // Meteor storm event logic (only in standard mode, after 20s)
     const timeSinceGameStart = (currentTime - gameStartTimeRef.current) / 1000;
