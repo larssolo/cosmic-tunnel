@@ -67,7 +67,6 @@ const useGameState = () => {
   const ufosRef = useRef<Ufo[]>([]);
   const ufoBulletsRef = useRef<UfoBullet[]>([]);
   const nextUfoTimeRef = useRef<number>(Date.now() + 12000 + Math.random() * 8000);
-  const lastUfoHitRef = useRef<number>(0);
   const [bonusStar, setBonusStar] = useState<BonusStar | null>(null);
   const [bonusRoundEndTime, setBonusRoundEndTime] = useState<number | null>(null);
   const bonusStarRef = useRef<BonusStar | null>(null);
@@ -223,7 +222,6 @@ const useGameState = () => {
     ufosRef.current = [];
     ufoBulletsRef.current = [];
     nextUfoTimeRef.current = Date.now() + 12000 + Math.random() * 8000;
-    lastUfoHitRef.current = 0;
     setBonusStar(null);
     setBonusRoundEndTime(null);
     bonusStarRef.current = null;
@@ -545,8 +543,8 @@ const useGameState = () => {
         if (u.isExploding) continue; // drop after explosion frame
         const nextX = u.x + u.vx * slowMotion;
         const nextPhase = u.phase + 0.08 * slowMotion;
-        // Chance to fire — every 60-100 frames
-        if (Math.random() < 0.012 && currentTime - u.spawnedAt > 400) {
+        // Chance to fire — ~0.3 shots/sec (every ~200 frames)
+        if (Math.random() < 0.005 && currentTime - u.spawnedAt > 600) {
           const ufoY = u.baseY + Math.sin(nextPhase) * 6;
           const bullet: UfoBullet = {
             id: currentTime + Math.floor(Math.random() * 1000),
@@ -629,6 +627,10 @@ const useGameState = () => {
       !bossRef.current &&
       !bonusStarRef.current &&
       !bonusRoundEndTimeRef.current &&
+      !stormActiveRef.current &&
+      !stormWarningRef.current &&
+      !wormholeRef.current &&
+      !activeDimensionRef.current &&
       timeSinceGameStart > 15 &&
       Math.random() < 0.0005
     ) {
@@ -853,12 +855,17 @@ const useGameState = () => {
     const shipCollided = checkShipCollision(obstacles, shipPosition, gameOverRef.current, isTunnelMode && tunnelActive);
     if (shipCollided && !isInvulnerable) {
       if (bonusRoundEndTimeRef.current) {
-        // During bonus round, touching a coin = collect (+500), no damage
+        // During bonus round, each touched coin = +500 (count them)
         playSound('powerUpCollect');
-        setScore((prev) => prev + 500);
-        // Pop the touched obstacle by clearing all near-ship obstacles
         const shipY = 85;
-        setObstacles((prev) => prev.filter((o) => Math.abs(o.x - shipPosition) > 8 || Math.abs(o.y - shipY) > 8));
+        const collected = obstacles.filter(
+          (o) => !o.isExploding && Math.abs(o.x - shipPosition) <= 8 && Math.abs(o.y - shipY) <= 8
+        );
+        if (collected.length > 0) {
+          setScore((prev) => prev + 500 * collected.length);
+          const collectedIds = new Set(collected.map((o) => o.id));
+          setObstacles((prev) => prev.filter((o) => !collectedIds.has(o.id)));
+        }
       } else {
         setConsecutiveHits(0);
         lastHitTimeRef.current = Date.now();
