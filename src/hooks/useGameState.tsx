@@ -186,7 +186,7 @@ const useGameState = () => {
         setIsInvulnerable(false);
       }, 2000);
     }
-  }, [isInvulnerable, playSound, submitHighScore]);
+  }, [isInvulnerable, playSound]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -232,6 +232,7 @@ const useGameState = () => {
     activeDimensionRef.current = null;
     nextWormholeScoreRef.current = 1500 + Math.floor(Math.random() * 1500);
     iceTargetRef.current = 50;
+    stopTunnelMode();
     resetObstacleTimer();
     resetProjectileTimer();
     resetPowerUps();
@@ -364,9 +365,7 @@ const useGameState = () => {
           activatePowerUp(powerUp.type, config.duration);
           setIsInvulnerable(true);
           setTimeout(() => {
-            if (!isPowerUpActive(PowerUpType.SHIELD)) {
-              setIsInvulnerable(false);
-            }
+            setIsInvulnerable(false);
           }, config.duration);
         } else {
           // Other power-ups (including slow motion)
@@ -384,10 +383,6 @@ const useGameState = () => {
     
     // Apply slow motion power-up to obstacle speed
     const slowMotion = isPowerUpActive(PowerUpType.SLOW_MOTION) ? 0.5 : 1.0;
-    
-    // Debug log for slow motion
-    if (slowMotion !== 1.0) {
-    }
     
     // Meteor storm event logic (only in standard mode, after 20s)
     const timeSinceGameStart = (currentTime - gameStartTimeRef.current) / 1000;
@@ -774,35 +769,27 @@ const useGameState = () => {
     }
 
     if (isTunnelMode && tunnelActive) {
-      // Tunnel mode obstacles
+      // Tunnel mode obstacles — single setState to avoid stale-prev race
       const newTunnelObstacle = createTunnelObstacle();
-      if (newTunnelObstacle) {
-        setObstacles(prev => [...prev, newTunnelObstacle]);
-      }
-
       setObstacles(prev => {
-        const updated = updateTunnelObstacles(prev, slowMotion);
-        return updated;
+        const withNew = newTunnelObstacle ? [...prev, newTunnelObstacle] : prev;
+        return updateTunnelObstacles(withNew, slowMotion);
       });
     } else if (bossRef.current && !bossRef.current.isExploding) {
       // Boss active — pause meteor spawn, but still update existing obstacles
       setObstacles(prev => updateObstacles(prev, slowMotion));
     } else {
-      // Standard mode obstacles
+      // Standard mode obstacles — single setState to avoid stale-prev race
       const newObstacle = createObstacle(stormMultiplier);
-      if (newObstacle) {
-        setObstacles(prev => [...prev, newObstacle]);
-      }
-
       setObstacles(prev => {
-        const updated = updateObstacles(prev, slowMotion);
-        return updated;
+        const withNew = newObstacle ? [...prev, newObstacle] : prev;
+        return updateObstacles(withNew, slowMotion);
       });
     }
     
     // Filter to only projectiles not already consumed by UFO/bonus star this frame
     const projectilesForMeteorCheck = liveProjectiles.filter((p) => !consumedProjectileIds.has(p.id));
-    const { hitCount: meteorHitCount, updatedObstacles: collidedObstacles, destroyedObstacles, newProjectilesList } =
+    const { hitCount: meteorHitCount, destroyedObstacles, newProjectilesList } =
       checkProjectileCollisions(obstacles, projectilesForMeteorCheck);
 
     if (meteorHitCount > 0) {
@@ -812,32 +799,28 @@ const useGameState = () => {
       setConsecutiveHits(prev => prev + meteorHitCount);
       setScoreMultiplier(prev => Math.min(prev * Math.pow(1.2, meteorHitCount), 8));
 
+      // Mark destroyed obstacle IDs; apply via functional update to keep moved positions
+      const destroyedIds = new Set(destroyedObstacles.map((o) => o.id));
+      setObstacles(prev => prev.map(o => destroyedIds.has(o.id) ? { ...o, isExploding: true } : o));
+
       // Per-hit base score
-      let scorePerHit = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
+      const survivingIdsAfterMeteor = new Set(newProjectilesList.map((p) => p.id));
+      for (const p of projectilesForMeteorCheck) {
+        if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
+      }
+
       if (bonusRoundEndTimeRef.current) {
-        scorePerHit = Math.round(500 * scoreBoost);
+        setScore(prev => prev + Math.round(500 * scoreBoost) * meteorHitCount);
       } else if (isTunnelMode && tunnelActive) {
-        // Tunnel mode obstacles can have variable point values per obstacle
+        // Tunnel mode obstacles have variable point values
         const totalTunnelScore = destroyedObstacles.reduce((sum, o) => {
           const pts = o.points ?? 50;
           return sum + Math.round(pts * scoreMultiplierRef.current * scoreBoost);
         }, 0);
         setScore(prev => prev + totalTunnelScore);
-        setObstacles(collidedObstacles);
-        const survivingIdsAfterMeteor = new Set(newProjectilesList.map((p) => p.id));
-        for (const p of projectilesForMeteorCheck) {
-          if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
-        }
-        scorePerHit = 0; // already added
-      }
-
-      if (scorePerHit > 0) {
+      } else {
+        const scorePerHit = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
         setScore(prev => prev + scorePerHit * meteorHitCount);
-        setObstacles(collidedObstacles);
-        const survivingIdsAfterMeteor = new Set(newProjectilesList.map((p) => p.id));
-        for (const p of projectilesForMeteorCheck) {
-          if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
-        }
       }
     }
 
@@ -927,7 +910,9 @@ const useGameState = () => {
     powerUps,
     removePowerUp,
     activatePowerUp,
-    currentLevel
+    currentLevel,
+    tunnelActive,
+    countdownTime
   ]);
 
   useEffect(() => {
