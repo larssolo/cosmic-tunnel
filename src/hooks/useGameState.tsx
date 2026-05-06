@@ -545,8 +545,13 @@ const useGameState = () => {
 
     if (ufosRef.current.length > 0) {
       const updatedUfos: Ufo[] = [];
+      let aliveCount = 0;
       for (const u of ufosRef.current) {
-        if (u.isExploding) continue; // drop after explosion frame
+        if (u.isExploding) {
+          // Keep the exploding sprite on screen until its setTimeout removes it
+          updatedUfos.push(u);
+          continue;
+        }
         const nextX = u.x + u.vx * slowMotion;
         const nextPhase = u.phase + 0.08 * slowMotion;
         // Chance to fire — ~0.3 shots/sec (every ~200 frames)
@@ -566,12 +571,11 @@ const useGameState = () => {
           continue;
         }
         updatedUfos.push({ ...u, x: nextX, phase: nextPhase });
+        aliveCount++;
       }
-      if (updatedUfos.length !== ufosRef.current.length) {
-        // UFO left screen → schedule next
-        if (updatedUfos.length === 0) {
-          nextUfoTimeRef.current = currentTime + 8000 + Math.random() * 10000;
-        }
+      if (aliveCount === 0 && updatedUfos.every((u) => !u.isExploding)) {
+        // Everything left/dead, schedule next UFO
+        nextUfoTimeRef.current = currentTime + 8000 + Math.random() * 10000;
       }
       ufosRef.current = updatedUfos;
       setUfos(updatedUfos);
@@ -596,9 +600,14 @@ const useGameState = () => {
 
     // Projectile-vs-UFO collisions
     if (ufosRef.current.length > 0 && liveProjectiles.length > 0) {
-      const survivingUfos: Ufo[] = [];
+      const updatedUfosAfterHits: Ufo[] = [];
       let hitCount = 0;
+      let aliveUfosLeft = 0;
       for (const u of ufosRef.current) {
+        if (u.isExploding) {
+          updatedUfosAfterHits.push(u);
+          continue;
+        }
         const uy = u.baseY + Math.sin(u.phase) * 6;
         let killed = false;
         for (const p of liveProjectiles) {
@@ -612,16 +621,27 @@ const useGameState = () => {
             break;
           }
         }
-        if (!killed) survivingUfos.push(u);
+        if (killed) {
+          // Mark exploding; remove after a short delay so the animation shows
+          const exploding: Ufo = { ...u, isExploding: true };
+          updatedUfosAfterHits.push(exploding);
+          setTimeout(() => {
+            ufosRef.current = ufosRef.current.filter((x) => x.id !== u.id);
+            setUfos(ufosRef.current);
+            if (ufosRef.current.length === 0) {
+              nextUfoTimeRef.current = Date.now() + 8000 + Math.random() * 10000;
+            }
+          }, 400);
+        } else {
+          updatedUfosAfterHits.push(u);
+          aliveUfosLeft++;
+        }
       }
       if (hitCount > 0) {
         playSound('explosion');
         setScore((prev) => prev + 500 * hitCount);
-        ufosRef.current = survivingUfos;
-        setUfos(survivingUfos);
-        if (survivingUfos.length === 0) {
-          nextUfoTimeRef.current = currentTime + 8000 + Math.random() * 10000;
-        }
+        ufosRef.current = updatedUfosAfterHits;
+        setUfos(updatedUfosAfterHits);
       }
     }
 
