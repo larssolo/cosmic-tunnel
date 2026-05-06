@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere' | 'levelUp' | 'powerUpCollect' | 'achievementUnlock';
+type SoundType = 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble' | 'crash' | 'atmosphere' | 'levelUp' | 'powerUpCollect' | 'achievementUnlock' | 'menuMusic' | 'voidSpawn' | 'voidCoreHit' | 'voidCountdown' | 'voidAllCores';
 
 export const useSound = () => {
   const audioRefs = useRef<Record<SoundType, HTMLAudioElement | null>>({
@@ -14,7 +14,12 @@ export const useSound = () => {
     atmosphere: null,
     levelUp: null,
     powerUpCollect: null,
-    achievementUnlock: null
+    achievementUnlock: null,
+    menuMusic: null,
+    voidSpawn: null,
+    voidCoreHit: null,
+    voidCountdown: null,
+    voidAllCores: null,
   });
 
   // Initialize audio elements
@@ -73,6 +78,26 @@ export const useSound = () => {
       audioRefs.current.achievementUnlock.volume = 0.8;
     }
 
+    // Menu / start screen music — replace URL with your Epidemic Sound download
+    audioRefs.current.menuMusic = new Audio('REPLACE_WITH_MENU_MUSIC_URL');
+    if (audioRefs.current.menuMusic) {
+      audioRefs.current.menuMusic.volume = 0.5;
+      audioRefs.current.menuMusic.loop = true;
+    }
+
+    // Void Awakens event sounds — replace URLs with your Epidemic Sound downloads
+    audioRefs.current.voidSpawn = new Audio('REPLACE_WITH_VOID_SPAWN_URL');
+    audioRefs.current.voidCoreHit = new Audio('REPLACE_WITH_VOID_CORE_HIT_URL');
+    audioRefs.current.voidCountdown = new Audio('REPLACE_WITH_VOID_COUNTDOWN_URL');
+    audioRefs.current.voidAllCores = new Audio('REPLACE_WITH_VOID_ALL_CORES_URL');
+    if (audioRefs.current.voidSpawn) audioRefs.current.voidSpawn.volume = 0.9;
+    if (audioRefs.current.voidCoreHit) audioRefs.current.voidCoreHit.volume = 0.8;
+    if (audioRefs.current.voidCountdown) {
+      audioRefs.current.voidCountdown.volume = 0.6;
+      audioRefs.current.voidCountdown.loop = true;
+    }
+    if (audioRefs.current.voidAllCores) audioRefs.current.voidAllCores.volume = 1.0;
+
     // Preload audio
     Object.values(audioRefs.current).forEach(audio => {
       if (audio) {
@@ -105,33 +130,29 @@ export const useSound = () => {
 
   const playSound = useCallback((type: SoundType) => {
     const audio = audioRefs.current[type];
-    if (audio) {
-      // Create a new instance for overlapping sounds
-      if (type === 'shoot') {
-        const newAudio = new Audio(audio.src);
-        newAudio.volume = audio.volume;
-        newAudio.play().catch(err => {
-          console.error(`Error playing ${type} sound:`, err);
-        });
-      } else if (type === 'atmosphere') {
-        // For atmosphere sound, ensure it's not already playing before starting
-        if (audio.paused) {
-          console.log('Starting atmosphere sound...');
-          audio.play().catch(err => {
-            console.error(`Error playing atmosphere sound:`, err);
-          });
-        } else {
-          console.log('Atmosphere sound is already playing');
-        }
-      } else {
-        // For other sounds, reset and play the existing audio
-        audio.currentTime = 0;
-        audio.play().catch(err => {
-          console.error(`Error playing ${type} sound:`, err);
-        });
+    if (!audio) return;
+    if (type === 'shoot') {
+      const newAudio = new Audio(audio.src);
+      newAudio.volume = audio.volume;
+      newAudio.play().catch(() => {});
+    } else if (type === 'atmosphere' || type === 'menuMusic' || type === 'voidCountdown') {
+      // Looping sounds — only start if not already playing
+      if (audio.paused) {
+        audio.play().catch(() => {});
       }
+    } else {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
     }
   }, []);
 
-  return { playSound };
+  const stopSound = useCallback((type: SoundType) => {
+    const audio = audioRefs.current[type];
+    if (audio && !audio.paused) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  }, []);
+
+  return { playSound, stopSound };
 };

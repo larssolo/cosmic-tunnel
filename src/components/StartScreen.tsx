@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import loginBackground from "@/assets/login-background.mp4";
@@ -13,11 +13,25 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
   const [blink, setBlink] = useState(true);
+  const menuMusicRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: highScores = [] } = useQuery({
     queryKey: ["highScores"],
     queryFn: () => CloudHighScoreService.getHighScores(10),
   });
+
+  // Start menu music when screen mounts, stop when game starts
+  useEffect(() => {
+    const audio = new Audio('REPLACE_WITH_MENU_MUSIC_URL');
+    audio.volume = 0.5;
+    audio.loop = true;
+    menuMusicRef.current = audio;
+    audio.play().catch(() => {}); // autoplay may be blocked until user interaction
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => setBlink((b) => !b), 600);
@@ -29,6 +43,11 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
     if (name.length < 2) {
       setError("ENTER A NAME (MIN 2 CHARS)");
       return;
+    }
+    // Stop menu music before game starts
+    if (menuMusicRef.current) {
+      menuMusicRef.current.pause();
+      menuMusicRef.current.currentTime = 0;
     }
     localStorage.setItem("playerName", name);
     onStart(name);

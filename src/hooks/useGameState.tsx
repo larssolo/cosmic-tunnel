@@ -89,7 +89,8 @@ const useGameState = () => {
   const livesRef = useRef(MAX_LIVES);
   const gameOverRef = useRef(false);
   
-  const { playSound } = useSound();
+  const { playSound, stopSound } = useSound();
+  const voidCountdownStartedRef = useRef(false);
   const {
     powerUps,
     activePowerUps,
@@ -232,6 +233,8 @@ const useGameState = () => {
     setVoidEntity(null);
     voidEntityRef.current = null;
     lastVoidHitRef.current = 0;
+    voidCountdownStartedRef.current = false;
+    stopSound('voidCountdown');
     setWormhole(null);
     setActiveDimension(null);
     wormholeRef.current = null;
@@ -253,7 +256,7 @@ const useGameState = () => {
     lastHitTimeRef.current = Date.now();
     playSound('start');
     playSound('atmosphere');
-  }, [resetObstacleTimer, resetProjectileTimer, resetPowerUps, playSound]);
+  }, [resetObstacleTimer, resetProjectileTimer, resetPowerUps, playSound, stopSound]);
 
   const startGame = useCallback(() => {
     resetGame();
@@ -887,7 +890,8 @@ const useGameState = () => {
       };
       setVoidEntity(newVoid);
       voidEntityRef.current = newVoid;
-      playSound('speedUp');
+      voidCountdownStartedRef.current = false;
+      playSound('voidSpawn');
     }
 
     if (voidEntityRef.current) {
@@ -921,7 +925,7 @@ const useGameState = () => {
           return core;
         });
         if (coreHits > 0) {
-          playSound('explosion');
+          playSound('voidCoreHit');
           setScore(prev => prev + 1000 * coreHits);
           const updated: VoidEntity = { ...ve, cores: updatedCores };
           setVoidEntity(updated);
@@ -929,15 +933,24 @@ const useGameState = () => {
         }
       }
 
+      // Start countdown alarm in the last 10 seconds
+      if (VOID_DURATION_MS - voidElapsed <= 10000 && !voidCountdownStartedRef.current) {
+        voidCountdownStartedRef.current = true;
+        playSound('voidCountdown');
+      }
+
       // Void duration expired — game over, final score bonus (guard prevents firing 60x/sec)
       if (voidElapsed >= VOID_DURATION_MS && !gameOverRef.current) {
+        stopSound('voidCountdown');
         const survivedCores = ve.cores.filter(c => !c.destroyed).length;
         if (survivedCores === 0) {
           setScore(prev => prev + 5000);
+          playSound('voidAllCores');
+        } else {
+          playSound('crash');
         }
         setGameOver(true);
         gameOverRef.current = true;
-        playSound('crash');
       }
     }
 
