@@ -22,6 +22,7 @@ import { CyberOverlay } from "./CyberOverlay";
 import VoidEntity from "./VoidEntity";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
+import { unlockAudio } from "@/hooks/useSound";
 
 interface GameProps {
   playerName: string;
@@ -73,6 +74,9 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
 
   // Always keep the ref current — no dep array needed on the game loop
   updateGameRef.current = updateGame;
+
+  // Unlock audio context as soon as Game mounts (right after user clicked START)
+  useEffect(() => { unlockAudio(); }, []);
 
   const isMobile = useIsMobile();
 
