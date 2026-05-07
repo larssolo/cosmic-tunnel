@@ -98,23 +98,9 @@ export const useSound = () => {
     }
     if (audioRefs.current.voidAllCores) audioRefs.current.voidAllCores.volume = 1.0;
 
-    // Preload audio
+    // Preload audio (load only — play() without user gesture is blocked by browsers)
     Object.values(audioRefs.current).forEach(audio => {
-      if (audio) {
-        audio.load();
-        // Enable sound on mobile by playing silently once
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              audio.pause();
-              audio.currentTime = 0;
-            })
-            .catch(err => {
-              console.log('Preload audio error:', err);
-            });
-        }
-      }
+      if (audio) audio.load();
     });
 
     // Clean up function
