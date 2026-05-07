@@ -58,4 +58,24 @@ export const CloudHighScoreService = {
       return [];
     }
   },
+
+  async getRankAndTotal(score: number): Promise<{ rank: number; total: number }> {
+    try {
+      const [higherRes, totalRes] = await Promise.all([
+        supabase
+          .from("leaderboard")
+          .select("*", { count: "exact", head: true })
+          .gt("score", score),
+        supabase
+          .from("leaderboard")
+          .select("*", { count: "exact", head: true }),
+      ]);
+
+      const higher = higherRes.count ?? 0;
+      const total = totalRes.count ?? 0;
+      return { rank: higher + 1, total };
+    } catch {
+      return { rank: 0, total: 0 };
+    }
+  },
 };
