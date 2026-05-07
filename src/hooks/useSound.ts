@@ -48,16 +48,24 @@ for (const [key, cfg] of Object.entries(TRACKS) as [SoundType, TrackConfig][]) {
 
 // ---------------------------------------------------------------------------
 // Unlock audio on first user interaction (required by browsers / iOS Safari).
-// Call this from any click/keydown handler before playing sounds.
+// Uses the standard silent-buffer trick that reliably unblocks HTMLAudioElement
+// playback on iOS Safari and Chrome's autoplay policy.
 // ---------------------------------------------------------------------------
 let unlocked = false;
 export const unlockAudio = () => {
   if (unlocked) return;
   unlocked = true;
-  // Resume any suspended Web Audio context browsers may have created internally
-  // by briefly playing and immediately pausing each audio element.
-  const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-  ctx.resume();
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    // Play a silent 1-sample buffer — this is the standard iOS unlock pattern
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume();
+  } catch (_) { /* not all browsers support AudioContext */ }
 };
 
 // Loop sounds that should only start if not already playing
@@ -68,7 +76,19 @@ export const soundManager = {
     const audio = audioElements[type];
     if (!audio) return;
     if (LOOP_TYPES.has(type)) {
-      if (audio.paused) audio.play().catch(() => {});
+      if (!audio.paused) return; // already playing
+      if (audio.readyState >= 2) {
+        // Audio is buffered enough — play immediately
+        audio.play().catch(() => {});
+      } else {
+        // Not loaded yet — wait for enough data then play
+        const onReady = () => {
+          audio.play().catch(() => {});
+          audio.removeEventListener('canplay', onReady);
+        };
+        audio.addEventListener('canplay', onReady);
+        audio.load(); // kick off loading if not started
+      }
     } else if (type === 'shoot') {
       // Allow overlapping shots by cloning
       const clone = new Audio(audio.src);

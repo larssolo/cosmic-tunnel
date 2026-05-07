@@ -51,7 +51,11 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   };
 
   // Unlock audio + start menu music on first interaction anywhere on the page
+  // useRef so the handler is stable and can be removed after firing once
+  const audioStartedRef = React.useRef(false);
   const handleFirstInteraction = () => {
+    if (audioStartedRef.current) return;
+    audioStartedRef.current = true;
     unlockAudio();
     soundManager.play('menuMusic');
   };
