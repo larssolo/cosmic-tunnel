@@ -136,25 +136,41 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
             ► HIGH SCORES ◄
           </p>
           {highScores.length > 0 ? (
-            <ol className="text-[10px] md:text-xs space-y-1.5">
-              {highScores.slice(0, 10).map((entry, idx) => {
-                const colors = ["#ffff00", "#ffffff", "#ff8800"];
-                const color = colors[idx] || "#00ffaa";
-                return (
-                  <li
-                    key={entry.id}
-                    className="flex justify-between gap-2"
-                    style={{ color, textShadow: `0 0 4px ${color}` }}
-                  >
-                    <span>
-                      {String(idx + 1).padStart(2, "0")}.{" "}
-                      {entry.player_name.toUpperCase().slice(0, 12).padEnd(12, ".")}
-                    </span>
-                    <span>{String(entry.score).padStart(6, "0")}</span>
-                  </li>
-                );
-              })}
-            </ol>
+            <div
+              className="overflow-hidden relative"
+              style={{ height: "140px", maskImage: "linear-gradient(to bottom, transparent, black 12%, black 88%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 12%, black 88%, transparent)" }}
+            >
+              <ol
+                className="text-[10px] md:text-xs space-y-1.5 absolute left-0 right-0"
+                style={{ animation: `leaderboardScroll ${Math.max(highScores.length * 1.6, 12)}s linear infinite` }}
+              >
+                {/* Render the list twice so the loop is seamless */}
+                {[...highScores.slice(0, 10), ...highScores.slice(0, 10)].map((entry, idx) => {
+                  const realIdx = idx % highScores.slice(0, 10).length;
+                  const colors = ["#ffff00", "#ffffff", "#ff8800"];
+                  const color = colors[realIdx] || "#00ffaa";
+                  return (
+                    <li
+                      key={`${entry.id}-${idx}`}
+                      className="flex justify-between gap-2"
+                      style={{ color, textShadow: `0 0 4px ${color}` }}
+                    >
+                      <span>
+                        {String(realIdx + 1).padStart(2, "0")}.{" "}
+                        {entry.player_name.toUpperCase().slice(0, 12).padEnd(12, ".")}
+                      </span>
+                      <span>{String(entry.score).padStart(6, "0")}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+              <style>{`
+                @keyframes leaderboardScroll {
+                  0% { transform: translateY(0); }
+                  100% { transform: translateY(-50%); }
+                }
+              `}</style>
+            </div>
           ) : (
             <p
               className="text-[10px] md:text-xs"

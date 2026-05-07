@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Zap, Heart, Trophy } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Zap, Heart } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import { CountdownTimer } from "./CountdownTimer";
 
@@ -42,14 +41,9 @@ const GameUI: React.FC<GameUIProps> = ({
   bossDefeatedNotice = false,
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
+  const [rankInfo, setRankInfo] = useState<{ rank: number; total: number } | null>(null);
   const submittedRef = useRef(false);
   const queryClient = useQueryClient();
-
-  const { data: highScores = [] } = useQuery({
-    queryKey: ['highScores'],
-    queryFn: () => CloudHighScoreService.getHighScores(10),
-    refetchInterval: 30000,
-  });
 
   useEffect(() => {
     if (showInstructions) {
@@ -66,14 +60,19 @@ const GameUI: React.FC<GameUIProps> = ({
   useEffect(() => {
     if (gameOver) {
       setShowInstructions(true);
+      setRankInfo(null);
       if (score > 0 && !submittedRef.current) {
         submittedRef.current = true;
-        onSubmitScore(playerName).then(() => {
-          queryClient.invalidateQueries({ queryKey: ['highScores'] });
-        });
+        onSubmitScore(playerName)
+          .then(() => CloudHighScoreService.getRankAndTotal(score))
+          .then((info) => {
+            setRankInfo(info);
+            queryClient.invalidateQueries({ queryKey: ['highScores'] });
+          });
       }
     } else {
       submittedRef.current = false;
+      setRankInfo(null);
     }
   }, [gameOver, score, playerName, onSubmitScore, queryClient]);
 
@@ -131,31 +130,11 @@ const GameUI: React.FC<GameUIProps> = ({
         {tunnelMode && <p className="text-xs text-yellow-400 mt-1">Tunnel Mode</p>}
       </div>
 
-      {/* Score + leaderboard */}
+      {/* Score */}
       <div className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm"
            style={{ boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)", border: "1px solid rgba(155, 135, 245, 0.2)" }}>
         <p className="font-bold">Score: {score}</p>
         <p className="text-sm text-green-300 font-medium">Meteor Hit: {meteorHits}</p>
-        <div className="mt-2 pt-2 border-t border-purple-500/20">
-          <p className="text-xs flex items-center gap-1 mb-1 text-yellow-400">
-            <Trophy size={12} />
-            <span>Best Pilots</span>
-          </p>
-          {highScores.length > 0 ? (
-            <ul className="text-xs space-y-1">
-              {highScores.map((entry, idx) => (
-                <li key={entry.id} className="flex justify-between gap-3">
-                  <span className={idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : idx === 2 ? "text-amber-600" : ""}>
-                    {entry.player_name}
-                  </span>
-                  <span>{entry.score}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-gray-400">No scores yet</p>
-          )}
-        </div>
       </div>
 
       {/* Lives display */}
@@ -200,6 +179,43 @@ const GameUI: React.FC<GameUIProps> = ({
           >
             METEORS: {meteorHits}
           </p>
+
+          {/* Rank among all pilots */}
+          {score > 0 && (
+            <div className="mt-4 text-center">
+              {rankInfo ? (
+                <>
+                  <p
+                    className="text-[10px] md:text-sm"
+                    style={{ color: "#ffaaff", textShadow: "0 0 8px #ff66ff" }}
+                  >
+                    PILOT {playerName} HOLDS RANK
+                  </p>
+                  <p
+                    className="text-base md:text-2xl mt-1"
+                    style={{ color: "#ffff00", textShadow: "0 0 12px #ffff00, 0 0 24px #ff8800" }}
+                  >
+                    #{rankInfo.rank} OF {rankInfo.total}
+                  </p>
+                  {rankInfo.rank === 1 && (
+                    <p className="text-[10px] md:text-sm mt-1" style={{ color: "#00ff00", textShadow: "0 0 8px #00ff00" }}>
+                      🏆 NEW WORLD RECORD! 🏆
+                    </p>
+                  )}
+                  {rankInfo.rank > 1 && rankInfo.rank <= 10 && (
+                    <p className="text-[10px] md:text-sm mt-1" style={{ color: "#00ff00", textShadow: "0 0 8px #00ff00" }}>
+                      ★ TOP 10 PILOT ★
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-[10px] md:text-sm" style={{ color: "#888" }}>
+                  CALCULATING RANK...
+                </p>
+              )}
+            </div>
+          )}
+
           <button
             onClick={onRestart}
             className="mt-6 px-6 py-4 text-xs md:text-sm transition-transform hover:scale-105 active:scale-95"
