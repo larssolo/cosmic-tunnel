@@ -20,14 +20,27 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
     queryFn: () => CloudHighScoreService.getHighScores(10),
   });
 
-  // Start menu music when screen mounts, stop when game starts
+  // Prepare menu music — start on first user interaction (browser autoplay policy)
   useEffect(() => {
     const audio = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.wav');
     audio.volume = 0.5;
     audio.loop = true;
     menuMusicRef.current = audio;
-    audio.play().catch(() => {}); // autoplay may be blocked until user interaction
+
+    const startOnInteraction = () => {
+      if (menuMusicRef.current && menuMusicRef.current.paused) {
+        menuMusicRef.current.play().catch(() => {});
+      }
+      window.removeEventListener('pointerdown', startOnInteraction);
+      window.removeEventListener('keydown', startOnInteraction);
+    };
+
+    window.addEventListener('pointerdown', startOnInteraction);
+    window.addEventListener('keydown', startOnInteraction);
+
     return () => {
+      window.removeEventListener('pointerdown', startOnInteraction);
+      window.removeEventListener('keydown', startOnInteraction);
       audio.pause();
       audio.src = '';
     };
