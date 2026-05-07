@@ -1006,8 +1006,7 @@ const useGameState = () => {
 
   useEffect(() => {
     startGame();
-    playSound('atmosphere');
-  }, [startGame, playSound]);
+  }, [startGame]);
 
   return {
     score,

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import loginBackground from "@/assets/login-background.mp4";
 import StarWarsCrawl from "./StarWarsCrawl";
+import { unlockAudio, soundManager } from "@/hooks/useSound";
 
 interface StartScreenProps {
   onStart: (playerName: string) => void;
@@ -13,36 +14,17 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
   const [blink, setBlink] = useState(true);
-  const menuMusicRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: highScores = [] } = useQuery({
     queryKey: ["highScores"],
     queryFn: () => CloudHighScoreService.getHighScores(10),
   });
 
-  // Prepare menu music — start on first user interaction (browser autoplay policy)
+  // Stop game sounds and start menu music when start screen mounts
   useEffect(() => {
-    const audio = new Audio('https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.wav');
-    audio.volume = 0.5;
-    audio.loop = true;
-    menuMusicRef.current = audio;
-
-    const startOnInteraction = () => {
-      if (menuMusicRef.current && menuMusicRef.current.paused) {
-        menuMusicRef.current.play().catch(() => {});
-      }
-      window.removeEventListener('pointerdown', startOnInteraction);
-      window.removeEventListener('keydown', startOnInteraction);
-    };
-
-    window.addEventListener('pointerdown', startOnInteraction);
-    window.addEventListener('keydown', startOnInteraction);
-
+    soundManager.stop('atmosphere');
     return () => {
-      window.removeEventListener('pointerdown', startOnInteraction);
-      window.removeEventListener('keydown', startOnInteraction);
-      audio.pause();
-      audio.src = '';
+      soundManager.stop('menuMusic');
     };
   }, []);
 
@@ -57,11 +39,9 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
       setError("ENTER A NAME (MIN 2 CHARS)");
       return;
     }
-    // Stop menu music before game starts
-    if (menuMusicRef.current) {
-      menuMusicRef.current.pause();
-      menuMusicRef.current.currentTime = 0;
-    }
+    // Stop menu music, unlock audio context, play start sound — all in the click handler
+    soundManager.stop('menuMusic');
+    soundManager.play('start');
     localStorage.setItem("playerName", name);
     onStart(name);
   };
@@ -70,8 +50,14 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
     if (e.key === "Enter") handleStart();
   };
 
+  // Unlock audio + start menu music on first interaction anywhere on the page
+  const handleFirstInteraction = () => {
+    unlockAudio();
+    soundManager.play('menuMusic');
+  };
+
   return (
-    <div
+    <div onPointerDown={handleFirstInteraction} onKeyDown={handleFirstInteraction}
       className="absolute inset-0 flex items-center justify-center p-4 overflow-hidden"
       style={{ fontFamily: "'Press Start 2P', monospace" }}
     >
