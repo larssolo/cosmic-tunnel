@@ -68,6 +68,13 @@ export const unlockAudio = () => {
   } catch (_) { /* not all browsers support AudioContext */ }
 };
 
+// Small pool of pre-created shoot Audio elements — rotated round-robin so
+// rapid fire doesn't allocate a new HTMLAudioElement per shot (which leaks
+// memory and decoded-audio buffers across rounds).
+const SHOOT_POOL_SIZE = 6;
+const shootPool: HTMLAudioElement[] = [];
+let shootPoolIndex = 0;
+
 // Loop sounds that should only start if not already playing
 const LOOP_TYPES = new Set<SoundType>(['atmosphere', 'menuMusic', 'voidCountdown']);
 
@@ -78,22 +85,28 @@ export const soundManager = {
     if (LOOP_TYPES.has(type)) {
       if (!audio.paused) return; // already playing
       if (audio.readyState >= 2) {
-        // Audio is buffered enough — play immediately
         audio.play().catch(() => {});
       } else {
-        // Not loaded yet — wait for enough data then play
         const onReady = () => {
           audio.play().catch(() => {});
           audio.removeEventListener('canplay', onReady);
         };
         audio.addEventListener('canplay', onReady);
-        audio.load(); // kick off loading if not started
+        audio.load();
       }
     } else if (type === 'shoot') {
-      // Allow overlapping shots by cloning
-      const clone = new Audio(audio.src);
-      clone.volume = audio.volume;
-      clone.play().catch(() => {});
+      // Lazy-init the pool on first shot (after audio is unlocked)
+      if (shootPool.length === 0) {
+        for (let i = 0; i < SHOOT_POOL_SIZE; i++) {
+          const el = new Audio(audio.src);
+          el.volume = audio.volume;
+          shootPool.push(el);
+        }
+      }
+      const el = shootPool[shootPoolIndex];
+      shootPoolIndex = (shootPoolIndex + 1) % SHOOT_POOL_SIZE;
+      el.currentTime = 0;
+      el.play().catch(() => {});
     } else {
       audio.currentTime = 0;
       audio.play().catch(() => {});
