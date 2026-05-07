@@ -253,7 +253,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
           >
             LARS.SOHL
           </a>{" "}
-          ARCADE
+          ARCADE &nbsp;·&nbsp; <span style={{ color: "#555" }}>v{__APP_VERSION__}</span>
         </p>
       </div>
     </div>
