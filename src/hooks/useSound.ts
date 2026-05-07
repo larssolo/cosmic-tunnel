@@ -29,10 +29,10 @@ const TRACKS: Record<SoundType, TrackConfig> = {
   levelUp:           { url: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', volume: 0.7 },
   powerUpCollect:    { url: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3', volume: 0.5 },
   achievementUnlock: { url: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', volume: 0.8 },
-  menuMusic:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.wav', volume: 0.5, loop: true },
-  voidSpawn:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/IMPACT_Sub_Boom_Tonal_Deep_Space.wav', volume: 0.9 },
-  voidCoreHit:       { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/DroneReactor_BW.43983.wav', volume: 0.8 },
-  voidCountdown:     { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/BEEPTimer_Digital%20Timer%20Beeping%20Bomb%20Clock_GENHD1-07734.wav', volume: 0.6, loop: true },
+  menuMusic:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.mp3', volume: 0.5, loop: true },
+  voidSpawn:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/IMPACT_Sub_Boom_Tonal_Deep_Space.mp3', volume: 0.9 },
+  voidCoreHit:       { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/DroneReactor_BW.43983.mp3', volume: 0.8 },
+  voidCountdown:     { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/BEEPTimer_Digital%20Timer%20Beeping%20Bomb%20Clock_GENHD1-07734.mp3', volume: 0.6, loop: true },
   voidAllCores:      { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/8-Bit%20135%20MIX%20Loop%20Version%201.mp3', volume: 1.0 },
 };
 
@@ -48,16 +48,24 @@ for (const [key, cfg] of Object.entries(TRACKS) as [SoundType, TrackConfig][]) {
 
 // ---------------------------------------------------------------------------
 // Unlock audio on first user interaction (required by browsers / iOS Safari).
-// Call this from any click/keydown handler before playing sounds.
+// Uses the standard silent-buffer trick that reliably unblocks HTMLAudioElement
+// playback on iOS Safari and Chrome's autoplay policy.
 // ---------------------------------------------------------------------------
 let unlocked = false;
 export const unlockAudio = () => {
   if (unlocked) return;
   unlocked = true;
-  // Resume any suspended Web Audio context browsers may have created internally
-  // by briefly playing and immediately pausing each audio element.
-  const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-  ctx.resume();
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    // Play a silent 1-sample buffer — this is the standard iOS unlock pattern
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume();
+  } catch (_) { /* not all browsers support AudioContext */ }
 };
 
 // Loop sounds that should only start if not already playing
@@ -68,7 +76,19 @@ export const soundManager = {
     const audio = audioElements[type];
     if (!audio) return;
     if (LOOP_TYPES.has(type)) {
-      if (audio.paused) audio.play().catch(() => {});
+      if (!audio.paused) return; // already playing
+      if (audio.readyState >= 2) {
+        // Audio is buffered enough — play immediately
+        audio.play().catch(() => {});
+      } else {
+        // Not loaded yet — wait for enough data then play
+        const onReady = () => {
+          audio.play().catch(() => {});
+          audio.removeEventListener('canplay', onReady);
+        };
+        audio.addEventListener('canplay', onReady);
+        audio.load(); // kick off loading if not started
+      }
     } else if (type === 'shoot') {
       // Allow overlapping shots by cloning
       const clone = new Audio(audio.src);
