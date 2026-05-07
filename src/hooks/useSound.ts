@@ -29,10 +29,10 @@ const TRACKS: Record<SoundType, TrackConfig> = {
   levelUp:           { url: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', volume: 0.7 },
   powerUpCollect:    { url: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3', volume: 0.5 },
   achievementUnlock: { url: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', volume: 0.8 },
-  menuMusic:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.wav', volume: 0.5, loop: true },
-  voidSpawn:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/IMPACT_Sub_Boom_Tonal_Deep_Space.wav', volume: 0.9 },
-  voidCoreHit:       { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/DroneReactor_BW.43983.wav', volume: 0.8 },
-  voidCountdown:     { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/BEEPTimer_Digital%20Timer%20Beeping%20Bomb%20Clock_GENHD1-07734.wav', volume: 0.6, loop: true },
+  menuMusic:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.mp3', volume: 0.5, loop: true },
+  voidSpawn:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/IMPACT_Sub_Boom_Tonal_Deep_Space.mp3', volume: 0.9 },
+  voidCoreHit:       { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/DroneReactor_BW.43983.mp3', volume: 0.8 },
+  voidCountdown:     { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/BEEPTimer_Digital%20Timer%20Beeping%20Bomb%20Clock_GENHD1-07734.mp3', volume: 0.6, loop: true },
   voidAllCores:      { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/8-Bit%20135%20MIX%20Loop%20Version%201.mp3', volume: 1.0 },
 };
 
