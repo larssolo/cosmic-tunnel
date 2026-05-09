@@ -20,18 +20,22 @@ export const LevelUpNotification = ({ level, name }: LevelUpNotificationProps) =
 
   return (
     <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-      <div className="animate-scale-in">
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-1 rounded-lg">
-          <div className="bg-background/95 backdrop-blur-sm p-8 rounded-lg">
-            <h2 className="text-5xl font-bold text-center mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              LEVEL {level}
-            </h2>
-            <p className="text-2xl text-center text-foreground/80">
-              {name}
-            </p>
-          </div>
-        </div>
+      <div style={{ textAlign: "center", fontFamily: "'Press Start 2P', monospace", animation: "lvlFadeInOut 3s ease forwards" }}>
+        <p style={{ color: "#ff00ff", fontSize: "clamp(10px, 2vw, 18px)", textShadow: "2px 2px 0 #00ffff, 4px 4px 0 #000, 0 0 14px #ff00ff", letterSpacing: "0.05em" }}>
+          LEVEL {level}
+        </p>
+        <p style={{ color: "#00ffff", fontSize: "clamp(7px, 1.2vw, 11px)", marginTop: "0.4em", textShadow: "1px 1px 0 #ff00ff, 0 0 8px #00ffff", letterSpacing: "0.04em" }}>
+          {name}
+        </p>
       </div>
+      <style>{`
+        @keyframes lvlFadeInOut {
+          0%   { opacity: 0; transform: scale(0.85); }
+          12%  { opacity: 1; transform: scale(1); }
+          75%  { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 };
