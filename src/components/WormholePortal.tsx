@@ -23,26 +23,26 @@ const WormholePortal: React.FC<{ wormhole: Wormhole | null }> = memo(({ wormhole
       <div
         className="absolute inset-0 rounded-full animate-spin"
         style={{
-          background: "conic-gradient(from 0deg, #ff00ff, #00ffff, #ffff00, #ff00ff)",
-          animationDuration: "2s",
-          boxShadow: "0 0 40px #ff00ff, 0 0 80px #00ffff66",
+          background: "conic-gradient(from 0deg, #ff00ff99, #00ffff99, #ffff0099, #ff00ff99)",
+          animationDuration: "3s",
+          boxShadow: "0 0 16px #ff00ff88, 0 0 32px #00ffff44",
         }}
       />
       {/* Mid ring */}
       <div
-        className="absolute inset-[12%] rounded-full animate-spin"
+        className="absolute inset-[14%] rounded-full animate-spin"
         style={{
-          background: "conic-gradient(from 180deg, #00ffff, #ff00ff, #00ff88, #00ffff)",
-          animationDuration: "1.2s",
+          background: "conic-gradient(from 180deg, #00ffff88, #ff00ff88, #00ff8888, #00ffff88)",
+          animationDuration: "2s",
           animationDirection: "reverse",
         }}
       />
       {/* Inner void */}
       <div
-        className="absolute inset-[28%] rounded-full"
+        className="absolute inset-[30%] rounded-full"
         style={{
-          background: "radial-gradient(circle, #000 40%, #1a0033 100%)",
-          boxShadow: "inset 0 0 20px #ff00ff",
+          background: "radial-gradient(circle, #000 50%, #1a0033 100%)",
+          boxShadow: "inset 0 0 10px #ff00ff66",
         }}
       />
       {/* Label */}

@@ -26,9 +26,10 @@ import { unlockAudio } from "@/hooks/useSound";
 
 interface GameProps {
   playerName: string;
+  onExit: () => void;
 }
 
-const Game: React.FC<GameProps> = ({ playerName }) => {
+const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameLoopRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number>(0);
@@ -231,6 +232,7 @@ const Game: React.FC<GameProps> = ({ playerName }) => {
         score={score}
         gameOver={gameOver}
         onRestart={resetGame}
+        onExit={onExit}
         onSubmitScore={submitHighScore}
         playerName={playerName}
         scoreMultiplier={scoreMultiplier}

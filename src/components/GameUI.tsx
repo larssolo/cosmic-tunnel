@@ -9,6 +9,7 @@ interface GameUIProps {
   score: number;
   gameOver: boolean;
   onRestart: () => void;
+  onExit: () => void;
   onSubmitScore: (playerName: string) => Promise<void>;
   playerName: string;
   scoreMultiplier: number;
@@ -27,6 +28,7 @@ const GameUI: React.FC<GameUIProps> = ({
   score,
   gameOver,
   onRestart,
+  onExit,
   onSubmitScore,
   playerName,
   scoreMultiplier,
@@ -229,6 +231,21 @@ const GameUI: React.FC<GameUIProps> = ({
             }}
           >
             ▶ PLAY AGAIN ◀
+          </button>
+
+          <button
+            onClick={onExit}
+            className="mt-3 px-6 py-3 text-[10px] md:text-xs transition-transform hover:scale-105 active:scale-95"
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              backgroundColor: "transparent",
+              color: "#00ffff",
+              border: "2px solid #00ffff",
+              textShadow: "0 0 6px #00ffff",
+              boxShadow: "0 0 10px #00ffff66",
+            }}
+          >
+            ✦ EXIT SPACESHIP ✦
           </button>
         </div>
       )}

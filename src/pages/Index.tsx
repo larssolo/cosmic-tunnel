@@ -8,7 +8,7 @@ const Index = () => {
   return (
     <div className="w-full h-screen overflow-hidden bg-black relative">
       {playerName ? (
-        <Game playerName={playerName} />
+        <Game playerName={playerName} onExit={() => setPlayerName(null)} />
       ) : (
         <StartScreen onStart={(name) => setPlayerName(name)} />
       )}

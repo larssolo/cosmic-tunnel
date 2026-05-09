@@ -45,10 +45,10 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
 
   return (
     <>
-      {/* Background */}
-      <div className="absolute inset-0" style={{ background: cfg.bg, zIndex: 0 }} />
+      {/* Background tint — semi-transparent so meteors stay visible */}
+      <div className="absolute inset-0" style={{ background: cfg.bg, zIndex: 0, opacity: 0.35 }} />
 
-      {/* Grid lines */}
+      {/* Grid lines — subtle */}
       <div
         className="absolute inset-0"
         style={{
@@ -58,13 +58,14 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
             linear-gradient(90deg, ${cfg.gridColor} 1px, transparent 1px)
           `,
           backgroundSize: "8% 8%",
+          opacity: 0.4,
         }}
       />
 
-      {/* Ambient glow */}
+      {/* Ambient glow — reduced */}
       <div
         className="absolute inset-0"
-        style={{ zIndex: 0, background: `radial-gradient(ellipse at 50% 80%, ${cfg.accentColor}22 0%, transparent 70%)` }}
+        style={{ zIndex: 0, background: `radial-gradient(ellipse at 50% 90%, ${cfg.accentColor}0d 0%, transparent 55%)` }}
       />
 
       {/* Top HUD bar */}
@@ -99,49 +100,48 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
 
 const NeonCityParticles = memo(() => (
   <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-    {Array.from({ length: 12 }).map((_, i) => (
+    {Array.from({ length: 6 }).map((_, i) => (
       <div
         key={i}
         className="absolute"
         style={{
-          width: `${2 + (i % 3)}px`,
-          height: `${40 + (i % 4) * 20}px`,
-          left: `${(i * 8.5) % 100}%`,
+          width: "2px",
+          height: `${30 + (i % 3) * 15}px`,
+          left: `${(i * 17) % 100}%`,
           bottom: 0,
-          background: i % 2 === 0 ? "#ff00ff55" : "#00ffff55",
-          boxShadow: i % 2 === 0 ? "0 0 8px #ff00ff" : "0 0 8px #00ffff",
-          animation: `buildingGlow ${1.5 + (i % 3) * 0.5}s ease-in-out infinite alternate`,
-          animationDelay: `${i * 0.2}s`,
+          background: i % 2 === 0 ? "#ff00ff33" : "#00ffff33",
+          animation: `buildingGlow ${2 + (i % 3) * 0.6}s ease-in-out infinite alternate`,
+          animationDelay: `${i * 0.3}s`,
         }}
       />
     ))}
-    <style>{`@keyframes buildingGlow { from { opacity: 0.3; } to { opacity: 0.8; } }`}</style>
+    <style>{`@keyframes buildingGlow { from { opacity: 0.15; } to { opacity: 0.4; } }`}</style>
   </div>
 ));
 
 const LavaParticles = memo(() => (
   <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-    {Array.from({ length: 8 }).map((_, i) => (
+    {Array.from({ length: 5 }).map((_, i) => (
       <div
         key={i}
         className="absolute rounded-full"
         style={{
-          width: `${8 + (i % 4) * 6}px`,
-          height: `${8 + (i % 4) * 6}px`,
-          left: `${(i * 13 + 5) % 90}%`,
-          top: `${70 + (i % 3) * 10}%`,
-          background: "radial-gradient(circle, #ffff00 0%, #ff4400 60%, transparent 100%)",
-          boxShadow: "0 0 12px #ff4400",
-          animation: `lavaBubble ${2 + (i % 3)}s ease-in-out infinite`,
-          animationDelay: `${i * 0.4}s`,
+          width: `${6 + (i % 3) * 4}px`,
+          height: `${6 + (i % 3) * 4}px`,
+          left: `${(i * 20 + 5) % 90}%`,
+          top: `${75 + (i % 3) * 8}%`,
+          background: "radial-gradient(circle, #ff6600 0%, #ff2200 70%, transparent 100%)",
+          opacity: 0.45,
+          animation: `lavaBubble ${2.5 + (i % 3)}s ease-in-out infinite`,
+          animationDelay: `${i * 0.5}s`,
         }}
       />
     ))}
     <style>{`
       @keyframes lavaBubble {
-        0%   { transform: translateY(0) scale(1); opacity: 0.8; }
-        50%  { transform: translateY(-30px) scale(1.2); opacity: 1; }
-        100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+        0%   { transform: translateY(0) scale(1); opacity: 0.45; }
+        50%  { transform: translateY(-20px) scale(1.1); opacity: 0.6; }
+        100% { transform: translateY(-45px) scale(0.4); opacity: 0; }
       }
     `}</style>
   </div>
@@ -149,19 +149,18 @@ const LavaParticles = memo(() => (
 
 const IceParticles = memo(() => (
   <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-    {Array.from({ length: 16 }).map((_, i) => (
+    {Array.from({ length: 8 }).map((_, i) => (
       <div
         key={i}
         className="absolute"
         style={{
-          width: "2px",
-          height: `${15 + (i % 4) * 8}px`,
-          left: `${(i * 6.5) % 98}%`,
-          top: `${(i * 7 + 10) % 80}%`,
-          background: "linear-gradient(to bottom, #ffffff, #00ccff44)",
-          boxShadow: "0 0 6px #00ccff",
+          width: "1px",
+          height: `${12 + (i % 4) * 6}px`,
+          left: `${(i * 13) % 98}%`,
+          top: `${(i * 11 + 15) % 75}%`,
+          background: "linear-gradient(to bottom, #ffffff66, transparent)",
           transform: `rotate(${(i % 6) * 30}deg)`,
-          opacity: 0.5 + (i % 3) * 0.2,
+          opacity: 0.25 + (i % 3) * 0.1,
         }}
       />
     ))}
