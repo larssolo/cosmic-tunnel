@@ -88,6 +88,12 @@ const useGameState = () => {
   const meteorHitsRef = useRef(0);
   const livesRef = useRef(MAX_LIVES);
   const gameOverRef = useRef(false);
+  const pendingTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(fn, ms);
+    pendingTimeoutsRef.current.push(id);
+    return id;
+  }, []);
   
   const { playSound, stopSound } = useSound();
   const voidCountdownStartedRef = useRef(false);
@@ -156,10 +162,10 @@ const useGameState = () => {
 
       if (unlockedAchievements.length > 0) {
         unlockedAchievements.forEach((achievement, index) => {
-          setTimeout(() => {
+          safeTimeout(() => {
             playSound('achievementUnlock');
             setAchievementNotifications(prev => [...prev, achievement]);
-            setTimeout(() => {
+            safeTimeout(() => {
               setAchievementNotifications(prev => prev.filter(a => a.id !== achievement.id));
             }, 5000);
           }, index * 500);
@@ -168,7 +174,7 @@ const useGameState = () => {
     } catch (error) {
       console.error("Failed to submit high score:", error);
     }
-  }, [score, meteorHits, currentLevel, survivalTime, powerUpsCollected, lives, consecutiveHits, timeWithoutHit, playSound]);
+  }, [score, meteorHits, currentLevel, survivalTime, powerUpsCollected, lives, consecutiveHits, timeWithoutHit, playSound, safeTimeout]);
 
   // Handle ship being hit
   const handleShipHit = useCallback(() => {
@@ -186,13 +192,15 @@ const useGameState = () => {
       playSound('crash');
       
       // Reset invulnerability after 2 seconds
-      setTimeout(() => {
+      safeTimeout(() => {
         setIsInvulnerable(false);
       }, 2000);
     }
-  }, [isInvulnerable, playSound]);
+  }, [isInvulnerable, playSound, safeTimeout]);
 
   const resetGame = useCallback(() => {
+    pendingTimeoutsRef.current.forEach(clearTimeout);
+    pendingTimeoutsRef.current = [];
     setScore(0);
     setGameOver(false);
     setShipPosition(50);
@@ -310,7 +318,7 @@ const useGameState = () => {
         playSound('speedUp'); // Use as transition sound
 
         // Start tunnel mode after transition animation
-        setTimeout(() => {
+        safeTimeout(() => {
           startTunnelMode();
           setTunnelTransition(false);
         }, 2500);
@@ -322,14 +330,14 @@ const useGameState = () => {
         playSound('speedUp');
 
         // Stop tunnel mode after transition animation
-        setTimeout(() => {
+        safeTimeout(() => {
           stopTunnelMode();
           setTunnelTransition(false);
         }, 2500);
       }
 
       // Hide notification after 3 seconds
-      setTimeout(() => {
+      safeTimeout(() => {
         setLevelUpNotification(null);
       }, 3000);
     }
@@ -373,7 +381,7 @@ const useGameState = () => {
           // Shield makes ship invulnerable
           activatePowerUp(powerUp.type, config.duration);
           setIsInvulnerable(true);
-          setTimeout(() => {
+          safeTimeout(() => {
             setIsInvulnerable(false);
           }, config.duration);
         } else {
@@ -401,12 +409,12 @@ const useGameState = () => {
     if (!isTunnelMode && timeSinceGameStart > 20 && currentTime >= nextStormTimeRef.current && !stormActiveRef.current && !stormWarningRef.current) {
       stormWarningRef.current = true;
       setMeteorStormWarning(true);
-      setTimeout(() => {
+      safeTimeout(() => {
         stormWarningRef.current = false;
         setMeteorStormWarning(false);
         setMeteorStormActive(true);
         stormActiveRef.current = true;
-        setTimeout(() => {
+        safeTimeout(() => {
           setMeteorStormActive(false);
           stormActiveRef.current = false;
           spawnPowerUp();
@@ -629,7 +637,7 @@ const useGameState = () => {
           // Mark exploding; remove after a short delay so the animation shows
           const exploding: Ufo = { ...u, isExploding: true };
           updatedUfosAfterHits.push(exploding);
-          setTimeout(() => {
+          safeTimeout(() => {
             ufosRef.current = ufosRef.current.filter((x) => x.id !== u.id);
             setUfos(ufosRef.current);
             if (ufosRef.current.length === 0) {
@@ -861,11 +869,11 @@ const useGameState = () => {
           defeatedBossTypesRef.current.add(b.type);
           setBossLasers([]);
           bossLasersRef.current = [];
-          setTimeout(() => {
+          safeTimeout(() => {
             setBoss(null);
             bossRef.current = null;
           }, 1500);
-          setTimeout(() => setBossDefeatedNotice(false), 3000);
+          safeTimeout(() => setBossDefeatedNotice(false), 3000);
         } else {
           const damaged: Boss = { ...b, hp: newHp };
           setBoss(damaged);
@@ -1001,7 +1009,8 @@ const useGameState = () => {
     activatePowerUp,
     currentLevel,
     tunnelActive,
-    countdownTime
+    countdownTime,
+    safeTimeout
   ]);
 
   useEffect(() => {
