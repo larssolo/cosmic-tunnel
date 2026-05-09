@@ -67,7 +67,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
     >
       {showCrawl && <StarWarsCrawl onDone={() => setShowCrawl(false)} />}
       <video
-        className="absolute inset-0 w-full h-full object-cover opacity-40"
+        className="absolute inset-0 w-full h-full object-cover opacity-50"
         autoPlay
         loop
         muted
@@ -84,7 +84,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
             "repeating-linear-gradient(0deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 1px, transparent 1px, transparent 3px)",
         }}
       />
-      <div className="absolute inset-0 bg-black/60 z-10" />
+      <div className="absolute inset-0 bg-black/40 z-10" />
 
       <div
         className="relative z-30 w-full max-w-2xl text-center"
