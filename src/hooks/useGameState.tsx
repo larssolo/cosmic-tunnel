@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile, Boss, BossType, BossLaser, Wormhole, ActiveDimension, DimensionType, Ufo, UfoBullet, BonusStar, VoidEntity, VoidCore } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss, BossType, BossLaser, Ufo, UfoBullet, BonusStar, VoidEntity, VoidCore } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -23,7 +23,7 @@ const BOSS_BY_LEVEL: Record<number, { type: BossType; name: string; hp: number; 
   10: { type: 'laser_beast', name: 'LASER BEAST',  hp: 20, size: 22 },
 };
 
-const DIMENSION_TYPES: DimensionType[] = ['neon_city', 'lava_zone', 'ice_field'];
+interface SpeedRing { id: number; x: number; y: number; createdAt: number; }
 
 const useGameState = () => {
   const [score, setScore] = useState(0);
@@ -50,8 +50,7 @@ const useGameState = () => {
   const [meteorStormActive, setMeteorStormActive] = useState(false);
   const [boss, setBoss] = useState<Boss | null>(null);
   const [bossDefeatedNotice, setBossDefeatedNotice] = useState(false);
-  const [wormhole, setWormhole] = useState<Wormhole | null>(null);
-  const [activeDimension, setActiveDimension] = useState<ActiveDimension | null>(null);
+  const [speedRing, setSpeedRing] = useState<SpeedRing | null>(null);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
   const nextStormTimeRef = useRef<number>(Date.now() + 30000 + Math.random() * 30000);
@@ -74,13 +73,10 @@ const useGameState = () => {
   const bonusRoundEndTimeRef = useRef<number | null>(null);
   const [voidEntity, setVoidEntity] = useState<VoidEntity | null>(null);
   const voidEntityRef = useRef<VoidEntity | null>(null);
-  const wormholeRef = useRef<Wormhole | null>(null);
-  const activeDimensionRef = useRef<ActiveDimension | null>(null);
-  const nextWormholeScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
+  const speedRingRef = useRef<SpeedRing | null>(null);
+  const nextSpeedRingScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
   const shipPositionRef = useRef<number>(50);
   const nextSpeedIncreaseRef = useRef<number>(1000);
-  // Ice field: target vs actual position for slippery controls
-  const iceTargetRef = useRef<number>(50);
   
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
@@ -243,12 +239,9 @@ const useGameState = () => {
     lastVoidHitRef.current = 0;
     voidCountdownStartedRef.current = false;
     stopSound('voidCountdown');
-    setWormhole(null);
-    setActiveDimension(null);
-    wormholeRef.current = null;
-    activeDimensionRef.current = null;
-    nextWormholeScoreRef.current = 1500 + Math.floor(Math.random() * 1500);
-    iceTargetRef.current = 50;
+    setSpeedRing(null);
+    speedRingRef.current = null;
+    nextSpeedRingScoreRef.current = 1500 + Math.floor(Math.random() * 1500);
     stopTunnelMode();
     resetObstacleTimer();
     resetProjectileTimer();
@@ -271,13 +264,7 @@ const useGameState = () => {
   }, [resetGame]);
 
   const moveShip = useCallback((position: number) => {
-    const clamped = Math.max(10, Math.min(90, position));
-    if (activeDimensionRef.current?.type === 'ice_field') {
-      // Ice: store target, actual position lerps in updateGame
-      iceTargetRef.current = clamped;
-    } else {
-      setShipPosition(clamped);
-    }
+    setShipPosition(Math.max(10, Math.min(90, position)));
   }, []);
 
   const shootProjectile = useCallback(() => {
@@ -662,8 +649,6 @@ const useGameState = () => {
       !bonusRoundEndTimeRef.current &&
       !stormActiveRef.current &&
       !stormWarningRef.current &&
-      !wormholeRef.current &&
-      !activeDimensionRef.current &&
       timeSinceGameStart > 15 &&
       Math.random() < 0.0005
     ) {
@@ -725,60 +710,33 @@ const useGameState = () => {
       bonusRoundEndTimeRef.current = null;
     }
 
-    // Ice field: lerp ship toward target
-    if (activeDimensionRef.current?.type === 'ice_field') {
-      const cur = shipPositionRef.current;
-      const tgt = iceTargetRef.current;
-      const lerped = cur + (tgt - cur) * 0.04;
-      setShipPosition(Math.max(10, Math.min(90, lerped)));
+    // SPEED RING — spawns every ~2000 score, floats down, collect for +1500 pts + score boost
+    if (!isTunnelMode && !speedRingRef.current && !bossRef.current && scoreRef.current >= nextSpeedRingScoreRef.current) {
+      const ring: SpeedRing = { id: currentTime, x: 15 + Math.random() * 70, y: -8, createdAt: currentTime };
+      setSpeedRing(ring);
+      speedRingRef.current = ring;
     }
 
-    // WORMHOLE portal spawn — spawn once, CSS animation handles fade, no per-frame setState
-    if (!isTunnelMode && !wormholeRef.current && !activeDimensionRef.current && !bossRef.current && scoreRef.current >= nextWormholeScoreRef.current) {
-      const newWH: Wormhole = {
-        id: Date.now(),
-        x: 20 + Math.random() * 60,
-        y: 15 + Math.random() * 50,
-        size: 10,
-        createdAt: Date.now(),
-      };
-      setWormhole(newWH);
-      wormholeRef.current = newWH;
-    }
-
-    // Wormhole: only check collision + expiry (no per-frame state update)
-    if (wormholeRef.current) {
-      const wh = wormholeRef.current;
-      const age = currentTime - wh.createdAt;
-
-      if (age > 5000) {
-        // Portal expired
-        setWormhole(null);
-        wormholeRef.current = null;
-        nextWormholeScoreRef.current = scoreRef.current + 2000 + Math.floor(Math.random() * 2000);
+    if (speedRingRef.current) {
+      const ring = speedRingRef.current;
+      const newY = ring.y + 0.25 * slowMotion;
+      if (newY > 105) {
+        // Drifted off screen
+        setSpeedRing(null);
+        speedRingRef.current = null;
+        nextSpeedRingScoreRef.current = scoreRef.current + 1800 + Math.floor(Math.random() * 1200);
+      } else if (Math.abs(ring.x - shipPosition) < 7 && Math.abs(newY - 85) < 7) {
+        // Collected!
+        playSound('levelUp');
+        setScore(prev => prev + 1500);
+        activatePowerUp(PowerUpType.SCORE_BOOST, 8000);
+        setSpeedRing(null);
+        speedRingRef.current = null;
+        nextSpeedRingScoreRef.current = scoreRef.current + 1800 + Math.floor(Math.random() * 1200);
       } else {
-        // Ship enters wormhole — check collision
-        const wR = wh.size / 2;
-        if (Math.abs(wh.x - shipPosition) < wR + 5 && Math.abs(wh.y - 85) < wR + 5) {
-          const dimType = DIMENSION_TYPES[Math.floor(Math.random() * 3)];
-          const dim: ActiveDimension = { type: dimType, endTime: currentTime + 12000 };
-          setActiveDimension(dim);
-          activeDimensionRef.current = dim;
-          setWormhole(null);
-          wormholeRef.current = null;
-          if (dimType === 'ice_field') iceTargetRef.current = shipPosition;
-          playSound('speedUp');
-          nextWormholeScoreRef.current = scoreRef.current + 2000 + Math.floor(Math.random() * 2000);
-        }
-      }
-    }
-
-    // Dimension: check expiry only (DimensionOverlay handles its own countdown display)
-    if (activeDimensionRef.current) {
-      if (currentTime >= activeDimensionRef.current.endTime) {
-        setActiveDimension(null);
-        activeDimensionRef.current = null;
-        iceTargetRef.current = shipPositionRef.current;
+        const moved = { ...ring, y: newY };
+        setSpeedRing(moved);
+        speedRingRef.current = moved;
       }
     }
 
@@ -1041,8 +999,7 @@ const useGameState = () => {
     ufoBullets,
     bonusStar,
     bonusRoundEndTime,
-    wormhole,
-    activeDimension,
+    speedRing,
     voidEntity,
     startGame,
     resetGame,

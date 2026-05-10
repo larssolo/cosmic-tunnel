@@ -9,8 +9,7 @@ import GameUI from "./GameUI";
 import Boss from "./Boss";
 import Ufos from "./Ufos";
 import BonusStar from "./BonusStar";
-import WormholePortal from "./WormholePortal";
-import DimensionOverlay from "./DimensionOverlay";
+import SpeedRing from "./SpeedRing";
 import useGameState from "@/hooks/useGameState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PowerUps } from "./PowerUps";
@@ -67,8 +66,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     ufoBullets,
     bonusStar,
     bonusRoundEndTime,
-    wormhole,
-    activeDimension,
+    speedRing,
     voidEntity,
     resetGame,
     moveShip,
@@ -221,11 +219,6 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
           <TunnelMode />
           <TunnelObstacles obstacles={obstacles} />
         </>
-      ) : activeDimension ? (
-        <>
-          <DimensionOverlay dimension={activeDimension} />
-          <Obstacles obstacles={obstacles} dimension={activeDimension.type} bonusRound={!!bonusRoundEndTime} />
-        </>
       ) : (
         <>
           <Tunnel />
@@ -234,7 +227,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
       )}
 
       <VoidEntity voidEntity={voidEntity} />
-      <WormholePortal wormhole={wormhole} />
+      <SpeedRing ring={speedRing} />
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
       <Boss boss={boss} lasers={bossLasers} />
