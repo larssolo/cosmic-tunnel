@@ -33,8 +33,8 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameLoopRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number>(0);
-  // Stable ref — always points to latest updateGame, so game loop never restarts
   const updateGameRef = useRef<() => void>(() => {});
+  const shipPositionRef = useRef<number>(50);
 
   const {
     score,
@@ -73,8 +73,8 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     submitHighScore,
   } = useGameState();
 
-  // Always keep the ref current — no dep array needed on the game loop
   updateGameRef.current = updateGame;
+  shipPositionRef.current = shipPosition;
 
   // Unlock audio context as soon as Game mounts (right after user clicked START)
   useEffect(() => { unlockAudio(); }, []);
@@ -137,6 +137,36 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
       window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, [isMobile, gameOver, moveShip]);
+
+  // Keyboard controls — arrow keys to move, space to shoot
+  useEffect(() => {
+    if (gameOver) return;
+
+    const keysDown = new Set<string>();
+    const STEP = 1.5; // % per frame at 60fps
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") { e.preventDefault(); shootProjectile(); return; }
+      if (e.code === "ArrowLeft" || e.code === "ArrowRight") { e.preventDefault(); keysDown.add(e.code); }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => { keysDown.delete(e.code); };
+
+    let rafId: number;
+    const loop = () => {
+      if (keysDown.has("ArrowLeft"))  moveShip(shipPositionRef.current - STEP);
+      if (keysDown.has("ArrowRight")) moveShip(shipPositionRef.current + STEP);
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      cancelAnimationFrame(rafId);
+    };
+  }, [gameOver, moveShip, shootProjectile]);
 
   // Set up game loop — empty deps so it NEVER restarts (updateGameRef is always current)
   useEffect(() => {
