@@ -31,20 +31,20 @@ export const usePowerUps = () => {
 
   // Update power-up positions
   const updatePowerUps = useCallback(() => {
-    setPowerUps(prev =>
-      prev
-        .map(powerUp => ({
-          ...powerUp,
-          y: powerUp.y + POWER_UP_SPEED
-        }))
-        .filter(powerUp => powerUp.y < 100) // Remove off-screen
-    );
+    setPowerUps(prev => {
+      if (prev.length === 0) return prev;
+      return prev
+        .map(powerUp => ({ ...powerUp, y: powerUp.y + POWER_UP_SPEED }))
+        .filter(powerUp => powerUp.y < 100);
+    });
 
-    // Remove expired active power-ups
+    // Only update active power-ups when something actually expires
     const now = Date.now();
-    setActivePowerUps(prev =>
-      prev.filter(ap => ap.expiresAt > now)
-    );
+    setActivePowerUps(prev => {
+      if (prev.length === 0) return prev;
+      const next = prev.filter(ap => ap.expiresAt > now);
+      return next.length === prev.length ? prev : next;
+    });
   }, []);
 
   // Activate a power-up

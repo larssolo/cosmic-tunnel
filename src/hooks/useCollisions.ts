@@ -42,8 +42,7 @@ export function useCollisions() {
   ) => {
     let hitCount = 0;
     const updatedObstacles = [...obstacles];
-    const newProjectiles = [...projectiles];
-    const projectilesToRemove: number[] = [];
+    const projectilesToRemove = new Set<number>();
     const destroyedObstacles: Obstacle[] = [];
 
     for (let i = 0; i < updatedObstacles.length; i++) {
@@ -59,9 +58,9 @@ export function useCollisions() {
         obstacleX = centerX + Math.cos(obstacle.angle) * tunnelRadius;
       }
 
-      for (let j = 0; j < newProjectiles.length; j++) {
-        if (projectilesToRemove.includes(j)) continue;
-        const projectile = newProjectiles[j];
+      for (let j = 0; j < projectiles.length; j++) {
+        if (projectilesToRemove.has(j)) continue;
+        const projectile = projectiles[j];
 
         const xDiff = Math.abs(obstacleX - projectile.x);
         const yDiff = Math.abs(obstacle.y - (100 - projectile.y));
@@ -70,15 +69,15 @@ export function useCollisions() {
           hitCount++;
           updatedObstacles[i] = { ...obstacle, isExploding: true };
           destroyedObstacles.push(updatedObstacles[i]);
-          projectilesToRemove.push(j);
+          projectilesToRemove.add(j);
           break;
         }
       }
     }
 
-    const newProjectilesList = projectilesToRemove.length > 0
-      ? newProjectiles.filter((_, index) => !projectilesToRemove.includes(index))
-      : newProjectiles;
+    const newProjectilesList = projectilesToRemove.size > 0
+      ? projectiles.filter((_, index) => !projectilesToRemove.has(index))
+      : projectiles;
 
     return {
       hitCount,
