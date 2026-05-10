@@ -46,7 +46,6 @@ const GameUI: React.FC<GameUIProps> = ({
   const [rankInfo, setRankInfo] = useState<{ rank: number; total: number } | null>(null);
   const [showHitFlash, setShowHitFlash] = useState(false);
   const submittedRef = useRef(false);
-  const prevInvulnerableRef = useRef(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -62,13 +61,11 @@ const GameUI: React.FC<GameUIProps> = ({
   }, [showInstructions]);
 
   useEffect(() => {
-    if (isInvulnerable && !prevInvulnerableRef.current && !gameOver) {
+    if (isInvulnerable && !gameOver) {
       setShowHitFlash(true);
-      const t = setTimeout(() => setShowHitFlash(false), 700);
-      prevInvulnerableRef.current = true;
+      const t = setTimeout(() => setShowHitFlash(false), 600);
       return () => clearTimeout(t);
     }
-    if (!isInvulnerable) prevInvulnerableRef.current = false;
   }, [isInvulnerable, gameOver]);
 
   useEffect(() => {
@@ -289,7 +286,7 @@ const GameUI: React.FC<GameUIProps> = ({
       {showHitFlash && (
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ zIndex: 28, animation: "hitFlash 0.7s steps(1, end) forwards" }}
+          style={{ zIndex: 28, animation: "hitFlash 0.6s linear forwards" }}
         />
       )}
 
@@ -299,13 +296,11 @@ const GameUI: React.FC<GameUIProps> = ({
           to   { opacity: 1; }
         }
         @keyframes hitFlash {
-          0%   { background: rgba(255,0,0,0.75); }
-          14%  { background: rgba(255,255,255,0.6); }
-          28%  { background: rgba(255,0,0,0.55); }
-          42%  { background: rgba(255,255,255,0.35); }
-          57%  { background: rgba(255,0,0,0.3); }
-          71%  { background: rgba(255,255,255,0.1); }
-          100% { background: rgba(255,0,0,0); }
+          0%   { background: rgba(255, 30, 30, 0.88); }
+          20%  { background: rgba(255, 255, 255, 0.72); }
+          45%  { background: rgba(255, 30, 30, 0.52); }
+          70%  { background: rgba(255, 255, 255, 0.22); }
+          100% { background: transparent; }
         }
       `}</style>
     </div>
