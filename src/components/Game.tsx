@@ -143,18 +143,30 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     if (gameOver) return;
 
     const keysDown = new Set<string>();
-    const STEP = 1.5; // % per frame at 60fps
+    const STEP = 1.8; // % per rAF frame
+    // Local ref updated synchronously so every frame reads the latest position
+    // without waiting for React state to propagate between frames.
+    const kbPosRef = { current: shipPositionRef.current };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space") { e.preventDefault(); shootProjectile(); return; }
-      if (e.code === "ArrowLeft" || e.code === "ArrowRight") { e.preventDefault(); keysDown.add(e.code); }
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (!e.repeat) shootProjectile(); // fire once per press, not on browser key-repeat
+        return;
+      }
+      if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
+        e.preventDefault();
+        keysDown.add(e.code);
+      }
     };
     const handleKeyUp = (e: KeyboardEvent) => { keysDown.delete(e.code); };
 
     let rafId: number;
     const loop = () => {
-      if (keysDown.has("ArrowLeft"))  moveShip(shipPositionRef.current - STEP);
-      if (keysDown.has("ArrowRight")) moveShip(shipPositionRef.current + STEP);
+      let moved = false;
+      if (keysDown.has("ArrowLeft"))  { kbPosRef.current = Math.max(10, kbPosRef.current - STEP); moved = true; }
+      if (keysDown.has("ArrowRight")) { kbPosRef.current = Math.min(90, kbPosRef.current + STEP); moved = true; }
+      if (moved) moveShip(kbPosRef.current);
       rafId = requestAnimationFrame(loop);
     };
     rafId = requestAnimationFrame(loop);
