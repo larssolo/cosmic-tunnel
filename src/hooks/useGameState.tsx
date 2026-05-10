@@ -40,9 +40,9 @@ const useGameState = () => {
   // New state for features
   const [currentLevel, setCurrentLevel] = useState(1);
   const [levelUpNotification, setLevelUpNotification] = useState<{ level: number; name: string } | null>(null);
-  const [survivalTime, setSurvivalTime] = useState(0);
+  const survivalTimeRef = useRef(0);
   const [consecutiveHits, setConsecutiveHits] = useState(0);
-  const [timeWithoutHit, setTimeWithoutHit] = useState(0);
+  const timeWithoutHitRef = useRef(0);
   const [powerUpsCollected, setPowerUpsCollected] = useState(0);
   const [achievementNotifications, setAchievementNotifications] = useState<any[]>([]);
   const [tunnelTransition, setTunnelTransition] = useState(false);
@@ -136,7 +136,7 @@ const useGameState = () => {
     if (score <= 0) return;
 
     try {
-      const survivalSeconds = Math.floor(survivalTime);
+      const survivalSeconds = Math.floor(survivalTimeRef.current);
 
       await CloudHighScoreService.saveHighScore(
         playerName,
@@ -155,7 +155,7 @@ const useGameState = () => {
         highestLevel: currentLevel,
         perfectGame: lives === MAX_LIVES && score >= 5000,
         consecutiveHits,
-        timeWithoutHit
+        timeWithoutHit: timeWithoutHitRef.current
       };
 
       const unlockedAchievements = AchievementService.checkAchievements(gameStats);
@@ -174,7 +174,7 @@ const useGameState = () => {
     } catch (error) {
       console.error("Failed to submit high score:", error);
     }
-  }, [score, meteorHits, currentLevel, survivalTime, powerUpsCollected, lives, consecutiveHits, timeWithoutHit, playSound, safeTimeout]);
+  }, [score, meteorHits, currentLevel, powerUpsCollected, lives, consecutiveHits, playSound, safeTimeout]);
 
   // Handle ship being hit
   const handleShipHit = useCallback(() => {
@@ -212,9 +212,9 @@ const useGameState = () => {
     setLives(MAX_LIVES);
     setIsInvulnerable(false);
     setCurrentLevel(1);
-    setSurvivalTime(0);
+    survivalTimeRef.current = 0;
     setConsecutiveHits(0);
-    setTimeWithoutHit(0);
+    timeWithoutHitRef.current = 0;
     setPowerUpsCollected(0);
     setLevelUpNotification(null);
     setAchievementNotifications([]);
@@ -292,14 +292,11 @@ const useGameState = () => {
   const updateGame = useCallback(() => {
     if (gameOverRef.current) return;
     
-    // Update survival time
+    // Update survival/hit-time refs (no setState — only read at game-over submission)
     const currentTime = Date.now();
     const timeSinceStart = (currentTime - gameStartTimeRef.current) / 1000;
-    setSurvivalTime(timeSinceStart);
-    
-    // Update time without hit
-    const timeSinceLastHit = (currentTime - lastHitTimeRef.current) / 1000;
-    setTimeWithoutHit(timeSinceLastHit);
+    survivalTimeRef.current = timeSinceStart;
+    timeWithoutHitRef.current = (currentTime - lastHitTimeRef.current) / 1000;
     
     // Apply score boost power-up
     const scoreBoost = isPowerUpActive(PowerUpType.SCORE_BOOST) ? 2 : 1;
@@ -1032,7 +1029,6 @@ const useGameState = () => {
     powerUps,
     activePowerUps,
     achievementNotifications,
-    survivalTime,
     tunnelActive,
     countdownTime,
     tunnelTransition,

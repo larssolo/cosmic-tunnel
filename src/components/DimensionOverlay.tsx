@@ -45,16 +45,16 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
 
   return (
     <>
-      {/* Edge vignette — clear centre, coloured borders */}
+      {/* Edge vignette — large transparent centre, colour only at the very rim */}
       <div
         className="absolute inset-0"
         style={{
           zIndex: 0,
-          background: `radial-gradient(ellipse 55% 55% at 50% 50%, transparent 0%, ${cfg.accentColor}18 60%, ${cfg.accentColor}55 100%)`,
+          background: `radial-gradient(ellipse 70% 65% at 50% 50%, transparent 0%, transparent 62%, ${cfg.accentColor}22 80%, ${cfg.accentColor}66 100%)`,
         }}
       />
 
-      {/* Grid lines — only visible at edges via vignette mask */}
+      {/* Grid lines — masked so they only show in the outer ~25% */}
       <div
         className="absolute inset-0"
         style={{
@@ -64,9 +64,9 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
             linear-gradient(90deg, ${cfg.gridColor} 1px, transparent 1px)
           `,
           backgroundSize: "8% 8%",
-          maskImage: "radial-gradient(ellipse 50% 50% at 50% 50%, transparent 30%, black 100%)",
-          WebkitMaskImage: "radial-gradient(ellipse 50% 50% at 50% 50%, transparent 30%, black 100%)",
-          opacity: 0.6,
+          maskImage: "radial-gradient(ellipse 60% 58% at 50% 50%, transparent 55%, black 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 60% 58% at 50% 50%, transparent 55%, black 100%)",
+          opacity: 0.55,
         }}
       />
 
@@ -102,27 +102,25 @@ const DimensionOverlay: React.FC<{ dimension: ActiveDimension | null }> = memo((
 
 const NeonCityParticles = memo(() => (
   <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-    {/* Left edge columns */}
     {[0, 1, 2].map((i) => (
       <div key={`l${i}`} className="absolute" style={{
-        width: "2px", height: `${50 + i * 20}px`,
-        left: `${i * 4}%`, bottom: `${i * 8}%`,
-        background: "#ff00ff44",
+        width: "2px", height: `${40 + i * 18}px`,
+        left: `${i * 2}%`, bottom: `${i * 6}%`,
+        background: "#ff00ff55",
         animation: `buildingGlow ${1.8 + i * 0.4}s ease-in-out infinite alternate`,
         animationDelay: `${i * 0.25}s`,
       }} />
     ))}
-    {/* Right edge columns */}
     {[0, 1, 2].map((i) => (
       <div key={`r${i}`} className="absolute" style={{
-        width: "2px", height: `${50 + i * 20}px`,
-        right: `${i * 4}%`, bottom: `${i * 8}%`,
-        background: "#00ffff44",
+        width: "2px", height: `${40 + i * 18}px`,
+        right: `${i * 2}%`, bottom: `${i * 6}%`,
+        background: "#00ffff55",
         animation: `buildingGlow ${2 + i * 0.4}s ease-in-out infinite alternate`,
         animationDelay: `${i * 0.3}s`,
       }} />
     ))}
-    <style>{`@keyframes buildingGlow { from { opacity: 0.2; } to { opacity: 0.55; } }`}</style>
+    <style>{`@keyframes buildingGlow { from { opacity: 0.2; } to { opacity: 0.6; } }`}</style>
   </div>
 ));
 
@@ -134,7 +132,7 @@ const LavaParticles = memo(() => (
       return (
         <div key={i} className="absolute rounded-full" style={{
           width: `${8 + (i % 2) * 5}px`, height: `${8 + (i % 2) * 5}px`,
-          [onLeft ? "left" : "right"]: `${(i % 2) * 5 + 1}%`,
+          [onLeft ? "left" : "right"]: `${(i % 2) * 2}%`,
           bottom: `${5 + (i % 2) * 10}%`,
           background: "radial-gradient(circle, #ff6600 0%, #ff2200 70%, transparent 100%)",
           opacity: 0.5,
@@ -162,7 +160,7 @@ const IceParticles = memo(() => (
         <div key={i} className="absolute" style={{
           width: "1px",
           height: `${18 + (i % 3) * 8}px`,
-          [onLeft ? "left" : "right"]: `${(i % 3) * 3}%`,
+          [onLeft ? "left" : "right"]: `${(i % 3) * 2}%`,
           top: `${15 + (i % 3) * 22}%`,
           background: "linear-gradient(to bottom, #aaeeff88, transparent)",
           transform: `rotate(${onLeft ? -(i % 3) * 15 - 10 : (i % 3) * 15 + 10}deg)`,
