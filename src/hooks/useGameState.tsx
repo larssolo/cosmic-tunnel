@@ -407,7 +407,7 @@ const useGameState = () => {
       }, 3000);
     }
 
-    const stormMultiplier = stormActiveRef.current ? 2.5 : 1;
+    const stormMultiplier = stormActiveRef.current ? 1.7 : 1;
 
     // BOSS spawn — at specific level milestones (5, 7, 10), each only once per run
     if (!isTunnelMode && !bossRef.current && BOSS_BY_LEVEL[currentLevel] && !defeatedBossTypesRef.current.has(BOSS_BY_LEVEL[currentLevel].type)) {
