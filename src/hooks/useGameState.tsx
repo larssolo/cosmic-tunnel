@@ -734,9 +734,11 @@ const useGameState = () => {
         speedRingRef.current = null;
         nextSpeedRingScoreRef.current = scoreRef.current + 1800 + Math.floor(Math.random() * 1200);
       } else {
-        const moved = { ...ring, y: newY };
-        setSpeedRing(moved);
-        speedRingRef.current = moved;
+        speedRingRef.current = { ...ring, y: newY };
+        // Only re-render every ~4 frames to cut down on unnecessary React renders
+        if (Math.round(newY * 4) !== Math.round(ring.y * 4)) {
+          setSpeedRing(speedRingRef.current);
+        }
       }
     }
 
