@@ -12,7 +12,7 @@ export function useCollisions() {
     if (gameOver) return false;
     
     const shipY = 85; // Ship position from top (percentage)
-    const shipSize = isTunnelMode ? 8 : 12; // Smaller hitbox in tunnel mode for fairness
+    const shipSize = isTunnelMode ? 5 : 6;
     
     for (const obstacle of obstacles) {
       if (obstacle.isExploding) continue; // Exploding obstacles don't cause collisions
@@ -26,7 +26,7 @@ export function useCollisions() {
       // Collision radius based on obstacle size
       const obstacleRadius = obstacle.size / 2;
       const collisionThresholdX = obstacleRadius + shipSize / 2;
-      const collisionThresholdY = isTunnelMode ? 6 : 10; // Tighter Y collision in tunnel
+      const collisionThresholdY = isTunnelMode ? 4 : 6;
       
       if (xDiff <= collisionThresholdX && yDiff <= collisionThresholdY) {
         return true;
