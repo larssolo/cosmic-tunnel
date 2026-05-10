@@ -5,27 +5,29 @@ import { Obstacle } from "@/types/gameTypes";
 export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.RefObject<number>) {
   const lastObstacleTimeRef = useRef(Date.now());
 
-  const createObstacle = useCallback((spawnRateMultiplier: number = 1) => {
+  const createObstacle = useCallback((spawnRateMultiplier: number = 1, existingObstacles: Obstacle[] = []) => {
     const now = Date.now();
 
-    // Start with a longer interval and gradually decrease it based on score
-    // Even longer base interval for slower obstacle generation at the beginning
-    const baseInterval = 1500; // Starting with a longer delay (1.5 seconds)
-    const minInterval = 220;   // Tight enough to keep meteors on-screen at max flight speed
+    const baseInterval = 1500;
+    const minInterval = 380; // raised — prevents wall of meteors even during storm
     const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 6, minInterval) / spawnRateMultiplier;
-    
+
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
-      const newObstacle: Obstacle = {
-        id: now,
-        x: Math.random() * 80 + 10, // 10% to 90% of screen width
-        y: -5, // Start above the visible area
-        size: Math.random() * 10 + 5, // Size between 5% and 15% of container
-      };
-      
+      const size = Math.random() * 10 + 5;
+
+      // Pick an x that doesn't overlap with meteors near the top of the screen
+      const topObstacles = existingObstacles.filter(o => o.y < 15 && !o.isExploding);
+      let x = Math.random() * 80 + 10;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = Math.random() * 80 + 10;
+        const tooClose = topObstacles.some(o => Math.abs(o.x - candidate) < (o.size / 2 + size / 2 + 4));
+        if (!tooClose) { x = candidate; break; }
+      }
+
       lastObstacleTimeRef.current = now;
-      return newObstacle;
+      return { id: now, x, y: -5, size } as Obstacle;
     }
-    
+
     return null;
   }, [scoreRef]);
 

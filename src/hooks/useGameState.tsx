@@ -753,8 +753,8 @@ const useGameState = () => {
       // Boss active — pause meteor spawn, but still update existing obstacles
       setObstacles(prev => updateObstacles(prev, slowMotion));
     } else {
-      // Standard mode obstacles — single setState to avoid stale-prev race
-      const newObstacle = createObstacle(stormMultiplier);
+      // Standard mode obstacles — pass current obstacles so spawn can avoid overlaps
+      const newObstacle = createObstacle(stormMultiplier, obstacles);
       setObstacles(prev => {
         const withNew = newObstacle ? [...prev, newObstacle] : prev;
         return updateObstacles(withNew, slowMotion);

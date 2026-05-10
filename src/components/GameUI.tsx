@@ -160,8 +160,7 @@ const GameUI: React.FC<GameUIProps> = ({
       {gameOver && (
         <div
           className="absolute inset-0 flex items-center justify-center flex-col gap-4 pointer-events-auto"
-          style={{ background: "rgba(0,0,0,0.96)" }}
-          style={{ fontFamily: "'Press Start 2P', monospace", zIndex: 30 }}
+          style={{ background: "rgba(0,0,0,0.96)", fontFamily: "'Press Start 2P', monospace", zIndex: 30 }}
         >
           <h2
             className="text-3xl md:text-5xl"
