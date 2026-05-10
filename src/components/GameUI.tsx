@@ -44,7 +44,9 @@ const GameUI: React.FC<GameUIProps> = ({
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [rankInfo, setRankInfo] = useState<{ rank: number; total: number } | null>(null);
+  const [showHitFlash, setShowHitFlash] = useState(false);
   const submittedRef = useRef(false);
+  const prevInvulnerableRef = useRef(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -58,6 +60,16 @@ const GameUI: React.FC<GameUIProps> = ({
       };
     }
   }, [showInstructions]);
+
+  useEffect(() => {
+    if (isInvulnerable && !prevInvulnerableRef.current && !gameOver) {
+      setShowHitFlash(true);
+      const t = setTimeout(() => setShowHitFlash(false), 700);
+      prevInvulnerableRef.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!isInvulnerable) prevInvulnerableRef.current = false;
+  }, [isInvulnerable, gameOver]);
 
   useEffect(() => {
     if (gameOver) {
@@ -150,7 +162,8 @@ const GameUI: React.FC<GameUIProps> = ({
       {/* Game over screen */}
       {gameOver && (
         <div
-          className="absolute inset-0 bg-black/80 flex items-center justify-center flex-col gap-4 pointer-events-auto backdrop-blur-sm"
+          className="absolute inset-0 flex items-center justify-center flex-col gap-4 pointer-events-auto"
+          style={{ background: "rgba(0,0,0,0.96)" }}
           style={{ fontFamily: "'Press Start 2P', monospace", zIndex: 30 }}
         >
           <h2
@@ -272,10 +285,27 @@ const GameUI: React.FC<GameUIProps> = ({
           </p>
         </div>
       )}
+      {/* 8-bit hit flash */}
+      {showHitFlash && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: 28, animation: "hitFlash 0.7s steps(1, end) forwards" }}
+        />
+      )}
+
       <style>{`
         @keyframes stormPulse {
           from { opacity: 0.6; }
           to   { opacity: 1; }
+        }
+        @keyframes hitFlash {
+          0%   { background: rgba(255,0,0,0.75); }
+          14%  { background: rgba(255,255,255,0.6); }
+          28%  { background: rgba(255,0,0,0.55); }
+          42%  { background: rgba(255,255,255,0.35); }
+          57%  { background: rgba(255,0,0,0.3); }
+          71%  { background: rgba(255,255,255,0.1); }
+          100% { background: rgba(255,0,0,0); }
         }
       `}</style>
     </div>
