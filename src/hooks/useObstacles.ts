@@ -44,9 +44,10 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
           return { ...obstacle, y: obstacle.y + speedRef.current! * 1.5 * speedFactor * slowMotionMultiplier };
         }
         
-        // Normal movement for non-exploding obstacles - start slower, get faster over time
-        // Apply slow motion multiplier
-        return { ...obstacle, y: obstacle.y + (baseSpeed + speedRef.current! * speedFactor) * slowMotionMultiplier };
+        // Remove once off the bottom of the screen
+        const newY = obstacle.y + (baseSpeed + speedRef.current! * speedFactor) * slowMotionMultiplier;
+        if (newY > 105) return null;
+        return { ...obstacle, y: newY };
       })
       // Filter out null values (removed obstacles)
       .filter(Boolean) as Obstacle[];
