@@ -21,8 +21,8 @@ const Spaceship: React.FC<SpaceshipProps> = memo(({
       style={{
         bottom: "20%",
         left: `${position}%`,
-        // Use will-change for better performance during position changes
         willChange: "left",
+        zIndex: 25,
       }}
     >
       {isExploding ? (
