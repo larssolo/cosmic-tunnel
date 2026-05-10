@@ -35,6 +35,10 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const lastTimestampRef = useRef<number>(0);
   const updateGameRef = useRef<() => void>(() => {});
   const shipPositionRef = useRef<number>(50);
+  const keysDownRef = useRef<Set<string>>(new Set());
+  const kbPosRef = useRef<number>(50);
+  const moveShipRef = useRef<(pos: number) => void>(() => {});
+  const shootRef = useRef<() => void>(() => {});
 
   const {
     score,
@@ -74,7 +78,11 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   } = useGameState();
 
   updateGameRef.current = updateGame;
+  moveShipRef.current = moveShip;
+  shootRef.current = shootProjectile;
   shipPositionRef.current = shipPosition;
+  // Keep kbPos in sync when ship moves via mouse/touch so keyboard picks up from correct position
+  kbPosRef.current = shipPosition;
 
   // Unlock audio context as soon as Game mounts (right after user clicked START)
   useEffect(() => { unlockAudio(); }, []);
@@ -138,55 +146,44 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     };
   }, [isMobile, gameOver, moveShip]);
 
-  // Keyboard controls — arrow keys to move, space to shoot
+  // Keyboard listeners — purely track which keys are held; no separate rAF loop
   useEffect(() => {
-    if (gameOver) return;
-
-    const keysDown = new Set<string>();
-    const STEP = 1.8; // % per rAF frame
-    // Local ref updated synchronously so every frame reads the latest position
-    // without waiting for React state to propagate between frames.
-    const kbPosRef = { current: shipPositionRef.current };
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
-        if (!e.repeat) shootProjectile(); // fire once per press, not on browser key-repeat
+        if (!e.repeat) shootRef.current();
         return;
       }
       if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
         e.preventDefault();
-        keysDown.add(e.code);
+        keysDownRef.current.add(e.code);
       }
     };
-    const handleKeyUp = (e: KeyboardEvent) => { keysDown.delete(e.code); };
-
-    let rafId: number;
-    const loop = () => {
-      let moved = false;
-      if (keysDown.has("ArrowLeft"))  { kbPosRef.current = Math.max(10, kbPosRef.current - STEP); moved = true; }
-      if (keysDown.has("ArrowRight")) { kbPosRef.current = Math.min(90, kbPosRef.current + STEP); moved = true; }
-      if (moved) moveShip(kbPosRef.current);
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
+    const handleKeyUp = (e: KeyboardEvent) => { keysDownRef.current.delete(e.code); };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
-      cancelAnimationFrame(rafId);
     };
-  }, [gameOver, moveShip, shootProjectile]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Set up game loop — empty deps so it NEVER restarts (updateGameRef is always current)
+  // Single game loop — applies keyboard movement then runs game logic each frame
   useEffect(() => {
     const FPS = 60;
     const frameDelay = 1000 / FPS;
+    const STEP = 1.8; // % per frame
 
     const gameLoop = (timestamp: number) => {
       if (timestamp - lastTimestampRef.current >= frameDelay) {
+        // Apply keyboard movement first, synchronously, before game logic reads shipPosition
+        const keys = keysDownRef.current;
+        if (keys.has("ArrowLeft") || keys.has("ArrowRight")) {
+          if (keys.has("ArrowLeft"))  kbPosRef.current = Math.max(10, kbPosRef.current - STEP);
+          if (keys.has("ArrowRight")) kbPosRef.current = Math.min(90, kbPosRef.current + STEP);
+          moveShipRef.current(kbPosRef.current);
+        }
         updateGameRef.current();
         lastTimestampRef.current = timestamp;
       }
@@ -194,11 +191,8 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     };
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-
     return () => {
-      if (gameLoopRef.current !== null) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
+      if (gameLoopRef.current !== null) cancelAnimationFrame(gameLoopRef.current);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
