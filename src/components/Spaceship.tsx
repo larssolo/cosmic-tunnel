@@ -22,7 +22,7 @@ const Spaceship: React.FC<SpaceshipProps> = memo(({
         bottom: "20%",
         left: `${position}%`,
         willChange: "left",
-        zIndex: 25,
+        zIndex: isExploding ? 3 : 25,
       }}
     >
       {isExploding ? (
