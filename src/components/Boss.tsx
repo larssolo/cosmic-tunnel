@@ -13,19 +13,19 @@ const Boss: React.FC<BossProps> = memo(({ boss, lasers = [] }) => {
 
   return (
     <>
-      {/* Boss laser beams (only used by laser_beast) */}
+      {/* Boss laser beams (only used by laser_beast) — beam follows the boss */}
       {lasers.map((l) => {
         const elapsed = Date.now() - l.startedAt;
-        const charging = elapsed < 600;
-        const firing = elapsed >= 600 && elapsed < l.duration;
+        const charging = elapsed < 400;
+        const firing = elapsed >= 400 && elapsed < l.duration;
         if (!charging && !firing) return null;
         return (
           <div
             key={l.id}
             className="absolute pointer-events-none"
             style={{
-              left: `${l.x}%`,
-              top: 0,
+              left: `${boss.x}%`,
+              top: `${boss.y}%`,
               bottom: 0,
               width: charging ? "2px" : "10px",
               transform: "translateX(-50%)",

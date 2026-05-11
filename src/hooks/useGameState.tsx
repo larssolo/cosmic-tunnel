@@ -478,7 +478,7 @@ const useGameState = () => {
               id: now,
               x: shipPositionRef.current,
               startedAt: now,
-              duration: 800,
+              duration: 550,
             };
             setBossLasers(prev => {
               const next = [...prev, laser];
@@ -512,7 +512,8 @@ const useGameState = () => {
         if (elapsed >= l.duration) continue;
         surviving.push(l);
         // Damage only during firing phase (after 600ms charge) — rate-limited to once per invuln window
-        if (elapsed >= 600 && !isInvulnerable && Math.abs(l.x - shipPosition) < 4 && nowL - lastLaserHitRef.current > 2100) {
+        const beamX = bossRef.current?.x ?? l.x;
+        if (elapsed >= 400 && !isInvulnerable && Math.abs(beamX - shipPosition) < 4 && nowL - lastLaserHitRef.current > 2100) {
           lastLaserHitRef.current = nowL;
           handleShipHit();
         }
