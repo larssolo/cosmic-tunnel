@@ -7,7 +7,7 @@ export function useProjectiles() {
 
   const createProjectile = useCallback((shipPosition: number, gameOver: boolean, rapidFire: boolean = false) => {
     const now = Date.now();
-    const shootInterval = rapidFire ? 150 : 300; // Rapid fire shoots twice as fast
+    const shootInterval = rapidFire ? 150 : 200;
     if (now - lastShootTimeRef.current > shootInterval && !gameOver) {
       const newProjectile: Projectile = {
         id: now,

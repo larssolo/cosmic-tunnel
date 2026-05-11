@@ -187,14 +187,14 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
           if (keys.has("ArrowRight")) kbPosRef.current = Math.min(90, kbPosRef.current + STEP);
           moveShipRef.current(kbPosRef.current);
         }
+        updateGameRef.current();
         if (keys.has("Space")) {
           const nowMs = Date.now();
-          if (nowMs - lastHoldShotRef.current >= 250) {
+          if (nowMs - lastHoldShotRef.current >= 220) {
             shootRef.current();
             lastHoldShotRef.current = nowMs;
           }
         }
-        updateGameRef.current();
         lastTimestampRef.current = timestamp;
       }
       gameLoopRef.current = requestAnimationFrame(gameLoop);
