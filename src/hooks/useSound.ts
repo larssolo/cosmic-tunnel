@@ -3,7 +3,8 @@ import { useCallback } from 'react';
 export type SoundType =
   | 'shoot' | 'explosion' | 'gameOver' | 'start' | 'speedUp' | 'rumble'
   | 'crash' | 'atmosphere' | 'levelUp' | 'powerUpCollect' | 'achievementUnlock'
-  | 'menuMusic' | 'voidSpawn' | 'voidCoreHit' | 'voidCountdown' | 'voidAllCores';
+  | 'menuMusic' | 'voidSpawn' | 'voidCoreHit' | 'voidCountdown' | 'voidAllCores'
+  | 'laserBeastCharge' | 'laserBeastExplosion';
 
 // ---------------------------------------------------------------------------
 // Module-level singleton — audio elements live for the entire page session.
@@ -34,6 +35,8 @@ const TRACKS: Record<SoundType, TrackConfig> = {
   voidCoreHit:       { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/DroneReactor_BW.43983.mp3', volume: 0.8 },
   voidCountdown:     { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/BEEPTimer_Digital%20Timer%20Beeping%20Bomb%20Clock_GENHD1-07734.mp3', volume: 0.6, loop: true },
   voidAllCores:      { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/8-Bit%20135%20MIX%20Loop%20Version%201.mp3', volume: 1.0 },
+  laserBeastCharge:  { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/gregorquendel-laser-charge-175727.mp3', volume: 0.7, loop: true },
+  laserBeastExplosion: { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/dragon-studio-massive-explosion-2-397983.mp3', volume: 1.0 },
 };
 
 // Build audio elements once at module load time (no user gesture needed just to create them)
@@ -76,7 +79,7 @@ const shootPool: HTMLAudioElement[] = [];
 let shootPoolIndex = 0;
 
 // Loop sounds that should only start if not already playing
-const LOOP_TYPES = new Set<SoundType>(['atmosphere', 'menuMusic', 'voidCountdown']);
+const LOOP_TYPES = new Set<SoundType>(['atmosphere', 'menuMusic', 'voidCountdown', 'laserBeastCharge']);
 
 export const soundManager = {
   play(type: SoundType) {

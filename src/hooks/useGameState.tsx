@@ -225,6 +225,7 @@ const useGameState = () => {
     defeatedBossTypesRef.current = new Set();
     setBossLasers([]);
     bossLasersRef.current = [];
+    stopSound('laserBeastCharge');
     setUfos([]);
     setUfoBullets([]);
     ufosRef.current = [];
@@ -427,22 +428,28 @@ const useGameState = () => {
       setBoss(newBoss);
       bossRef.current = newBoss;
       playSound('speedUp');
+      if (cfg.type === 'laser_beast') playSound('laserBeastCharge');
     }
 
     // BOSS movement + attacks + collisions
     if (bossRef.current) {
       const b = bossRef.current;
       if (!b.isExploding) {
-        const bossSpeed = 0.4 * slowMotion;
+        // Laser Beast is now ~2.2× faster and weaves vertically so it can't be predicted
+        const baseBossSpeed = b.type === 'laser_beast' ? 0.9 : 0.4;
+        const bossSpeed = baseBossSpeed * slowMotion;
         let nextX = b.x + b.direction * bossSpeed;
         let nextDir = b.direction;
         if (nextX <= 15) { nextX = 15; nextDir = 1; }
         if (nextX >= 85) { nextX = 85; nextDir = -1; }
-        const nextY = Math.min(b.y + 0.005 * slowMotion, 28);
+        const baseY = Math.min(b.y + 0.005 * slowMotion, 28);
+        const nextY = b.type === 'laser_beast'
+          ? Math.max(10, Math.min(28, baseY + Math.sin(Date.now() / 380) * 4))
+          : baseY;
 
         // Attack timing
         const now = Date.now();
-        const attackInterval = b.type === 'crusher' ? 1800 : b.type === 'mothership' ? 1400 : 3200;
+        const attackInterval = b.type === 'crusher' ? 1800 : b.type === 'mothership' ? 1400 : 2400;
         let nextAttackAt = b.lastAttackAt ?? now;
         if (now - nextAttackAt >= attackInterval) {
           nextAttackAt = now;
@@ -471,7 +478,7 @@ const useGameState = () => {
               id: now,
               x: shipPositionRef.current,
               startedAt: now,
-              duration: 1500,
+              duration: 800,
             };
             setBossLasers(prev => {
               const next = [...prev, laser];
@@ -822,7 +829,12 @@ const useGameState = () => {
           setScore(prev => prev + 3000);
           setBossDefeatedNotice(true);
           spawnPowerUp();
-          playSound('levelUp');
+          if (b.type === 'laser_beast') {
+            stopSound('laserBeastCharge');
+            playSound('laserBeastExplosion');
+          } else {
+            playSound('levelUp');
+          }
           defeatedBossTypesRef.current.add(b.type);
           setBossLasers([]);
           bossLasersRef.current = [];

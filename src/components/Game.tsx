@@ -149,7 +149,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
-        if (!e.repeat) shootRef.current();
+        keysDownRef.current.add("Space");
         return;
       }
       if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
@@ -182,6 +182,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
           if (keys.has("ArrowRight")) kbPosRef.current = Math.min(90, kbPosRef.current + STEP);
           moveShipRef.current(kbPosRef.current);
         }
+        if (keys.has("Space")) shootRef.current();
         updateGameRef.current();
         lastTimestampRef.current = timestamp;
       }
