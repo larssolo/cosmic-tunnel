@@ -50,6 +50,7 @@ const useGameState = () => {
   const [meteorStormActive, setMeteorStormActive] = useState(false);
   const [boss, setBoss] = useState<Boss | null>(null);
   const [bossDefeatedNotice, setBossDefeatedNotice] = useState(false);
+  const [lifeGainedNotice, setLifeGainedNotice] = useState(false);
   const [speedRing, setSpeedRing] = useState<SpeedRing | null>(null);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
@@ -224,6 +225,7 @@ const useGameState = () => {
     nextStormTimeRef.current = Date.now() + 30000 + Math.random() * 30000;
     setBoss(null);
     setBossDefeatedNotice(false);
+    setLifeGainedNotice(false);
     bossRef.current = null;
     defeatedBossTypesRef.current = new Set();
     setBossLasers([]);
@@ -364,7 +366,14 @@ const useGameState = () => {
         
         if (powerUp.type === PowerUpType.HEALTH) {
           // Instant health restoration
-          setLives(prev => Math.min(prev + 1, 5)); // Max 5 lives
+          setLives(prev => {
+            const next = Math.min(prev + 1, 5);
+            if (next > prev) {
+              setLifeGainedNotice(true);
+              safeTimeout(() => setLifeGainedNotice(false), 1500);
+            }
+            return next;
+          });
         } else if (powerUp.type === PowerUpType.SHIELD) {
           // Shield makes ship invulnerable
           activatePowerUp(powerUp.type, config.duration);
@@ -1015,6 +1024,7 @@ const useGameState = () => {
     boss,
     bossLasers,
     bossDefeatedNotice,
+    lifeGainedNotice,
     ufos,
     ufoBullets,
     bonusStar,

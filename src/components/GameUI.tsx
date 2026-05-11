@@ -22,6 +22,7 @@ interface GameUIProps {
   meteorStormWarning?: boolean;
   meteorStormActive?: boolean;
   bossDefeatedNotice?: boolean;
+  lifeGainedNotice?: boolean;
 }
 
 const GameUI: React.FC<GameUIProps> = ({
@@ -41,6 +42,7 @@ const GameUI: React.FC<GameUIProps> = ({
   meteorStormWarning = false,
   meteorStormActive = false,
   bossDefeatedNotice = false,
+  lifeGainedNotice = false,
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [rankInfo, setRankInfo] = useState<{ rank: number; total: number } | null>(null);
@@ -92,6 +94,18 @@ const GameUI: React.FC<GameUIProps> = ({
   return (
     <div className="absolute inset-0 pointer-events-none font-robot9000">
       {tunnelMode && !gameOver && <CountdownTimer timeRemaining={countdownTime} />}
+
+      {/* Life Gained Notice */}
+      {lifeGainedNotice && !gameOver && (
+        <div className="absolute inset-x-0 top-1/2 flex items-center justify-center z-50 pointer-events-none">
+          <div style={{ fontFamily: "'Press Start 2P', monospace", textAlign: "center", animation: "lifeGainPop 1.5s ease-out forwards" }}>
+            <p style={{ color: "#ff3366", fontSize: "clamp(18px, 4vw, 36px)", textShadow: "0 0 25px #ff3366, 0 0 50px #ff0044" }}>
+              ♥ +1 LIFE ♥
+            </p>
+          </div>
+          <style>{`@keyframes lifeGainPop { 0% { transform: scale(0.5); opacity: 0; } 25% { transform: scale(1.3); opacity: 1; } 75% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }`}</style>
+        </div>
+      )}
 
       {/* Boss Defeated Notice */}
       {bossDefeatedNotice && !gameOver && (
