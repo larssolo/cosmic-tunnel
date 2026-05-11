@@ -225,6 +225,7 @@ const useGameState = () => {
     defeatedBossTypesRef.current = new Set();
     setBossLasers([]);
     bossLasersRef.current = [];
+    stopSound('laserBeastCharge');
     setUfos([]);
     setUfoBullets([]);
     ufosRef.current = [];
@@ -427,6 +428,7 @@ const useGameState = () => {
       setBoss(newBoss);
       bossRef.current = newBoss;
       playSound('speedUp');
+      if (cfg.type === 'laser_beast') playSound('laserBeastCharge');
     }
 
     // BOSS movement + attacks + collisions
@@ -827,7 +829,12 @@ const useGameState = () => {
           setScore(prev => prev + 3000);
           setBossDefeatedNotice(true);
           spawnPowerUp();
-          playSound('levelUp');
+          if (b.type === 'laser_beast') {
+            stopSound('laserBeastCharge');
+            playSound('laserBeastExplosion');
+          } else {
+            playSound('levelUp');
+          }
           defeatedBossTypesRef.current.add(b.type);
           setBossLasers([]);
           bossLasersRef.current = [];
