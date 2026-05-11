@@ -77,17 +77,20 @@ const useGameState = () => {
   const nextSpeedRingScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
   const shipPositionRef = useRef<number>(50);
   const nextSpeedIncreaseRef = useRef<number>(1000);
-  
+
   const scoreRef = useRef(0);
   const speedRef = useRef(0.5);
   const scoreMultiplierRef = useRef(1);
   const meteorHitsRef = useRef(0);
   const livesRef = useRef(MAX_LIVES);
   const gameOverRef = useRef(false);
-  const pendingTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const pendingTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const safeTimeout = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(fn, ms);
-    pendingTimeoutsRef.current.push(id);
+    const id = setTimeout(() => {
+      pendingTimeoutsRef.current.delete(id);
+      fn();
+    }, ms);
+    pendingTimeoutsRef.current.add(id);
     return id;
   }, []);
   
@@ -196,7 +199,7 @@ const useGameState = () => {
 
   const resetGame = useCallback(() => {
     pendingTimeoutsRef.current.forEach(clearTimeout);
-    pendingTimeoutsRef.current = [];
+    pendingTimeoutsRef.current = new Set();
     setScore(0);
     setGameOver(false);
     setShipPosition(50);
@@ -765,7 +768,9 @@ const useGameState = () => {
       const newObstacle = createObstacle(stormMultiplier, obstacles);
       setObstacles(prev => {
         const withNew = newObstacle ? [...prev, newObstacle] : prev;
-        return updateObstacles(withNew, slowMotion);
+        const updated = updateObstacles(withNew, slowMotion);
+        // Hard cap: never keep more than 40 obstacles to prevent unbounded growth
+        return updated.length > 40 ? updated.slice(-40) : updated;
       });
     }
     
