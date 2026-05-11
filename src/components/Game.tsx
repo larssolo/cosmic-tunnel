@@ -65,6 +65,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     boss,
     bossLasers,
     bossDefeatedNotice,
+    lifeGainedNotice,
     ufos,
     ufoBullets,
     bonusStar,
@@ -264,6 +265,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         meteorStormWarning={meteorStormWarning}
         meteorStormActive={meteorStormActive}
         bossDefeatedNotice={bossDefeatedNotice}
+        lifeGainedNotice={lifeGainedNotice}
       />
 
       {/* Active power-ups indicator */}

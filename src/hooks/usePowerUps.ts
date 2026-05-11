@@ -14,8 +14,15 @@ export const usePowerUps = () => {
     const now = Date.now();
     if (now - lastSpawnTimeRef.current < POWER_UP_SPAWN_INTERVAL) return;
 
-    const types = Object.values(PowerUpType);
-    const randomType = types[Math.floor(Math.random() * types.length)];
+    // HEALTH is weighted ~3x higher than other types so players see it more often
+    const weighted: PowerUpType[] = [
+      PowerUpType.HEALTH, PowerUpType.HEALTH, PowerUpType.HEALTH,
+      PowerUpType.SHIELD,
+      PowerUpType.RAPID_FIRE,
+      PowerUpType.SLOW_MOTION,
+      PowerUpType.SCORE_BOOST,
+    ];
+    const randomType = weighted[Math.floor(Math.random() * weighted.length)];
     const x = 20 + Math.random() * 60; // 20-80% across screen
 
     const newPowerUp: PowerUp = {
