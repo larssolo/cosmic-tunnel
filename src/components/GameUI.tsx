@@ -44,6 +44,7 @@ const GameUI: React.FC<GameUIProps> = ({
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [rankInfo, setRankInfo] = useState<{ rank: number; total: number } | null>(null);
+  const [showHitFlash, setShowHitFlash] = useState(false);
   const submittedRef = useRef(false);
   const queryClient = useQueryClient();
 
@@ -58,6 +59,14 @@ const GameUI: React.FC<GameUIProps> = ({
       };
     }
   }, [showInstructions]);
+
+  useEffect(() => {
+    if (isInvulnerable && !gameOver) {
+      setShowHitFlash(true);
+      const t = setTimeout(() => setShowHitFlash(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [isInvulnerable, gameOver]);
 
   useEffect(() => {
     if (gameOver) {
@@ -150,8 +159,8 @@ const GameUI: React.FC<GameUIProps> = ({
       {/* Game over screen */}
       {gameOver && (
         <div
-          className="absolute inset-0 bg-black/80 flex items-center justify-center flex-col gap-4 pointer-events-auto backdrop-blur-sm"
-          style={{ fontFamily: "'Press Start 2P', monospace", zIndex: 30 }}
+          className="absolute inset-0 flex items-center justify-center flex-col gap-4 pointer-events-auto"
+          style={{ background: "rgba(0,0,0,0.96)", fontFamily: "'Press Start 2P', monospace", zIndex: 30 }}
         >
           <h2
             className="text-3xl md:text-5xl"
@@ -272,10 +281,25 @@ const GameUI: React.FC<GameUIProps> = ({
           </p>
         </div>
       )}
+      {/* 8-bit hit flash */}
+      {showHitFlash && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: 28, animation: "hitFlash 0.6s linear forwards" }}
+        />
+      )}
+
       <style>{`
         @keyframes stormPulse {
           from { opacity: 0.6; }
           to   { opacity: 1; }
+        }
+        @keyframes hitFlash {
+          0%   { background: rgba(255, 30, 30, 0.88); }
+          20%  { background: rgba(255, 255, 255, 0.72); }
+          45%  { background: rgba(255, 30, 30, 0.52); }
+          70%  { background: rgba(255, 255, 255, 0.22); }
+          100% { background: transparent; }
         }
       `}</style>
     </div>

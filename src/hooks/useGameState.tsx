@@ -225,6 +225,7 @@ const useGameState = () => {
     defeatedBossTypesRef.current = new Set();
     setBossLasers([]);
     bossLasersRef.current = [];
+    stopSound('laserBeastCharge');
     setUfos([]);
     setUfoBullets([]);
     ufosRef.current = [];
@@ -407,7 +408,7 @@ const useGameState = () => {
       }, 3000);
     }
 
-    const stormMultiplier = stormActiveRef.current ? 2.5 : 1;
+    const stormMultiplier = stormActiveRef.current ? 1.7 : 1;
 
     // BOSS spawn — at specific level milestones (5, 7, 10), each only once per run
     if (!isTunnelMode && !bossRef.current && BOSS_BY_LEVEL[currentLevel] && !defeatedBossTypesRef.current.has(BOSS_BY_LEVEL[currentLevel].type)) {
@@ -427,22 +428,28 @@ const useGameState = () => {
       setBoss(newBoss);
       bossRef.current = newBoss;
       playSound('speedUp');
+      if (cfg.type === 'laser_beast') playSound('laserBeastCharge');
     }
 
     // BOSS movement + attacks + collisions
     if (bossRef.current) {
       const b = bossRef.current;
       if (!b.isExploding) {
-        const bossSpeed = 0.4 * slowMotion;
+        // Laser Beast is now ~2.2× faster and weaves vertically so it can't be predicted
+        const baseBossSpeed = b.type === 'laser_beast' ? 0.9 : 0.4;
+        const bossSpeed = baseBossSpeed * slowMotion;
         let nextX = b.x + b.direction * bossSpeed;
         let nextDir = b.direction;
         if (nextX <= 15) { nextX = 15; nextDir = 1; }
         if (nextX >= 85) { nextX = 85; nextDir = -1; }
-        const nextY = Math.min(b.y + 0.005 * slowMotion, 28);
+        const baseY = Math.min(b.y + 0.005 * slowMotion, 28);
+        const nextY = b.type === 'laser_beast'
+          ? Math.max(10, Math.min(28, baseY + Math.sin(Date.now() / 380) * 4))
+          : baseY;
 
         // Attack timing
         const now = Date.now();
-        const attackInterval = b.type === 'crusher' ? 1800 : b.type === 'mothership' ? 1400 : 3200;
+        const attackInterval = b.type === 'crusher' ? 1800 : b.type === 'mothership' ? 1400 : 2400;
         let nextAttackAt = b.lastAttackAt ?? now;
         if (now - nextAttackAt >= attackInterval) {
           nextAttackAt = now;
@@ -471,7 +478,7 @@ const useGameState = () => {
               id: now,
               x: shipPositionRef.current,
               startedAt: now,
-              duration: 1500,
+              duration: 800,
             };
             setBossLasers(prev => {
               const next = [...prev, laser];
@@ -734,9 +741,11 @@ const useGameState = () => {
         speedRingRef.current = null;
         nextSpeedRingScoreRef.current = scoreRef.current + 1800 + Math.floor(Math.random() * 1200);
       } else {
-        const moved = { ...ring, y: newY };
-        setSpeedRing(moved);
-        speedRingRef.current = moved;
+        speedRingRef.current = { ...ring, y: newY };
+        // Only re-render every ~4 frames to cut down on unnecessary React renders
+        if (Math.round(newY * 4) !== Math.round(ring.y * 4)) {
+          setSpeedRing(speedRingRef.current);
+        }
       }
     }
 
@@ -751,8 +760,8 @@ const useGameState = () => {
       // Boss active — pause meteor spawn, but still update existing obstacles
       setObstacles(prev => updateObstacles(prev, slowMotion));
     } else {
-      // Standard mode obstacles — single setState to avoid stale-prev race
-      const newObstacle = createObstacle(stormMultiplier);
+      // Standard mode obstacles — pass current obstacles so spawn can avoid overlaps
+      const newObstacle = createObstacle(stormMultiplier, obstacles);
       setObstacles(prev => {
         const withNew = newObstacle ? [...prev, newObstacle] : prev;
         return updateObstacles(withNew, slowMotion);
@@ -820,7 +829,12 @@ const useGameState = () => {
           setScore(prev => prev + 3000);
           setBossDefeatedNotice(true);
           spawnPowerUp();
-          playSound('levelUp');
+          if (b.type === 'laser_beast') {
+            stopSound('laserBeastCharge');
+            playSound('laserBeastExplosion');
+          } else {
+            playSound('levelUp');
+          }
           defeatedBossTypesRef.current.add(b.type);
           setBossLasers([]);
           bossLasersRef.current = [];
