@@ -39,6 +39,8 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const moveShipRef = useRef<(pos: number) => void>(() => {});
   const shootRef = useRef<() => void>(() => {});
   const lastHoldShotRef = useRef<number>(0);
+  const gameOverRef = useRef<boolean>(false);
+  const isMobileRef = useRef<boolean>(false);
 
   const {
     score,
@@ -80,6 +82,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   moveShipRef.current = moveShip;
   shootRef.current = shootProjectile;
   shipPositionRef.current = shipPosition;
+  gameOverRef.current = gameOver;
   // Keep kbPos in sync when ship moves via mouse/touch so keyboard picks up from correct position
   kbPosRef.current = shipPosition;
 
@@ -87,63 +90,38 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   useEffect(() => { unlockAudio(); }, []);
 
   const isMobile = useIsMobile();
+  isMobileRef.current = isMobile;
 
-  // Handle mouse/touch movement for ship control
+  // Mount-once movement handlers — use refs so they never go stale or re-subscribe
   useEffect(() => {
-    if (gameOver) return;
-
     const handleMove = (clientX: number) => {
-      if (!gameContainerRef.current) return;
-      
+      if (gameOverRef.current || !gameContainerRef.current) return;
       const rect = gameContainerRef.current.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const position = (x / rect.width) * 100;
-      moveShip(position);
+      const position = ((clientX - rect.left) / rect.width) * 100;
+      moveShipRef.current(position);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (isMobile) return; // Skip mouse events on mobile
-      handleMove(e.clientX);
+      if (!isMobileRef.current) handleMove(e.clientX);
     };
-
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 0) return;
-      handleMove(e.touches[0].clientX);
+      if (e.touches.length > 0) handleMove(e.touches[0].clientX);
     };
-
-    if (!isMobile) {
-      window.addEventListener("mousemove", handleMouseMove);
-    }
-    window.addEventListener("touchmove", handleTouchMove);
-
-    return () => {
-      if (!isMobile) {
-        window.removeEventListener("mousemove", handleMouseMove);
-      }
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [gameOver, moveShip, isMobile]);
-
-  // Handle orientation for mobile controls
-  useEffect(() => {
-    if (!isMobile || gameOver) return;
-
     const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (e.gamma === null) return;
-      
-      // Convert gamma (-90 to 90) to position (0 to 100)
-      // with a more sensitive range (-30 to 30 maps to 0-100)
+      if (!isMobileRef.current || e.gamma === null || gameOverRef.current) return;
       const gamma = Math.max(-30, Math.min(30, e.gamma));
-      const position = ((gamma + 30) / 60) * 100;
-      moveShip(position);
+      moveShipRef.current(((gamma + 30) / 60) * 100);
     };
 
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove);
     window.addEventListener("deviceorientation", handleOrientation);
-
     return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("deviceorientation", handleOrientation);
     };
-  }, [isMobile, gameOver, moveShip]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keyboard listeners — purely track which keys are held; no separate rAF loop
   useEffect(() => {
