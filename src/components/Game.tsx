@@ -38,6 +38,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const kbPosRef = useRef<number>(50);
   const moveShipRef = useRef<(pos: number) => void>(() => {});
   const shootRef = useRef<() => void>(() => {});
+  const lastHoldShotRef = useRef<number>(0);
 
   const {
     score,
@@ -149,7 +150,10 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
-        if (!e.repeat) shootRef.current();
+        if (!e.repeat) {
+          shootRef.current();
+          lastHoldShotRef.current = Date.now();
+        }
         keysDownRef.current.add("Space");
         return;
       }
@@ -183,7 +187,13 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
           if (keys.has("ArrowRight")) kbPosRef.current = Math.min(90, kbPosRef.current + STEP);
           moveShipRef.current(kbPosRef.current);
         }
-        if (keys.has("Space")) shootRef.current();
+        if (keys.has("Space")) {
+          const nowMs = Date.now();
+          if (nowMs - lastHoldShotRef.current >= 250) {
+            shootRef.current();
+            lastHoldShotRef.current = nowMs;
+          }
+        }
         updateGameRef.current();
         lastTimestampRef.current = timestamp;
       }
