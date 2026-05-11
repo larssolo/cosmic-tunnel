@@ -149,6 +149,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
+        if (!e.repeat) shootRef.current();
         keysDownRef.current.add("Space");
         return;
       }
