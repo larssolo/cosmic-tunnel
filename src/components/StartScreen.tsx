@@ -18,6 +18,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const { data: highScores = [] } = useQuery({
     queryKey: ["highScores"],
     queryFn: () => CloudHighScoreService.getHighScores(10),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   // Stop game sounds and start menu music when start screen mounts
