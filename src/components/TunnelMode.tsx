@@ -20,6 +20,7 @@ const TunnelMode = memo(() => {
     let offset = 0;
     let glitchIntensity = 0;
     let glitchTimer = 0;
+    let animationId = 0;
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -221,10 +222,10 @@ const TunnelMode = memo(() => {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       offset += 0.8;
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     };
 
-    const animationId = requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener("resize", resizeCanvas);
