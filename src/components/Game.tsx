@@ -100,10 +100,17 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     const handleMove = (clientX: number) => {
       if (gameOverRef.current || !gameContainerRef.current) return;
       const rect = gameContainerRef.current.getBoundingClientRect();
+      if (rect.width === 0) return;
       const position = ((clientX - rect.left) / rect.width) * 100;
       moveShipRef.current(position);
     };
 
+    // Primary: pointermove handles mouse, trackpad and pen uniformly
+    const handlePointerMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return; // touchmove handles touch
+      if (!isMobileRef.current) handleMove(e.clientX);
+    };
+    // Legacy fallback for browsers without pointer events
     const handleMouseMove = (e: MouseEvent) => {
       if (!isMobileRef.current) handleMove(e.clientX);
     };
@@ -116,10 +123,12 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
       moveShipRef.current(((gamma + 30) / 60) * 100);
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
     window.addEventListener("deviceorientation", handleOrientation);
     return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("deviceorientation", handleOrientation);
