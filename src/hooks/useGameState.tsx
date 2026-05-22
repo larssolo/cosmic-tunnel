@@ -391,7 +391,7 @@ const useGameState = () => {
     // Gradual speed increase every 1000 score points (threshold-based so jumps can't skip it)
     if (scoreRef.current >= nextSpeedIncreaseRef.current) {
       nextSpeedIncreaseRef.current += 1000;
-      setSpeed(prev => Math.min(prev + 0.05, 2.0));
+      setSpeed(prev => Math.min(prev + 0.035, 1.4));
       playSound('speedUp');
     }
     
