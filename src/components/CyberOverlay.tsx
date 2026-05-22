@@ -8,10 +8,10 @@ export const CyberOverlay = memo(({ isActive }: CyberOverlayProps) => {
   if (!isActive) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-50">
+    <div className="absolute inset-0 pointer-events-none z-40">
       {/* Scanlines */}
       <div 
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0 opacity-10"
         style={{
           background: `repeating-linear-gradient(
             0deg,
@@ -37,7 +37,7 @@ export const CyberOverlay = memo(({ isActive }: CyberOverlayProps) => {
       
       {/* Chromatic aberration edges */}
       <div 
-        className="absolute inset-0 opacity-30 mix-blend-screen"
+        className="absolute inset-0 opacity-10 mix-blend-screen"
         style={{
           boxShadow: `
             inset 3px 0 10px rgba(255, 0, 128, 0.3),
