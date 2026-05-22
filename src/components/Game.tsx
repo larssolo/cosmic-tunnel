@@ -19,6 +19,7 @@ import { AchievementUnlockedNotification } from "./AchievementUnlockedNotificati
 import { TunnelTransition } from "./TunnelTransition";
 import { CyberOverlay } from "./CyberOverlay";
 import VoidEntity from "./VoidEntity";
+import VictoryScreen from "./VictoryScreen";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
 import { unlockAudio } from "@/hooks/useSound";
@@ -45,6 +46,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const {
     score,
     gameOver,
+    isVictory,
     shipPosition,
     obstacles,
     projectiles,
@@ -294,6 +296,17 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
 
       {/* Tunnel transition overlay */}
       <TunnelTransition isActive={tunnelTransition} />
+
+      {/* Victory screen */}
+      {isVictory && (
+        <VictoryScreen
+          score={score}
+          playerName={playerName}
+          meteorHits={meteorHits}
+          onRestart={resetGame}
+          onExit={onExit}
+        />
+      )}
     </div>
   );
 };

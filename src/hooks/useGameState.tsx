@@ -28,6 +28,7 @@ interface SpeedRing { id: number; x: number; y: number; createdAt: number; }
 const useGameState = () => {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [isVictory, setIsVictory] = useState(false);
   const [shipPosition, setShipPosition] = useState(50); // Center position (%)
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
@@ -259,6 +260,7 @@ const useGameState = () => {
     meteorHitsRef.current = 0;
     livesRef.current = MAX_LIVES;
     gameOverRef.current = false;
+    setIsVictory(false);
     gameStartTimeRef.current = Date.now();
     lastHitTimeRef.current = Date.now();
     playSound('start');
@@ -388,6 +390,14 @@ const useGameState = () => {
       }
     });
     
+    // Victory condition — player completes all 15 levels
+    if (scoreRef.current >= 62000 && !gameOverRef.current) {
+      gameOverRef.current = true;
+      setGameOver(true);
+      setIsVictory(true);
+      return;
+    }
+
     // Gradual speed increase every 1000 score points (threshold-based so jumps can't skip it)
     if (scoreRef.current >= nextSpeedIncreaseRef.current) {
       nextSpeedIncreaseRef.current += 1000;
@@ -1004,6 +1014,7 @@ const useGameState = () => {
   return {
     score,
     gameOver,
+    isVictory,
     shipPosition,
     obstacles,
     projectiles,
