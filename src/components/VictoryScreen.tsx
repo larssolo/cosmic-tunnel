@@ -22,8 +22,8 @@ const VictoryScreen: React.FC<VictoryScreenProps> = ({ score, playerName, meteor
   const [phase, setPhase] = useState<"flash" | "text" | "full">("flash");
   const [letterIndex, setLetterIndex] = useState(0);
 
-  const headline = "YOU WIN!";
-  const subline = "COSMIC TUNNEL CONQUERED";
+  const headline = "YOU DID IT!";
+  const subline = "YOU ARE ONE OF THE FEW PILOTS WHO HAD THE COURAGE.";
 
   // Phase progression
   useEffect(() => {
