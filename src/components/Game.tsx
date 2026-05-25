@@ -210,9 +210,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   return (
     <div
       ref={gameContainerRef}
-      className={`relative w-full h-full overflow-hidden bg-black ${
-        tunnelTransition ? 'animate-tunnel-shake animate-tunnel-rotate' : ''
-      }`}
+      className="relative w-full h-full overflow-hidden bg-black"
       style={{ touchAction: "none" }}
       onPointerMove={(e) => {
         if (e.pointerType === "touch" || isMobileRef.current) return;

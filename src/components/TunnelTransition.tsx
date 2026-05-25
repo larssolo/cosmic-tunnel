@@ -7,13 +7,13 @@ interface TunnelTransitionProps {
 export const TunnelTransition = memo(({ isActive }: TunnelTransitionProps) => {
   // Generate random particles for debris effect
   const particles = useMemo(() => {
-    return Array.from({ length: 30 }).map((_, i) => ({
+    return Array.from({ length: 12 }).map((_, i) => ({
       id: i,
-      size: Math.random() * 6 + 2,
-      duration: Math.random() * 0.8 + 0.4,
+      size: Math.random() * 5 + 2,
+      duration: Math.random() * 0.8 + 0.5,
       delay: Math.random() * 0.5,
       startX: Math.random() * 100,
-      angle: (Math.random() - 0.5) * 60,
+      angle: (Math.random() - 0.5) * 40,
       color: i % 3 === 0 ? '#00ffff' : i % 3 === 1 ? '#ff00ff' : '#ff0080'
     }));
   }, []);
@@ -32,15 +32,15 @@ export const TunnelTransition = memo(({ isActive }: TunnelTransitionProps) => {
       
       {/* Grid lines rushing toward viewer */}
       <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 15 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={`grid-${i}`}
             className="absolute left-0 right-0 h-[2px]"
             style={{
-              top: `${(i / 15) * 100}%`,
+              top: `${(i / 8) * 100}%`,
               background: `linear-gradient(90deg, transparent, ${i % 2 === 0 ? '#00ffff' : '#ff00ff'}, transparent)`,
-              animation: `fly-past ${0.3 + i * 0.05}s linear ${i * 0.02}s forwards`,
-              opacity: 0.6
+              animation: `fly-past ${0.4 + i * 0.05}s linear ${i * 0.03}s forwards`,
+              opacity: 0.4
             }}
           />
         ))}
@@ -81,7 +81,7 @@ export const TunnelTransition = memo(({ isActive }: TunnelTransitionProps) => {
               3px 0 0 #ff00ff,
               -3px 0 0 #ff0080
             `,
-            animation: 'glitch-text 0.3s infinite'
+            animation: 'glitch-text 1.2s infinite'
           }}
         >
           ENTERING
@@ -98,7 +98,7 @@ export const TunnelTransition = memo(({ isActive }: TunnelTransitionProps) => {
               -3px 0 0 #00ffff,
               3px 0 0 #ff0080
             `,
-            animation: 'glitch-text 0.2s infinite reverse'
+            animation: 'glitch-text 1s infinite reverse'
           }}
         >
           CYBER WORMHOLE
