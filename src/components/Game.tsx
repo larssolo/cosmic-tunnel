@@ -208,11 +208,17 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const isTunnelMode = currentLevelData.gameMode === GameMode.TUNNEL && tunnelActive;
 
   return (
-    <div 
+    <div
       ref={gameContainerRef}
-      className={`relative w-full h-full overflow-hidden bg-black ${
-        tunnelTransition ? 'animate-tunnel-shake animate-tunnel-rotate' : ''
-      }`}
+      className="relative w-full h-full overflow-hidden bg-black"
+      style={{ touchAction: "none" }}
+      onPointerMove={(e) => {
+        if (e.pointerType === "touch" || isMobileRef.current) return;
+        if (gameOverRef.current || !gameContainerRef.current) return;
+        const rect = gameContainerRef.current.getBoundingClientRect();
+        if (rect.width === 0) return;
+        moveShipRef.current(((e.clientX - rect.left) / rect.width) * 100);
+      }}
       onClick={handleShoot}
     >
       {/* Game world - conditional rendering based on mode */}
