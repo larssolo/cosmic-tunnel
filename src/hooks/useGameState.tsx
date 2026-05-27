@@ -52,6 +52,16 @@ const useGameState = () => {
   const [boss, setBoss] = useState<Boss | null>(null);
   const [bossDefeatedNotice, setBossDefeatedNotice] = useState(false);
   const [lifeGainedNotice, setLifeGainedNotice] = useState(false);
+  // Combo system
+  const [comboCount, setComboCount] = useState(0);
+  const [comboNotice, setComboNotice] = useState(false);
+  const comboCountRef = useRef(0);
+  const lastKillTimeRef = useRef(0);
+  // Continue screen
+  const [showContinue, setShowContinue] = useState(false);
+  const continueUsedRef = useRef(false);
+  // Personal best
+  const [isPersonalBest, setIsPersonalBest] = useState(false);
   const [speedRing, setSpeedRing] = useState<SpeedRing | null>(null);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
@@ -136,6 +146,14 @@ const useGameState = () => {
   const submitHighScore = useCallback(async (playerName: string) => {
     if (score <= 0) return;
 
+    // Check personal best (stored per player name)
+    const pbKey = `pb_${playerName}`;
+    const prevBest = parseInt(localStorage.getItem(pbKey) ?? "0", 10);
+    if (score > prevBest) {
+      localStorage.setItem(pbKey, String(score));
+      setIsPersonalBest(true);
+    }
+
     try {
       const survivalSeconds = Math.floor(survivalTimeRef.current);
 
@@ -180,24 +198,40 @@ const useGameState = () => {
   // Handle ship being hit
   const handleShipHit = useCallback(() => {
     if (isInvulnerable || gameOverRef.current) return;
-    
+
     setLives(prev => prev - 1);
     if (livesRef.current - 1 <= 0) {
-      // Game over when no lives left
-      setGameOver(true);
-      gameOverRef.current = true;
-      playSound('crash');
+      if (!continueUsedRef.current) {
+        // Offer CONTINUE before final game over
+        gameOverRef.current = true;
+        playSound('crash');
+        setShowContinue(true);
+      } else {
+        setGameOver(true);
+        gameOverRef.current = true;
+        playSound('crash');
+      }
     } else {
-      // Set temporary invulnerability
       setIsInvulnerable(true);
       playSound('crash');
-      
-      // Reset invulnerability after 2 seconds
-      safeTimeout(() => {
-        setIsInvulnerable(false);
-      }, 2000);
+      safeTimeout(() => setIsInvulnerable(false), 2000);
     }
   }, [isInvulnerable, playSound, safeTimeout]);
+
+  const useContinue = useCallback(() => {
+    continueUsedRef.current = true;
+    setShowContinue(false);
+    gameOverRef.current = false;
+    setLives(3);
+    livesRef.current = 3;
+    setIsInvulnerable(true);
+    safeTimeout(() => setIsInvulnerable(false), 2000);
+  }, [safeTimeout]);
+
+  const declineContinue = useCallback(() => {
+    setShowContinue(false);
+    setGameOver(true);
+  }, []);
 
   const resetGame = useCallback(() => {
     pendingTimeoutsRef.current.forEach(clearTimeout);
@@ -261,6 +295,12 @@ const useGameState = () => {
     livesRef.current = MAX_LIVES;
     gameOverRef.current = false;
     setIsVictory(false);
+    setShowContinue(false);
+    continueUsedRef.current = false;
+    comboCountRef.current = 0;
+    setComboCount(0);
+    setComboNotice(false);
+    setIsPersonalBest(false);
     gameStartTimeRef.current = Date.now();
     lastHitTimeRef.current = Date.now();
     playSound('start');
@@ -277,9 +317,13 @@ const useGameState = () => {
 
   const shootProjectile = useCallback(() => {
     const rapidFire = isPowerUpActive(PowerUpType.RAPID_FIRE);
-    const newProjectile = createProjectile(shipPosition, gameOverRef.current, rapidFire);
-    if (newProjectile) {
-      setProjectiles(prev => [...prev, newProjectile]);
+    const tripleShot = isPowerUpActive(PowerUpType.TRIPLE_SHOT);
+    const result = createProjectile(shipPosition, gameOverRef.current, rapidFire, tripleShot);
+    if (result) {
+      setProjectiles(prev => [
+        ...prev,
+        ...(Array.isArray(result) ? result : [result]),
+      ]);
       playSound('shoot');
     }
   }, [shipPosition, createProjectile, playSound, isPowerUpActive]);
@@ -815,17 +859,33 @@ const useGameState = () => {
         if (!survivingIdsAfterMeteor.has(p.id)) consumedProjectileIds.add(p.id);
       }
 
+      // Combo tracking
+      const now2 = Date.now();
+      const timeSinceLastKill = now2 - lastKillTimeRef.current;
+      if (timeSinceLastKill < 1500) {
+        comboCountRef.current += meteorHitCount;
+      } else {
+        comboCountRef.current = meteorHitCount;
+      }
+      lastKillTimeRef.current = now2;
+      const combo = comboCountRef.current;
+      if (combo >= 3) {
+        setComboCount(combo);
+        setComboNotice(true);
+        safeTimeout(() => setComboNotice(false), 1200);
+      }
+      const comboBonus = combo >= 10 ? 4 : combo >= 6 ? 3 : combo >= 3 ? 2 : 1;
+
       if (bonusRoundEndTimeRef.current) {
-        setScore(prev => prev + Math.round(500 * scoreBoost) * meteorHitCount);
+        setScore(prev => prev + Math.round(500 * scoreBoost * comboBonus) * meteorHitCount);
       } else if (isTunnelMode && tunnelActive) {
-        // Tunnel mode obstacles have variable point values
         const totalTunnelScore = destroyedObstacles.reduce((sum, o) => {
           const pts = o.points ?? 50;
-          return sum + Math.round(pts * scoreMultiplierRef.current * scoreBoost);
+          return sum + Math.round(pts * scoreMultiplierRef.current * scoreBoost * comboBonus);
         }, 0);
         setScore(prev => prev + totalTunnelScore);
       } else {
-        const scorePerHit = Math.round(50 * scoreMultiplierRef.current * scoreBoost);
+        const scorePerHit = Math.round(50 * scoreMultiplierRef.current * scoreBoost * comboBonus);
         setScore(prev => prev + scorePerHit * meteorHitCount);
       }
     }
@@ -1048,6 +1108,12 @@ const useGameState = () => {
     shootProjectile,
     updateGame,
     submitHighScore,
+    comboCount,
+    comboNotice,
+    showContinue,
+    useContinue,
+    declineContinue,
+    isPersonalBest,
   };
 };
 

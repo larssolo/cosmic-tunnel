@@ -21,6 +21,7 @@ export const usePowerUps = () => {
       PowerUpType.RAPID_FIRE,
       PowerUpType.SLOW_MOTION,
       PowerUpType.SCORE_BOOST,
+      PowerUpType.TRIPLE_SHOT,
     ];
     const randomType = weighted[Math.floor(Math.random() * weighted.length)];
     const x = 20 + Math.random() * 60; // 20-80% across screen

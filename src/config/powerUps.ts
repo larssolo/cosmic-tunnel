@@ -40,6 +40,14 @@ export const POWER_UP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     duration: 0,
     color: "hsl(120, 100%, 60%)",
     icon: "Heart"
+  },
+  [PowerUpType.TRIPLE_SHOT]: {
+    type: PowerUpType.TRIPLE_SHOT,
+    name: "Triple Shot",
+    description: "8 seconds of triple lasers",
+    duration: 8000,
+    color: "hsl(300, 100%, 65%)",
+    icon: "Zap"
   }
 };
 
