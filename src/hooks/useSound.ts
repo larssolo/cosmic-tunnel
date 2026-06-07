@@ -130,6 +130,14 @@ export const soundManager = {
       }
     }
   },
+  // Call this from a user gesture (touch/click) inside the game to ensure
+  // iOS Safari starts atmosphere music — it silently fails in useEffect context.
+  resumeAtmosphere() {
+    const atm = audioElements['atmosphere'];
+    if (atm && atm.paused) {
+      atm.play().catch(() => {});
+    }
+  },
 };
 
 // ---------------------------------------------------------------------------
