@@ -99,14 +99,17 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   // Unlock audio context as soon as Game mounts (right after user clicked START)
   useEffect(() => { unlockAudio(); }, []);
 
-  // iOS Safari won't start atmosphere from useEffect — resume it on first user gesture
+  // iOS/Android block audio.play() outside a user gesture context.
+  // Keep retrying resumeAtmosphere on every interaction until it's actually playing.
   useEffect(() => {
-    const resume = () => soundManager.resumeAtmosphere();
-    window.addEventListener('pointerdown', resume, { once: true });
-    window.addEventListener('touchstart', resume, { once: true, passive: true });
+    const atmosphere = () => soundManager.resumeAtmosphere();
+    window.addEventListener('pointerdown', atmosphere, { passive: true });
+    window.addEventListener('touchstart', atmosphere, { passive: true });
+    window.addEventListener('click', atmosphere);
     return () => {
-      window.removeEventListener('pointerdown', resume);
-      window.removeEventListener('touchstart', resume);
+      window.removeEventListener('pointerdown', atmosphere);
+      window.removeEventListener('touchstart', atmosphere);
+      window.removeEventListener('click', atmosphere);
     };
   }, []);
 
