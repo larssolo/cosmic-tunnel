@@ -10,7 +10,8 @@ export enum PowerUpType {
   RAPID_FIRE = 'rapidFire',
   SLOW_MOTION = 'slowMotion',
   SCORE_BOOST = 'scoreBoost',
-  HEALTH = 'health'
+  HEALTH = 'health',
+  TRIPLE_SHOT = 'tripleShot'
 }
 
 export interface ActivePowerUp {

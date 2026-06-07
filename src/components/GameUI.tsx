@@ -23,6 +23,7 @@ interface GameUIProps {
   meteorStormActive?: boolean;
   bossDefeatedNotice?: boolean;
   lifeGainedNotice?: boolean;
+  isPersonalBest?: boolean;
 }
 
 const GameUI: React.FC<GameUIProps> = ({
@@ -43,6 +44,7 @@ const GameUI: React.FC<GameUIProps> = ({
   meteorStormActive = false,
   bossDefeatedNotice = false,
   lifeGainedNotice = false,
+  isPersonalBest = false,
 }) => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [rankInfo, setRankInfo] = useState<{ rank: number; total: number } | null>(null);
@@ -198,6 +200,14 @@ const GameUI: React.FC<GameUIProps> = ({
           >
             SCORE: {String(score).padStart(6, "0")}
           </p>
+          {isPersonalBest && (
+            <p
+              className="text-[10px] md:text-sm mt-1"
+              style={{ color: "#00ff88", textShadow: "0 0 12px #00ff88, 0 0 24px #00ff44", animation: "pbFlash 0.6s ease-in-out infinite alternate" }}
+            >
+              ★ NEW PERSONAL BEST ★
+            </p>
+          )}
           <p
             className="text-xs md:text-sm"
             style={{ color: "#00ff00", textShadow: "0 0 6px #00ff00" }}
@@ -307,6 +317,10 @@ const GameUI: React.FC<GameUIProps> = ({
         @keyframes stormPulse {
           from { opacity: 0.6; }
           to   { opacity: 1; }
+        }
+        @keyframes pbFlash {
+          from { opacity: 0.6; transform: scale(0.97); }
+          to   { opacity: 1;   transform: scale(1.05); }
         }
         @keyframes hitFlash {
           0%   { background: rgba(255, 30, 30, 0.88); }

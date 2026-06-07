@@ -20,6 +20,7 @@ import { TunnelTransition } from "./TunnelTransition";
 import { CyberOverlay } from "./CyberOverlay";
 import VoidEntity from "./VoidEntity";
 import VictoryScreen from "./VictoryScreen";
+import ContinueScreen from "./ContinueScreen";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
 import { unlockAudio } from "@/hooks/useSound";
@@ -79,6 +80,12 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     shootProjectile,
     updateGame,
     submitHighScore,
+    comboCount,
+    comboNotice,
+    showContinue,
+    useContinue,
+    declineContinue,
+    isPersonalBest,
   } = useGameState();
 
   updateGameRef.current = updateGame;
@@ -263,7 +270,22 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         </div>
       )}
       <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
-      
+
+      {/* Combo notice */}
+      {comboNotice && (
+        <div className="absolute inset-x-0 flex justify-center pointer-events-none" style={{ top: "30%", zIndex: 55 }}>
+          <div style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "clamp(14px, 3vw, 28px)",
+            color: comboCount >= 10 ? "#ff4400" : comboCount >= 6 ? "#ff00ff" : "#ffff00",
+            textShadow: "0 0 20px currentColor, 3px 3px 0 #000",
+            animation: "comboPop 1.2s ease-out forwards",
+          }}>
+            {comboCount >= 10 ? "★ ULTRA COMBO ★" : comboCount >= 6 ? "★ MEGA COMBO ★" : "★ COMBO ★"} x{comboCount}
+          </div>
+        </div>
+      )}
+
       {/* Game UI */}
       <GameUI
         score={score}
@@ -283,6 +305,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         meteorStormActive={meteorStormActive}
         bossDefeatedNotice={bossDefeatedNotice}
         lifeGainedNotice={lifeGainedNotice}
+        isPersonalBest={isPersonalBest}
       />
 
       {/* Active power-ups indicator */}
@@ -311,6 +334,11 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
 
       {/* Tunnel transition overlay */}
       <TunnelTransition isActive={tunnelTransition} />
+
+      {/* Continue screen */}
+      {showContinue && (
+        <ContinueScreen onContinue={useContinue} onGameOver={declineContinue} />
+      )}
 
       {/* Victory screen */}
       {isVictory && (
