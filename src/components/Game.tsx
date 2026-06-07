@@ -23,7 +23,7 @@ import VictoryScreen from "./VictoryScreen";
 import ContinueScreen from "./ContinueScreen";
 import { getLevelByScore } from "@/config/levels";
 import { GameMode } from "@/types/gameModeTypes";
-import { unlockAudio } from "@/hooks/useSound";
+import { unlockAudio, soundManager } from "@/hooks/useSound";
 
 interface GameProps {
   playerName: string;
@@ -98,6 +98,17 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
 
   // Unlock audio context as soon as Game mounts (right after user clicked START)
   useEffect(() => { unlockAudio(); }, []);
+
+  // iOS Safari won't start atmosphere from useEffect — resume it on first user gesture
+  useEffect(() => {
+    const resume = () => soundManager.resumeAtmosphere();
+    window.addEventListener('pointerdown', resume, { once: true });
+    window.addEventListener('touchstart', resume, { once: true, passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', resume);
+      window.removeEventListener('touchstart', resume);
+    };
+  }, []);
 
   const isMobile = useIsMobile();
   isMobileRef.current = isMobile;
