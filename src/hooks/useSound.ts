@@ -7,9 +7,19 @@ export type SoundType =
   | 'laserBeastCharge' | 'laserBeastExplosion';
 
 // ---------------------------------------------------------------------------
-// Module-level singleton — audio elements live for the entire page session.
-// This avoids the "too far from user gesture" problem that kills useEffect-
-// based audio initialisation, and survives component mount/unmount cycles.
+// HYBRID audio engine — bulletproof on desktop AND mobile.
+//
+// Primary path: Web Audio API. One AudioContext is unlocked once on the first
+// user gesture, after which every sound plays through it freely and overlaps
+// cleanly (perfect for rapid fire) with no per-shot allocation. This is what
+// fixes laser + music on iOS/Android.
+//
+// Fallback path: HTML <audio>. If a track can't be fetched+decoded for Web
+// Audio (e.g. the CDN doesn't send CORS headers), we fall back to a plain
+// <audio> element. Crucially, on the unlock gesture we now play()+pause()
+// EVERY element (the missing piece in the old code — it only unlocked the
+// AudioContext, never the individual <audio> elements, so most sounds stayed
+// muted on mobile).
 // ---------------------------------------------------------------------------
 
 interface TrackConfig {
@@ -39,103 +49,205 @@ const TRACKS: Record<SoundType, TrackConfig> = {
   laserBeastExplosion: { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/dragon-studio-massive-explosion-2-397983.mp3', volume: 1.0 },
 };
 
-// Build audio elements once at module load time (no user gesture needed just to create them)
-const audioElements = {} as Record<SoundType, HTMLAudioElement>;
-for (const [key, cfg] of Object.entries(TRACKS) as [SoundType, TrackConfig][]) {
-  const el = new Audio(cfg.url);
-  el.volume = cfg.volume;
-  if (cfg.loop) el.loop = true;
-  el.preload = 'auto';
-  audioElements[key] = el;
-}
+const LOOP_TYPES = new Set<SoundType>(['atmosphere', 'menuMusic', 'voidCountdown', 'laserBeastCharge']);
 
 // ---------------------------------------------------------------------------
-// Unlock audio on first user interaction (required by browsers / iOS Safari).
-// Uses the standard silent-buffer trick that reliably unblocks HTMLAudioElement
-// playback on iOS Safari and Chrome's autoplay policy.
+// Web Audio state
 // ---------------------------------------------------------------------------
-let unlocked = false;
-export const unlockAudio = () => {
-  if (unlocked) return;
-  unlocked = true;
+let audioCtx: AudioContext | null = null;
+const buffers = {} as Record<SoundType, AudioBuffer | undefined>;
+const bufferFailed = {} as Record<SoundType, boolean>; // CORS/network failure → use HTML fallback
+const activeLoops = {} as Record<SoundType, { src: AudioBufferSourceNode } | undefined>;
+
+const getCtx = (): AudioContext | null => {
+  if (audioCtx) return audioCtx;
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new AudioCtx();
-    // Play a silent 1-sample buffer — this is the standard iOS unlock pattern
-    const buf = ctx.createBuffer(1, 1, 22050);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    ctx.resume();
-  } catch (_) { /* not all browsers support AudioContext */ }
+    const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    audioCtx = new Ctor();
+  } catch {
+    audioCtx = null;
+  }
+  return audioCtx;
 };
 
-// Small pool of pre-created shoot Audio elements — rotated round-robin so
-// rapid fire doesn't allocate a new HTMLAudioElement per shot (which leaks
-// memory and decoded-audio buffers across rounds).
+const loadBuffer = async (type: SoundType): Promise<AudioBuffer | undefined> => {
+  if (buffers[type]) return buffers[type];
+  if (bufferFailed[type]) return undefined;
+  const ctx = getCtx();
+  if (!ctx) { bufferFailed[type] = true; return undefined; }
+  try {
+    const res = await fetch(TRACKS[type].url, { mode: 'cors' });
+    if (!res.ok) throw new Error('fetch failed');
+    const arr = await res.arrayBuffer();
+    const decoded = await ctx.decodeAudioData(arr);
+    buffers[type] = decoded;
+    return decoded;
+  } catch {
+    // Likely CORS — mark so we use the HTML fallback for this track.
+    bufferFailed[type] = true;
+    return undefined;
+  }
+};
+
+let preloadStarted = false;
+const preloadAll = () => {
+  if (preloadStarted) return;
+  preloadStarted = true;
+  (Object.keys(TRACKS) as SoundType[]).forEach((t) => { void loadBuffer(t); });
+};
+
+// ---------------------------------------------------------------------------
+// HTML <audio> fallback state
+// ---------------------------------------------------------------------------
+const htmlElements = {} as Record<SoundType, HTMLAudioElement>;
+const getHtmlElement = (type: SoundType): HTMLAudioElement => {
+  let el = htmlElements[type];
+  if (!el) {
+    const cfg = TRACKS[type];
+    el = new Audio(cfg.url);
+    el.volume = cfg.volume;
+    el.preload = 'auto';
+    if (cfg.loop) el.loop = true;
+    htmlElements[type] = el;
+  }
+  return el;
+};
+
+// Small pool for the rapid-fire shoot sound in HTML fallback mode.
 const SHOOT_POOL_SIZE = 6;
 const shootPool: HTMLAudioElement[] = [];
 let shootPoolIndex = 0;
 
-// Loop sounds that should only start if not already playing
-const LOOP_TYPES = new Set<SoundType>(['atmosphere', 'menuMusic', 'voidCountdown', 'laserBeastCharge']);
+const playHtml = (type: SoundType) => {
+  if (type === 'shoot') {
+    if (shootPool.length === 0) {
+      for (let i = 0; i < SHOOT_POOL_SIZE; i++) {
+        const el = new Audio(TRACKS.shoot.url);
+        el.volume = TRACKS.shoot.volume;
+        shootPool.push(el);
+      }
+    }
+    const el = shootPool[shootPoolIndex];
+    shootPoolIndex = (shootPoolIndex + 1) % SHOOT_POOL_SIZE;
+    el.currentTime = 0;
+    el.play().catch(() => {});
+    return;
+  }
+  const el = getHtmlElement(type);
+  if (LOOP_TYPES.has(type)) {
+    if (!el.paused) return;
+    el.play().catch(() => {});
+  } else {
+    el.currentTime = 0;
+    el.play().catch(() => {});
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Unlock — called from a user gesture. Unlocks BOTH engines.
+// ---------------------------------------------------------------------------
+export const unlockAudio = () => {
+  const ctx = getCtx();
+  if (ctx) {
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    try {
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch { /* ignore */ }
+  }
+  // Unlock every HTML element (and the shoot pool) within the gesture —
+  // play then immediately pause so they're permitted to play later on mobile.
+  (Object.keys(TRACKS) as SoundType[]).forEach((t) => {
+    const el = getHtmlElement(t);
+    el.play().then(() => {
+      if (!LOOP_TYPES.has(t)) { el.pause(); el.currentTime = 0; }
+      else { el.pause(); } // loops: leave position, will play() fresh later
+    }).catch(() => {});
+  });
+  if (shootPool.length === 0) {
+    for (let i = 0; i < SHOOT_POOL_SIZE; i++) {
+      const el = new Audio(TRACKS.shoot.url);
+      el.volume = TRACKS.shoot.volume;
+      el.play().then(() => { el.pause(); el.currentTime = 0; }).catch(() => {});
+      shootPool.push(el);
+    }
+  }
+  preloadAll();
+};
+
+const playBuffer = (type: SoundType, buffer: AudioBuffer) => {
+  const ctx = getCtx();
+  if (!ctx) return;
+  const cfg = TRACKS[type];
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.value = cfg.volume;
+  src.connect(gain);
+  gain.connect(ctx.destination);
+  if (cfg.loop) {
+    src.loop = true;
+    activeLoops[type] = { src };
+  }
+  try { src.start(0); } catch { /* ignore */ }
+};
 
 export const soundManager = {
   play(type: SoundType) {
-    const audio = audioElements[type];
-    if (!audio) return;
-    if (LOOP_TYPES.has(type)) {
-      if (!audio.paused) return; // already playing
-      if (audio.readyState >= 2) {
-        audio.play().catch(() => {});
-      } else {
-        const onReady = () => {
-          audio.play().catch(() => {});
-          audio.removeEventListener('canplay', onReady);
-        };
-        audio.addEventListener('canplay', onReady);
-        audio.load();
-      }
-    } else if (type === 'shoot') {
-      // Lazy-init the pool on first shot (after audio is unlocked)
-      if (shootPool.length === 0) {
-        for (let i = 0; i < SHOOT_POOL_SIZE; i++) {
-          const el = new Audio(audio.src);
-          el.volume = audio.volume;
-          shootPool.push(el);
-        }
-      }
-      const el = shootPool[shootPoolIndex];
-      shootPoolIndex = (shootPoolIndex + 1) % SHOOT_POOL_SIZE;
-      el.currentTime = 0;
-      el.play().catch(() => {});
+    const ctx = getCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+
+    // Don't restart a Web Audio loop already playing.
+    if (LOOP_TYPES.has(type) && activeLoops[type]) return;
+
+    // Buffer ready → Web Audio. Failed (CORS) → HTML. Not loaded yet → load then route.
+    const cached = buffers[type];
+    if (cached) {
+      playBuffer(type, cached);
+    } else if (bufferFailed[type]) {
+      playHtml(type);
     } else {
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
+      void loadBuffer(type).then((buf) => {
+        if (buf) {
+          if (LOOP_TYPES.has(type) && activeLoops[type]) return;
+          playBuffer(type, buf);
+        } else {
+          playHtml(type);
+        }
+      });
     }
   },
+
   stop(type: SoundType) {
-    const audio = audioElements[type];
-    if (audio && !audio.paused) {
-      audio.pause();
-      audio.currentTime = 0;
+    const loop = activeLoops[type];
+    if (loop) {
+      try { loop.src.stop(); } catch { /* ignore */ }
+      activeLoops[type] = undefined;
     }
+    const el = htmlElements[type];
+    if (el && !el.paused) { el.pause(); el.currentTime = 0; }
   },
+
   stopAll() {
-    for (const audio of Object.values(audioElements)) {
-      if (!audio.paused) {
-        audio.pause();
-        audio.currentTime = 0;
-      }
-    }
+    (Object.keys(activeLoops) as SoundType[]).forEach((t) => soundManager.stop(t));
+    (Object.keys(htmlElements) as SoundType[]).forEach((t) => {
+      const el = htmlElements[t];
+      if (el && !el.paused) { el.pause(); el.currentTime = 0; }
+    });
   },
-  // Call this from a user gesture (touch/click) inside the game to ensure
-  // iOS Safari starts atmosphere music — it silently fails in useEffect context.
+
+  // Resume atmosphere from a user gesture (re-checked on every interaction).
   resumeAtmosphere() {
-    const atm = audioElements['atmosphere'];
-    if (atm && atm.paused) {
-      atm.play().catch(() => {});
+    const ctx = getCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    const playingWebAudio = !!activeLoops['atmosphere'];
+    const htmlEl = htmlElements['atmosphere'];
+    const playingHtml = htmlEl && !htmlEl.paused;
+    if (!playingWebAudio && !playingHtml) {
+      soundManager.play('atmosphere');
     }
   },
 };
