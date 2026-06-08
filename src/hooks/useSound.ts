@@ -29,24 +29,24 @@ interface TrackConfig {
 }
 
 const TRACKS: Record<SoundType, TrackConfig> = {
-  shoot:             { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/lazercannon-37980.mp3', volume: 0.3 },
+  shoot:             { url: '/sounds/lazercannon-37980.mp3', volume: 0.3 },
   explosion:         { url: 'https://assets.mixkit.co/active_storage/sfx/235/235-preview.mp3', volume: 1.0 },
   gameOver:          { url: 'https://assets.mixkit.co/active_storage/sfx/1204/1204-preview.mp3', volume: 1.0 },
-  start:             { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/gamestart-272829.mp3', volume: 0.7 },
+  start:             { url: '/sounds/gamestart-272829.mp3', volume: 0.7 },
   speedUp:           { url: 'https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3', volume: 0.6 },
   rumble:            { url: 'https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3', volume: 1.0 },
-  crash:             { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/game-over-classic-206486.mp3', volume: 1.0 },
-  atmosphere:        { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/atmosphere-sound-effect-239969.mp3', volume: 0.6, loop: true },
+  crash:             { url: '/sounds/game-over-classic-206486.mp3', volume: 1.0 },
+  atmosphere:        { url: '/sounds/atmosphere-sound-effect-239969.mp3', volume: 0.6, loop: true },
   levelUp:           { url: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', volume: 0.7 },
   powerUpCollect:    { url: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3', volume: 0.5 },
   achievementUnlock: { url: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', volume: 0.8 },
-  menuMusic:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/Arcade%20Mobile%20Game%20Background%20loop.mp3', volume: 0.5, loop: true },
-  voidSpawn:         { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/IMPACT_Sub_Boom_Tonal_Deep_Space.mp3', volume: 0.9 },
-  voidCoreHit:       { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/DroneReactor_BW.43983.mp3', volume: 0.8 },
-  voidCountdown:     { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/BEEPTimer_Digital%20Timer%20Beeping%20Bomb%20Clock_GENHD1-07734.mp3', volume: 0.6, loop: true },
-  voidAllCores:      { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/8-Bit%20135%20MIX%20Loop%20Version%201.mp3', volume: 1.0 },
-  laserBeastCharge:  { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/gregorquendel-laser-charge-175727.mp3', volume: 0.7, loop: true },
-  laserBeastExplosion: { url: 'https://filedn.com/lQQF6SFSgwj0ab00vQxYlGF/Game%20sound/Cosmic%20Tunnel/dragon-studio-massive-explosion-2-397983.mp3', volume: 1.0 },
+  menuMusic:         { url: '/sounds/Arcade Mobile Game Background loop.mp3', volume: 0.5, loop: true },
+  voidSpawn:         { url: '/sounds/IMPACT_Sub_Boom_Tonal_Deep_Space.mp3', volume: 0.9 },
+  voidCoreHit:       { url: '/sounds/DroneReactor_BW.43983.mp3', volume: 0.8 },
+  voidCountdown:     { url: '/sounds/BEEPTimer_Digital Timer Beeping Bomb Clock_GENHD1-07734.mp3', volume: 0.6, loop: true },
+  voidAllCores:      { url: '/sounds/8-Bit 135 MIX Loop Version 1.mp3', volume: 1.0 },
+  laserBeastCharge:  { url: '/sounds/gregorquendel-laser-charge-175727.mp3', volume: 0.7, loop: true },
+  laserBeastExplosion: { url: '/sounds/dragon-studio-massive-explosion-2-397983.mp3', volume: 1.0 },
 };
 
 const LOOP_TYPES = new Set<SoundType>(['atmosphere', 'menuMusic', 'voidCountdown', 'laserBeastCharge']);
