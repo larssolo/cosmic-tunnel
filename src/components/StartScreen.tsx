@@ -14,9 +14,6 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
   const [blink, setBlink] = useState(true);
-  // Mobile/desktop audio gate — one explicit tap guarantees the browser
-  // unlocks audio and starts the menu music inside a real user gesture.
-  const [entered, setEntered] = useState(false);
 
   const { data: highScores = [] } = useQuery({
     queryKey: ["highScores"],
@@ -25,21 +22,13 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
     refetchOnWindowFocus: true,
   });
 
-  // Stop game sounds when start screen mounts. Menu music is started by the
-  // ENTER SPACE MISSION gate (handleEnter) so it always runs inside a gesture.
+  // Stop game sounds and start menu music when start screen mounts
   useEffect(() => {
     soundManager.stop('atmosphere');
     return () => {
       soundManager.stop('menuMusic');
     };
   }, []);
-
-  // The audio gate — unlock + start menu music in one guaranteed user gesture.
-  const handleEnter = () => {
-    unlockAudio();
-    soundManager.play('menuMusic');
-    setEntered(true);
-  };
 
   useEffect(() => {
     const interval = setInterval(() => setBlink((b) => !b), 600);
@@ -63,59 +52,20 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
     if (e.key === "Enter") handleStart();
   };
 
+  // Unlock audio + start menu music on first interaction anywhere on the page
+  const audioStartedRef = React.useRef(false);
+  const handleFirstInteraction = () => {
+    if (audioStartedRef.current) return;
+    audioStartedRef.current = true;
+    unlockAudio();
+    soundManager.play('menuMusic');
+  };
+
   return (
-    <div
+    <div onPointerDown={handleFirstInteraction} onKeyDown={handleFirstInteraction}
       className="absolute inset-0 flex items-center justify-center p-4 overflow-hidden"
       style={{ fontFamily: "'Press Start 2P', monospace" }}
     >
-      {/* Audio gate overlay — shown until the pilot taps to enter */}
-      {!entered && (
-        <button
-          onClick={handleEnter}
-          className="absolute inset-0 z-50 flex flex-col items-center justify-center w-full h-full"
-          style={{
-            fontFamily: "'Press Start 2P', monospace",
-            background: "radial-gradient(ellipse at center, #1a0033 0%, #000 100%)",
-            cursor: "pointer",
-          }}
-        >
-          <h1
-            className="text-2xl md:text-4xl mb-3 leading-tight"
-            style={{ color: "#ff00ff", textShadow: "3px 3px 0 #00ffff, 0 0 24px #ff00ff", letterSpacing: "0.05em" }}
-          >
-            COSMIC
-          </h1>
-          <h1
-            className="text-2xl md:text-4xl mb-12 leading-tight"
-            style={{ color: "#00ffff", textShadow: "3px 3px 0 #ff00ff, 0 0 24px #00ffff", letterSpacing: "0.05em" }}
-          >
-            TUNNEL
-          </h1>
-          <div
-            className="px-8 py-5 text-base md:text-2xl"
-            style={{
-              color: "#fff",
-              border: "4px solid #ffff00",
-              background: "#ff00ff",
-              textShadow: "2px 2px 0 #000",
-              boxShadow: "0 0 30px #ff00ff, 4px 4px 0 #000",
-              animation: "enterPulse 0.8s ease-in-out infinite alternate",
-            }}
-          >
-            ▶ ENTER SPACE MISSION ◀
-          </div>
-          <p className="mt-8 text-[10px] md:text-xs" style={{ color: "#ffff00", textShadow: "0 0 8px #ffff00" }}>
-            ★ TAP TO ENGAGE SOUND ★
-          </p>
-          <style>{`
-            @keyframes enterPulse {
-              from { transform: scale(0.97); box-shadow: 0 0 20px #ff00ff, 4px 4px 0 #000; }
-              to   { transform: scale(1.04); box-shadow: 0 0 55px #ff00ff, 4px 4px 0 #000; }
-            }
-          `}</style>
-        </button>
-      )}
-
       {showCrawl && <StarWarsCrawl onDone={() => setShowCrawl(false)} />}
       <video
         className="absolute inset-0 w-full h-full object-cover opacity-70"
