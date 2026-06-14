@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Obstacle, Projectile, Boss, BossType, BossLaser, Ufo, UfoBullet, BonusStar, VoidEntity, VoidCore } from "@/types/gameTypes";
+import { Obstacle, Projectile, Boss, BossType, BossLaser, Ufo, UfoBullet, BonusStar, VoidEntity, VoidCore, GravityWell } from "@/types/gameTypes";
 import { useObstacles } from "./useObstacles";
 import { useProjectiles } from "./useProjectiles";
 import { useCollisions } from "./useCollisions";
@@ -63,6 +63,9 @@ const useGameState = () => {
   // Personal best
   const [isPersonalBest, setIsPersonalBest] = useState(false);
   const [speedRing, setSpeedRing] = useState<SpeedRing | null>(null);
+  const [gravityWell, setGravityWell] = useState<GravityWell | null>(null);
+  const gravityWellRef = useRef<GravityWell | null>(null);
+  const nextGravityWellTimeRef = useRef<number>(Date.now() + 45000 + Math.random() * 30000);
   const gameStartTimeRef = useRef<number>(Date.now());
   const lastHitTimeRef = useRef<number>(Date.now());
   const nextStormTimeRef = useRef<number>(Date.now() + 30000 + Math.random() * 30000);
@@ -283,6 +286,9 @@ const useGameState = () => {
     setSpeedRing(null);
     speedRingRef.current = null;
     nextSpeedRingScoreRef.current = 1500 + Math.floor(Math.random() * 1500);
+    setGravityWell(null);
+    gravityWellRef.current = null;
+    nextGravityWellTimeRef.current = Date.now() + 45000 + Math.random() * 30000;
     stopTunnelMode();
     resetObstacleTimer();
     resetProjectileTimer();
@@ -816,6 +822,73 @@ const useGameState = () => {
       }
     }
 
+    // GRAVITY WELL — a mini black hole that periodically appears and drags
+    // asteroids (and the ship) toward it for ~8s. Standard mode only.
+    const GRAVITY_WELL_DURATION = 8000;
+    if (
+      !isTunnelMode &&
+      !gravityWellRef.current &&
+      !bossRef.current &&
+      !voidEntityRef.current &&
+      !bonusRoundEndTimeRef.current &&
+      timeSinceGameStart > 25 &&
+      currentTime >= nextGravityWellTimeRef.current
+    ) {
+      const well: GravityWell = {
+        id: currentTime,
+        x: 25 + Math.random() * 50,
+        y: 22 + Math.random() * 28,
+        size: 18,
+        startedAt: currentTime,
+        duration: GRAVITY_WELL_DURATION,
+      };
+      setGravityWell(well);
+      gravityWellRef.current = well;
+      playSound('rumble');
+    }
+
+    if (gravityWellRef.current) {
+      const gw = gravityWellRef.current;
+      if (currentTime - gw.startedAt >= gw.duration) {
+        // Collapse — despawn and re-arm the next appearance
+        setGravityWell(null);
+        gravityWellRef.current = null;
+        nextGravityWellTimeRef.current = currentTime + 40000 + Math.random() * 30000;
+      } else {
+        // Pull the ship horizontally toward the well — gentle enough to fight against
+        const dxShip = gw.x - shipPosition;
+        const adx = Math.abs(dxShip);
+        if (adx > 0.5) {
+          const shipPull = Math.sign(dxShip) * Math.min(0.18, 4 / Math.max(adx, 8)) * slowMotion;
+          setShipPosition(prev => Math.max(10, Math.min(90, prev + shipPull)));
+        }
+
+        // Detect asteroids that fall into the core (read from the frame's closure
+        // obstacles, like checkShipCollision does) and award points for them
+        const consumeRadius = gw.size * 0.35;
+        const consumedIds = new Set<number>();
+        for (const o of obstacles) {
+          if (o.isExploding) continue;
+          if (Math.hypot(gw.x - o.x, gw.y - o.y) < consumeRadius) consumedIds.add(o.id);
+        }
+        if (consumedIds.size > 0) {
+          playSound('explosion');
+          setScore(prev => prev + 100 * consumedIds.size);
+        }
+
+        // Bend every asteroid toward the well; consumed ones get the explosion VFX
+        setObstacles(prev => prev.map(o => {
+          if (consumedIds.has(o.id)) return { ...o, isExploding: true };
+          if (o.isExploding) return o;
+          const dx = gw.x - o.x;
+          const dy = gw.y - o.y;
+          const d = Math.max(2, Math.hypot(dx, dy));
+          const strength = Math.min(1.5, 40 / (d * d)) * slowMotion;
+          return { ...o, x: o.x + (dx / d) * strength, y: o.y + (dy / d) * strength };
+        }));
+      }
+    }
+
     if (isTunnelMode && tunnelActive) {
       // Tunnel mode obstacles — single setState to avoid stale-prev race
       const newTunnelObstacle = createTunnelObstacle();
@@ -1101,6 +1174,7 @@ const useGameState = () => {
     bonusStar,
     bonusRoundEndTime,
     speedRing,
+    gravityWell,
     voidEntity,
     startGame,
     resetGame,
