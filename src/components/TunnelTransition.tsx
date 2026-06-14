@@ -1,148 +1,86 @@
-import React, { memo, useMemo } from "react";
+import { memo } from "react";
 
 interface TunnelTransitionProps {
   isActive: boolean;
 }
 
 export const TunnelTransition = memo(({ isActive }: TunnelTransitionProps) => {
-  // Generate random particles for debris effect
-  const particles = useMemo(() => {
-    return Array.from({ length: 12 }).map((_, i) => ({
-      id: i,
-      size: Math.random() * 5 + 2,
-      duration: Math.random() * 0.8 + 0.5,
-      delay: Math.random() * 0.5,
-      startX: Math.random() * 100,
-      angle: (Math.random() - 0.5) * 40,
-      color: i % 3 === 0 ? '#00ffff' : i % 3 === 1 ? '#ff00ff' : '#ff0080'
-    }));
-  }, []);
-
   if (!isActive) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
-      {/* Dark overlay with gradient */}
-      <div 
-        className="absolute inset-0 animate-pulse"
+    <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+      {/* Left wedge — slides in from the left edge, apex meets center */}
+      <div
+        className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at center, rgba(26, 0, 48, 0.8), rgba(10, 0, 21, 0.95))'
+          clipPath: "polygon(0% 0%, 50% 50%, 0% 100%)",
+          background:
+            "linear-gradient(90deg, rgba(10,0,21,0.96) 0%, rgba(26,0,51,0.92) 55%, rgba(255,0,255,0.75) 92%, rgba(255,0,255,0) 100%)",
+          animation: "wormhole-left 2.5s ease-in-out forwards",
         }}
       />
-      
-      {/* Grid lines rushing toward viewer */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={`grid-${i}`}
-            className="absolute left-0 right-0 h-[2px]"
-            style={{
-              top: `${(i / 8) * 100}%`,
-              background: `linear-gradient(90deg, transparent, ${i % 2 === 0 ? '#00ffff' : '#ff00ff'}, transparent)`,
-              animation: `fly-past ${0.4 + i * 0.05}s linear ${i * 0.03}s forwards`,
-              opacity: 0.4
-            }}
-          />
-        ))}
+      {/* Right wedge — slides in from the right edge, apex meets center */}
+      <div
+        className="absolute inset-0"
+        style={{
+          clipPath: "polygon(100% 0%, 50% 50%, 100% 100%)",
+          background:
+            "linear-gradient(270deg, rgba(10,0,21,0.96) 0%, rgba(26,0,51,0.92) 55%, rgba(0,255,255,0.75) 92%, rgba(0,255,255,0) 100%)",
+          animation: "wormhole-right 2.5s ease-in-out forwards",
+        }}
+      />
+
+      {/* Neon edges tracing the hourglass slopes */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        preserveAspectRatio="none"
+        viewBox="0 0 100 100"
+        style={{ animation: "wormhole-edges 2.5s ease-in-out forwards" }}
+      >
+        <line x1="0" y1="0" x2="50" y2="50" stroke="#ff00ff" strokeWidth="0.35" />
+        <line x1="0" y1="100" x2="50" y2="50" stroke="#ff00ff" strokeWidth="0.35" />
+        <line x1="100" y1="0" x2="50" y2="50" stroke="#00ffff" strokeWidth="0.35" />
+        <line x1="100" y1="100" x2="50" y2="50" stroke="#00ffff" strokeWidth="0.35" />
+      </svg>
+
+      {/* Label sits at the pinch */}
+      <div
+        className="absolute top-1/2 left-1/2 whitespace-nowrap"
+        style={{
+          transform: "translate(-50%, -50%)",
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: "clamp(8px, 1.4vw, 14px)",
+          color: "#00ffff",
+          textShadow: "0 0 10px #00ffff, 0 0 20px #ff00ff, 2px 2px 0 #000",
+          letterSpacing: "0.4em",
+          animation: "wormhole-label 2.5s ease-in-out forwards",
+        }}
+      >
+        WORM HOLE
       </div>
-      
-      {/* Debris particles */}
-      <div className="absolute inset-0">
-        {particles.map((particle) => (
-          <div
-            key={particle.id}
-            className="absolute"
-            style={{
-              width: `${particle.size}px`,
-              height: `${particle.size * 3}px`,
-              left: `${particle.startX}%`,
-              top: '-10%',
-              background: `linear-gradient(to bottom, transparent, ${particle.color}, transparent)`,
-              boxShadow: `0 0 10px ${particle.color}`,
-              transform: `rotate(${particle.angle}deg)`,
-              animation: `fly-past ${particle.duration}s linear ${particle.delay}s forwards`,
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Main text */}
-      <div className="text-center relative z-10">
-        {/* Glitch effect layers */}
-        <h1 
-          className="text-5xl md:text-7xl font-bold mb-4 tracking-widest"
-          style={{
-            fontFamily: 'monospace',
-            color: '#00ffff',
-            textShadow: `
-              0 0 10px #00ffff,
-              0 0 20px #00ffff,
-              0 0 40px #00ffff,
-              3px 0 0 #ff00ff,
-              -3px 0 0 #ff0080
-            `,
-            animation: 'glitch-text 1.2s infinite'
-          }}
-        >
-          ENTERING
-        </h1>
-        <h2 
-          className="text-6xl md:text-8xl font-bold tracking-wider"
-          style={{
-            fontFamily: 'monospace',
-            color: '#ff00ff',
-            textShadow: `
-              0 0 10px #ff00ff,
-              0 0 30px #ff00ff,
-              0 0 60px #ff00ff,
-              -3px 0 0 #00ffff,
-              3px 0 0 #ff0080
-            `,
-            animation: 'glitch-text 1s infinite reverse'
-          }}
-        >
-          CYBER WORMHOLE
-        </h2>
-        
-        {/* Animated underline */}
-        <div className="mt-6 flex justify-center gap-2">
-          <div 
-            className="h-1 animate-pulse"
-            style={{
-              width: '100px',
-              background: 'linear-gradient(90deg, transparent, #00ffff, #ff00ff)',
-              boxShadow: '0 0 20px #00ffff'
-            }}
-          />
-          <div 
-            className="h-1 animate-pulse"
-            style={{
-              width: '100px',
-              background: 'linear-gradient(90deg, #ff00ff, #00ffff, transparent)',
-              boxShadow: '0 0 20px #ff00ff',
-              animationDelay: '0.1s'
-            }}
-          />
-        </div>
-        
-        {/* Warning text */}
-        <p 
-          className="mt-4 text-sm tracking-[0.3em] animate-pulse"
-          style={{
-            color: '#ff0080',
-            fontFamily: 'monospace',
-            textShadow: '0 0 10px #ff0080'
-          }}
-        >
-          [ DIMENSIONAL SHIFT DETECTED ]
-        </p>
-      </div>
-      
-      {/* Corner brackets */}
-      <div className="absolute top-8 left-8 w-16 h-16 border-l-4 border-t-4 border-cyan-400 opacity-80" style={{ boxShadow: '0 0 15px #00ffff' }} />
-      <div className="absolute top-8 right-8 w-16 h-16 border-r-4 border-t-4 border-pink-500 opacity-80" style={{ boxShadow: '0 0 15px #ff00ff' }} />
-      <div className="absolute bottom-8 left-8 w-16 h-16 border-l-4 border-b-4 border-pink-500 opacity-80" style={{ boxShadow: '0 0 15px #ff00ff' }} />
-      <div className="absolute bottom-8 right-8 w-16 h-16 border-r-4 border-b-4 border-cyan-400 opacity-80" style={{ boxShadow: '0 0 15px #00ffff' }} />
+
+      <style>{`
+        @keyframes wormhole-left {
+          0%   { transform: translateX(-100%); }
+          25%  { transform: translateX(0); }
+          75%  { transform: translateX(0); }
+          100% { transform: translateX(-100%); }
+        }
+        @keyframes wormhole-right {
+          0%   { transform: translateX(100%); }
+          25%  { transform: translateX(0); }
+          75%  { transform: translateX(0); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes wormhole-edges {
+          0%, 100% { opacity: 0; filter: drop-shadow(0 0 0 transparent); }
+          25%, 75% { opacity: 1; filter: drop-shadow(0 0 4px #ff00ff) drop-shadow(0 0 4px #00ffff); }
+        }
+        @keyframes wormhole-label {
+          0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+          25%, 75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+      `}</style>
     </div>
   );
 });
