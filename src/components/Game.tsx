@@ -10,6 +10,7 @@ import Boss from "./Boss";
 import Ufos from "./Ufos";
 import BonusStar from "./BonusStar";
 import SpeedRing from "./SpeedRing";
+import GravityWell from "./GravityWell";
 import useGameState from "@/hooks/useGameState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PowerUps } from "./PowerUps";
@@ -74,6 +75,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     bonusStar,
     bonusRoundEndTime,
     speedRing,
+    gravityWell,
     voidEntity,
     resetGame,
     moveShip,
@@ -257,6 +259,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
 
       <VoidEntity voidEntity={voidEntity} />
       <SpeedRing ring={speedRing} />
+      <GravityWell well={gravityWell} />
       <PowerUps powerUps={powerUps} />
       <Projectiles projectiles={projectiles} />
       <Boss boss={boss} lasers={bossLasers} />

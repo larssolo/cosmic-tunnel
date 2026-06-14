@@ -81,6 +81,15 @@ export interface ActiveDimension {
   endTime: number; // timestamp when dimension expires — no per-frame setState
 }
 
+export interface GravityWell {
+  id: number;
+  x: number;         // % center
+  y: number;         // % center
+  size: number;      // % visual diameter
+  startedAt: number; // timestamp
+  duration: number;  // ms lifetime
+}
+
 export interface VoidCore {
   id: number;
   x: number; // % from left
