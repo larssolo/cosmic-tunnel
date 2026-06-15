@@ -131,11 +131,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     // Primary: pointermove handles mouse, trackpad and pen uniformly
     const handlePointerMove = (e: PointerEvent) => {
       if (e.pointerType === "touch") return; // touchmove handles touch
-      if (!isMobileRef.current) handleMove(e.clientX);
-    };
-    // Legacy fallback for browsers without pointer events
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isMobileRef.current) handleMove(e.clientX);
+      handleMove(e.clientX);
     };
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) handleMove(e.touches[0].clientX);
@@ -147,12 +143,10 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     };
 
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
     window.addEventListener("deviceorientation", handleOrientation);
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("deviceorientation", handleOrientation);
     };
@@ -236,7 +230,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
       className="relative w-full h-full overflow-hidden bg-black"
       style={{ touchAction: "none" }}
       onPointerMove={(e) => {
-        if (e.pointerType === "touch" || isMobileRef.current) return;
+        if (e.pointerType === "touch") return;
         if (gameOverRef.current || !gameContainerRef.current) return;
         const rect = gameContainerRef.current.getBoundingClientRect();
         if (rect.width === 0) return;
