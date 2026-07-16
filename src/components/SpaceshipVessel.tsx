@@ -3,13 +3,14 @@ import React, { memo } from "react";
 
 interface SpaceshipVesselProps {
   isInvulnerable: boolean;
+  thrust?: number;
 }
 
 // Memoize the component to prevent unnecessary re-renders
-const SpaceshipVessel: React.FC<SpaceshipVesselProps> = memo(({ isInvulnerable }) => {
+const SpaceshipVessel: React.FC<SpaceshipVesselProps> = memo(({ isInvulnerable, thrust = 1 }) => {
   return (
     <div className={`relative w-full h-full ${isInvulnerable ? "animate-pulse opacity-80" : ""}`}>
-      <svg viewBox="0 0 16 16" className="w-full h-full" style={{ shapeRendering: "crispEdges" }}>
+      <svg viewBox="0 0 16 16" className="w-full h-full" style={{ shapeRendering: "crispEdges", overflow: "visible" }}>
         {/* nose */}
         <rect x="7" y="0" width="2" height="2" fill="#ffffff" />
         <rect x="7" y="2" width="2" height="1" fill="#9be8ff" />
@@ -30,16 +31,26 @@ const SpaceshipVessel: React.FC<SpaceshipVesselProps> = memo(({ isInvulnerable }
         {/* engine block */}
         <rect x="5" y="9" width="6" height="2" fill="#1A1F2C" />
         <rect x="6" y="11" width="4" height="1" fill="#2b3245" />
-        {/* flame frame A */}
-        <g className="flameA">
-          <rect x="6" y="12" width="4" height="2" fill="#F97316" />
-          <rect x="7" y="14" width="2" height="1" fill="#ffff00" />
-        </g>
-        {/* flame frame B */}
-        <g className="flameB">
-          <rect x="6" y="12" width="4" height="1" fill="#F97316" />
-          <rect x="7" y="13" width="2" height="2" fill="#ff4500" />
-          <rect x="7" y="15" width="2" height="1" fill="#ffff00" />
+        {/* flame — scaled vertically by thrust, anchored at its top (y=12) */}
+        <g
+          style={{
+            transformBox: "fill-box",
+            transformOrigin: "center top",
+            transform: `scaleY(${thrust})`,
+            transition: "transform 130ms ease-out",
+          }}
+        >
+          {/* flame frame A */}
+          <g className="flameA">
+            <rect x="6" y="12" width="4" height="2" fill="#F97316" />
+            <rect x="7" y="14" width="2" height="1" fill="#ffff00" />
+          </g>
+          {/* flame frame B */}
+          <g className="flameB">
+            <rect x="6" y="12" width="4" height="1" fill="#F97316" />
+            <rect x="7" y="13" width="2" height="2" fill="#ff4500" />
+            <rect x="7" y="15" width="2" height="1" fill="#ffff00" />
+          </g>
         </g>
       </svg>
       {isInvulnerable && (
