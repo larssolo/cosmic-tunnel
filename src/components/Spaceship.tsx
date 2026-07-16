@@ -16,6 +16,10 @@ const Spaceship: React.FC<SpaceshipProps> = memo(({ position, vertical, isExplod
   const [tilt, setTilt] = React.useState(0);
   const tiltResetRef = React.useRef<number | null>(null);
 
+  const prevVertRef = React.useRef(vertical);
+  const [thrust, setThrust] = React.useState(1);
+  const thrustResetRef = React.useRef<number | null>(null);
+
   React.useEffect(() => {
     const delta = position - prevPosRef.current;
     prevPosRef.current = position;
@@ -25,6 +29,18 @@ const Spaceship: React.FC<SpaceshipProps> = memo(({ position, vertical, isExplod
       tiltResetRef.current = window.setTimeout(() => setTilt(0), 150);
     }
   }, [position]);
+
+  // Flame reacts to vertical motion: flying up/forward (vertical decreases)
+  // stretches the flame, diving down (vertical increases) shortens it.
+  React.useEffect(() => {
+    const vDelta = vertical - prevVertRef.current;
+    prevVertRef.current = vertical;
+    if (Math.abs(vDelta) > 0.05) {
+      setThrust(Math.max(0.5, Math.min(1.85, 1 - vDelta * 0.14)));
+      if (thrustResetRef.current) window.clearTimeout(thrustResetRef.current);
+      thrustResetRef.current = window.setTimeout(() => setThrust(1), 140);
+    }
+  }, [vertical]);
 
   return (
     <div
@@ -38,7 +54,7 @@ const Spaceship: React.FC<SpaceshipProps> = memo(({ position, vertical, isExplod
         zIndex: isExploding ? 3 : 60,
       }}
     >
-      {isExploding ? <SpaceshipExplosion /> : <SpaceshipVessel isInvulnerable={isInvulnerable} />}
+      {isExploding ? <SpaceshipExplosion /> : <SpaceshipVessel isInvulnerable={isInvulnerable} thrust={thrust} />}
     </div>
   );
 });
