@@ -246,7 +246,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         </>
       ) : (
         <>
-          <Tunnel />
+          <Tunnel speedMultiplier={currentLevelData.speedMultiplier} />
           <Obstacles obstacles={obstacles} bonusRound={!!bonusRoundEndTime} />
         </>
       )}
