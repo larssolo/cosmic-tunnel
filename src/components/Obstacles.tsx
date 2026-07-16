@@ -46,6 +46,37 @@ const ObstacleItem = memo(({ obstacle, dimension, bonusRound }: { obstacle: Obst
     );
   }
 
+  if (obstacle.kind === 'comet' && !obstacle.isExploding) {
+    const angleDeg = (obstacle.vx ?? 0) > 0 ? -60 : 60; // trail points back along travel
+    return (
+      <div
+        className="absolute"
+        style={{
+          width: `${obstacle.size}%`, height: `${obstacle.size}%`, aspectRatio: "1 / 1",
+          left: `${obstacle.x}%`, top: `${obstacle.y}%`, transform: "translate(-50%, -50%)",
+        }}
+      >
+        <div
+          className="absolute left-1/2 top-1/2"
+          style={{
+            width: "45%", height: "320%",
+            transform: `translate(-50%, -100%) rotate(${angleDeg}deg)`,
+            transformOrigin: "bottom center",
+            background: "linear-gradient(to top, rgba(120,255,255,0.75) 0%, rgba(0,200,255,0.3) 40%, transparent 100%)",
+            filter: "blur(4px)", borderRadius: "50%",
+          }}
+        />
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: "radial-gradient(circle at 40% 40%, #ffffff 0%, #aef4ff 45%, #00c8ff 100%)",
+            boxShadow: "0 0 16px #7df4ff, 0 0 34px rgba(0,200,255,0.6)",
+          }}
+        />
+      </div>
+    );
+  }
+
   // Dimension-specific styles
   const getDimStyle = () => {
     if (dimension === 'neon_city') {

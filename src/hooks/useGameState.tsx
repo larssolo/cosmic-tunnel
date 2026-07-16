@@ -85,6 +85,7 @@ const useGameState = () => {
   const ufosRef = useRef<Ufo[]>([]);
   const ufoBulletsRef = useRef<UfoBullet[]>([]);
   const nextUfoTimeRef = useRef<number>(Date.now() + 12000 + Math.random() * 8000);
+  const nextCometTimeRef = useRef<number>(Date.now() + 25000);
   const [bonusStar, setBonusStar] = useState<BonusStar | null>(null);
   const [bonusRoundEndTime, setBonusRoundEndTime] = useState<number | null>(null);
   const bonusStarRef = useRef<BonusStar | null>(null);
@@ -285,6 +286,7 @@ const useGameState = () => {
     ufosRef.current = [];
     ufoBulletsRef.current = [];
     nextUfoTimeRef.current = Date.now() + 12000 + Math.random() * 8000;
+    nextCometTimeRef.current = Date.now() + 25000;
     setBonusStar(null);
     setBonusRoundEndTime(null);
     bonusStarRef.current = null;
@@ -918,6 +920,23 @@ const useGameState = () => {
       // Boss active — pause meteor spawn, but still update existing obstacles
       setObstacles(prev => updateObstacles(prev, slowMotion));
     } else {
+      // Comet: rare, fast, steep diagonal, high reward (level 4+)
+      const nowLevel = getLevelByScore(scoreRef.current!).level;
+      if (nowLevel >= 4 && currentTime >= nextCometTimeRef.current && !bonusRoundEndTimeRef.current && !bossRef.current) {
+        nextCometTimeRef.current = currentTime + 15000 + Math.random() * 10000;
+        const fromLeft = Math.random() < 0.5;
+        const comet = {
+          id: currentTime + 0.5,
+          x: fromLeft ? -5 : 105,
+          y: 2 + Math.random() * 18,
+          size: 5,
+          seed: Math.random(),
+          kind: 'comet' as const,
+          vx: (fromLeft ? 1 : -1) * (0.45 + Math.random() * 0.15),
+        };
+        setObstacles(prev => [...prev, comet]);
+      }
+
       // Standard mode obstacles — pass current obstacles so spawn can avoid overlaps
       const newObstacle = createObstacle(stormMultiplier, obstacles);
       setObstacles(prev => {
@@ -932,6 +951,11 @@ const useGameState = () => {
     const projectilesForMeteorCheck = liveProjectiles.filter((p) => !consumedProjectileIds.has(p.id));
     const { hitCount: meteorHitCount, destroyedObstacles, newProjectilesList } =
       checkProjectileCollisions(obstacles, projectilesForMeteorCheck);
+
+    const cometKills = destroyedObstacles.filter(o => o.kind === 'comet').length;
+    if (cometKills > 0) {
+      setScore(prev => prev + 150 * cometKills * scoreMultiplierRef.current);
+    }
 
     if (meteorHitCount > 0) {
       playSound('explosion');
