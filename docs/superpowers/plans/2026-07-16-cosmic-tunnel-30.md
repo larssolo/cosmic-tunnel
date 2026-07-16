@@ -10,7 +10,8 @@
 
 ## Global Constraints
 
-- Repo has NO test framework. Verification per task = `npm run lint` (must pass) + `npm run build` (must pass) + manual browser check described in the task. Do NOT add a test framework.
+- Repo has NO test framework. Do NOT add a test framework.
+- LINT BASELINE (clean tree, pre-existing, NOT introduced by this work): **11 errors + 12 warnings = 23 problems** total, across App.tsx, tailwind.config.ts, useGameState.tsx (incl. `602:9 prefer-const`), and other existing files. Verification per task = `npm run lint` shows **no NEW problems beyond this baseline** (a changed file must not add errors/warnings; ideally the total stays 23) + `npm run build` passes (chunk-size advisory is expected and fine) + the task's manual browser check. Do NOT attempt to fix the pre-existing 23 problems — they are out of scope.
 - Do not touch: bosses' behavior, tunnel-mode canvas visuals, power-up configs, sounds, Supabase services, menu screens (StartScreen/VictoryScreen/etc.).
 - Spec: `docs/superpowers/specs/2026-07-16-cosmic-tunnel-30-design.md`.
 - Fonts/palette: in-game text uses `'Press Start 2P', monospace`; neon palette cyan `#00e5ff` / magenta `#ff2d95` / yellow `#ffff00`.
