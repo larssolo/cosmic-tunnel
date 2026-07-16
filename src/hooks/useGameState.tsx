@@ -30,6 +30,7 @@ const useGameState = () => {
   const [gameOver, setGameOver] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
   const [shipPosition, setShipPosition] = useState(50); // Center position (%)
+  const [shipVertical, setShipVertical] = useState(82); // ship center, % from top
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   const [speed, setSpeed] = useState(0.5);
@@ -37,7 +38,9 @@ const useGameState = () => {
   const [meteorHits, setMeteorHits] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES); // Initialize with maximum lives
   const [isInvulnerable, setIsInvulnerable] = useState(false); // Add invulnerability state
-  
+  const [hitFlash, setHitFlash] = useState(0);
+  const hitStopUntilRef = useRef(0);
+
   // New state for features
   const [currentLevel, setCurrentLevel] = useState(1);
   const [levelUpNotification, setLevelUpNotification] = useState<{ level: number; name: string } | null>(null);
@@ -55,6 +58,7 @@ const useGameState = () => {
   // Combo system
   const [comboCount, setComboCount] = useState(0);
   const [comboNotice, setComboNotice] = useState(false);
+  const [grazeNotice, setGrazeNotice] = useState(false);
   const comboCountRef = useRef(0);
   const lastKillTimeRef = useRef(0);
   // Continue screen
@@ -82,6 +86,7 @@ const useGameState = () => {
   const ufosRef = useRef<Ufo[]>([]);
   const ufoBulletsRef = useRef<UfoBullet[]>([]);
   const nextUfoTimeRef = useRef<number>(Date.now() + 12000 + Math.random() * 8000);
+  const nextCometTimeRef = useRef<number>(Date.now() + 25000);
   const [bonusStar, setBonusStar] = useState<BonusStar | null>(null);
   const [bonusRoundEndTime, setBonusRoundEndTime] = useState<number | null>(null);
   const bonusStarRef = useRef<BonusStar | null>(null);
@@ -91,6 +96,7 @@ const useGameState = () => {
   const speedRingRef = useRef<SpeedRing | null>(null);
   const nextSpeedRingScoreRef = useRef<number>(1500 + Math.floor(Math.random() * 1500));
   const shipPositionRef = useRef<number>(50);
+  const shipVerticalRef = useRef<number>(82);
   const nextSpeedIncreaseRef = useRef<number>(1000);
 
   const scoreRef = useRef(0);
@@ -202,6 +208,9 @@ const useGameState = () => {
   const handleShipHit = useCallback(() => {
     if (isInvulnerable || gameOverRef.current) return;
 
+    setHitFlash(Date.now());
+    hitStopUntilRef.current = Date.now() + 120;
+
     setLives(prev => prev - 1);
     if (livesRef.current - 1 <= 0) {
       if (!continueUsedRef.current) {
@@ -242,6 +251,8 @@ const useGameState = () => {
     setScore(0);
     setGameOver(false);
     setShipPosition(50);
+    setShipVertical(82);
+    shipVerticalRef.current = 82;
     setObstacles([]);
     setProjectiles([]);
     setSpeed(0.5);
@@ -249,6 +260,8 @@ const useGameState = () => {
     setMeteorHits(0);
     setLives(MAX_LIVES);
     setIsInvulnerable(false);
+    setHitFlash(0);
+    hitStopUntilRef.current = 0;
     setCurrentLevel(1);
     survivalTimeRef.current = 0;
     setConsecutiveHits(0);
@@ -274,6 +287,7 @@ const useGameState = () => {
     ufosRef.current = [];
     ufoBulletsRef.current = [];
     nextUfoTimeRef.current = Date.now() + 12000 + Math.random() * 8000;
+    nextCometTimeRef.current = Date.now() + 25000;
     setBonusStar(null);
     setBonusRoundEndTime(null);
     bonusStarRef.current = null;
@@ -306,6 +320,7 @@ const useGameState = () => {
     comboCountRef.current = 0;
     setComboCount(0);
     setComboNotice(false);
+    setGrazeNotice(false);
     setIsPersonalBest(false);
     gameStartTimeRef.current = Date.now();
     lastHitTimeRef.current = Date.now();
@@ -321,10 +336,16 @@ const useGameState = () => {
     setShipPosition(Math.max(10, Math.min(90, position)));
   }, []);
 
+  const moveShipVertical = useCallback((pos: number) => {
+    const clamped = Math.max(35, Math.min(88, pos));
+    shipVerticalRef.current = clamped;
+    setShipVertical(clamped);
+  }, []);
+
   const shootProjectile = useCallback(() => {
     const rapidFire = isPowerUpActive(PowerUpType.RAPID_FIRE);
     const tripleShot = isPowerUpActive(PowerUpType.TRIPLE_SHOT);
-    const result = createProjectile(shipPosition, gameOverRef.current, rapidFire, tripleShot);
+    const result = createProjectile(shipPosition, shipVerticalRef.current, gameOverRef.current, rapidFire, tripleShot);
     if (result) {
       setProjectiles(prev => [
         ...prev,
@@ -336,7 +357,8 @@ const useGameState = () => {
 
   const updateGame = useCallback(() => {
     if (gameOverRef.current) return;
-    
+    if (Date.now() < hitStopUntilRef.current) return; // brief hit-stop after losing a life
+
     // Update survival/hit-time refs (no setState — only read at game-over submission)
     const currentTime = Date.now();
     const timeSinceStart = (currentTime - gameStartTimeRef.current) / 1000;
@@ -401,7 +423,7 @@ const useGameState = () => {
       const powerUpX = powerUp.x;
       const powerUpY = powerUp.y;
       const shipX = shipPosition;
-      const shipY = 85; // Ship is at 85% from top
+      const shipY = shipVerticalRef.current;
       
       // Improved collision detection
       const distanceX = Math.abs(powerUpX - shipX);
@@ -565,7 +587,7 @@ const useGameState = () => {
         bossRef.current = updated;
 
         // Ship collision with boss body
-        const shipY = 85;
+        const shipY = shipVerticalRef.current;
         if (Math.abs(updated.x - shipPosition) < (updated.size / 2 + 6) && Math.abs(updated.y - shipY) < 12 && !isInvulnerable) {
           handleShipHit();
           const bumped: Boss = { ...updated, y: 15 };
@@ -660,7 +682,7 @@ const useGameState = () => {
     // UFO bullets: move, hit ship, cleanup
     if (ufoBulletsRef.current.length > 0) {
       const survivingBullets: UfoBullet[] = [];
-      const shipY = 85;
+      const shipY = shipVerticalRef.current;
       for (const b of ufoBulletsRef.current) {
         const ny = b.y + b.vy * slowMotion;
         if (ny > 100) continue;
@@ -805,7 +827,7 @@ const useGameState = () => {
         setSpeedRing(null);
         speedRingRef.current = null;
         nextSpeedRingScoreRef.current = scoreRef.current + 1800 + Math.floor(Math.random() * 1200);
-      } else if (Math.abs(ring.x - shipPosition) < 7 && Math.abs(newY - 85) < 7) {
+      } else if (Math.abs(ring.x - shipPosition) < 7 && Math.abs(newY - shipVerticalRef.current) < 7) {
         // Collected!
         playSound('levelUp');
         setScore(prev => prev + 1500);
@@ -900,6 +922,23 @@ const useGameState = () => {
       // Boss active — pause meteor spawn, but still update existing obstacles
       setObstacles(prev => updateObstacles(prev, slowMotion));
     } else {
+      // Comet: rare, fast, steep diagonal, high reward (level 4+)
+      const nowLevel = getLevelByScore(scoreRef.current!).level;
+      if (nowLevel >= 4 && currentTime >= nextCometTimeRef.current && !bonusRoundEndTimeRef.current && !bossRef.current) {
+        nextCometTimeRef.current = currentTime + 15000 + Math.random() * 10000;
+        const fromLeft = Math.random() < 0.5;
+        const comet = {
+          id: currentTime + 0.5,
+          x: fromLeft ? -5 : 105,
+          y: 2 + Math.random() * 18,
+          size: 5,
+          seed: Math.random(),
+          kind: 'comet' as const,
+          vx: (fromLeft ? 1 : -1) * (0.45 + Math.random() * 0.15),
+        };
+        setObstacles(prev => [...prev, comet]);
+      }
+
       // Standard mode obstacles — pass current obstacles so spawn can avoid overlaps
       const newObstacle = createObstacle(stormMultiplier, obstacles);
       setObstacles(prev => {
@@ -914,6 +953,11 @@ const useGameState = () => {
     const projectilesForMeteorCheck = liveProjectiles.filter((p) => !consumedProjectileIds.has(p.id));
     const { hitCount: meteorHitCount, destroyedObstacles, newProjectilesList } =
       checkProjectileCollisions(obstacles, projectilesForMeteorCheck);
+
+    const cometKills = destroyedObstacles.filter(o => o.kind === 'comet').length;
+    if (cometKills > 0) {
+      setScore(prev => prev + 150 * cometKills * scoreMultiplierRef.current);
+    }
 
     if (meteorHitCount > 0) {
       playSound('explosion');
@@ -1035,10 +1079,10 @@ const useGameState = () => {
       const voidProgress = Math.min(voidElapsed / VOID_DURATION_MS, 1);
       const newRiseY = voidProgress * 85;
 
-      // Check if the void has consumed the ship (ship at y=85%, void top at 100-newRiseY% from top)
+      // Check if the void has consumed the ship (ship at shipVerticalRef.current% from top, void top at 100-newRiseY% from top)
       // Rate-limited to once per 2100ms — same window as the invulnerability period
       const voidTopPct = 100 - newRiseY;
-      if (voidTopPct <= 86 && !isInvulnerable && currentTime - lastVoidHitRef.current > 2100) {
+      if (voidTopPct <= shipVerticalRef.current + 1 && !isInvulnerable && currentTime - lastVoidHitRef.current > 2100) {
         lastVoidHitRef.current = currentTime;
         handleShipHit();
       }
@@ -1096,12 +1140,12 @@ const useGameState = () => {
       setProjectiles(liveProjectiles);
     }
 
-    const shipCollided = checkShipCollision(obstacles, shipPosition, gameOverRef.current, isTunnelMode && tunnelActive);
+    const shipCollided = checkShipCollision(obstacles, shipPosition, shipVerticalRef.current, gameOverRef.current, isTunnelMode && tunnelActive);
     if (shipCollided && !isInvulnerable) {
       if (bonusRoundEndTimeRef.current) {
         // During bonus round, each touched coin = +500 (count them)
         playSound('powerUpCollect');
-        const shipY = 85;
+        const shipY = shipVerticalRef.current;
         const collected = obstacles.filter(
           (o) => !o.isExploding && Math.abs(o.x - shipPosition) <= 8 && Math.abs(o.y - shipY) <= 8
         );
@@ -1114,6 +1158,23 @@ const useGameState = () => {
         setConsecutiveHits(0);
         lastHitTimeRef.current = Date.now();
         handleShipHit();
+      }
+    } else if (!bonusRoundEndTimeRef.current && !(isTunnelMode && tunnelActive)) {
+      // GRAZE: near-miss bonus — obstacle passes within a whisker of the ship
+      const shipY = shipVerticalRef.current;
+      const grazedIds: number[] = [];
+      for (const o of obstacles) {
+        if (o.isExploding || o.grazed) continue;
+        const xDiff = Math.abs(o.x - shipPosition);
+        const yDiff = Math.abs(o.y - shipY);
+        const collisionX = o.size / 2 + 3; // mirrors checkShipCollision thresholds
+        if (yDiff < 5 && xDiff > collisionX && xDiff < collisionX + 4) grazedIds.push(o.id);
+      }
+      if (grazedIds.length > 0) {
+        setScore(prev => prev + 25 * grazedIds.length * scoreMultiplierRef.current);
+        setObstacles(prev => prev.map(o => (grazedIds.includes(o.id) ? { ...o, grazed: true } : o)));
+        setGrazeNotice(true);
+        safeTimeout(() => setGrazeNotice(false), 600);
       }
     }
   }, [
@@ -1149,12 +1210,14 @@ const useGameState = () => {
     gameOver,
     isVictory,
     shipPosition,
+    shipVertical,
     obstacles,
     projectiles,
     scoreMultiplier,
     meteorHits,
     lives,
     isInvulnerable,
+    hitFlash,
     currentLevel,
     levelUpNotification,
     powerUps,
@@ -1179,11 +1242,13 @@ const useGameState = () => {
     startGame,
     resetGame,
     moveShip,
+    moveShipVertical,
     shootProjectile,
     updateGame,
     submitHighScore,
     comboCount,
     comboNotice,
+    grazeNotice,
     showContinue,
     useContinue,
     declineContinue,

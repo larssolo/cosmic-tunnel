@@ -4,6 +4,10 @@ export interface Obstacle {
   x: number;
   y: number;
   size: number;
+  seed?: number;
+  vx?: number;               // horizontal drift, % per frame
+  kind?: 'meteor' | 'comet';
+  grazed?: boolean;          // graze bonus already awarded
   isExploding?: boolean;
   obstacleType?: 'small' | 'medium' | 'large';
   points?: number;

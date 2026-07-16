@@ -7,6 +7,7 @@ export function useProjectiles() {
 
   const createProjectile = useCallback((
     shipPosition: number,
+    shipY: number,
     gameOver: boolean,
     rapidFire: boolean = false,
     tripleShot: boolean = false
@@ -15,14 +16,15 @@ export function useProjectiles() {
     const shootInterval = rapidFire ? 150 : 200;
     if (now - lastShootTimeRef.current > shootInterval && !gameOver) {
       lastShootTimeRef.current = now;
+      const spawnY = 100 - shipY + 5; // projectile y counts from bottom; 82 → 23
       if (tripleShot) {
         return [
-          { id: now,     x: shipPosition - 6, y: 20 },
-          { id: now + 1, x: shipPosition,      y: 20 },
-          { id: now + 2, x: shipPosition + 6,  y: 20 },
+          { id: now,     x: shipPosition - 6, y: spawnY },
+          { id: now + 1, x: shipPosition,     y: spawnY },
+          { id: now + 2, x: shipPosition + 6, y: spawnY },
         ];
       }
-      return { id: now, x: shipPosition, y: 20 };
+      return { id: now, x: shipPosition, y: spawnY };
     }
     return null;
   }, []);

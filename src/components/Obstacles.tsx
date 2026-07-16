@@ -46,6 +46,37 @@ const ObstacleItem = memo(({ obstacle, dimension, bonusRound }: { obstacle: Obst
     );
   }
 
+  if (obstacle.kind === 'comet' && !obstacle.isExploding) {
+    const angleDeg = (obstacle.vx ?? 0) > 0 ? -60 : 60; // trail points back along travel
+    return (
+      <div
+        className="absolute"
+        style={{
+          width: `${obstacle.size}%`, height: `${obstacle.size}%`, aspectRatio: "1 / 1",
+          left: `${obstacle.x}%`, top: `${obstacle.y}%`, transform: "translate(-50%, -50%)",
+        }}
+      >
+        <div
+          className="absolute left-1/2 top-1/2"
+          style={{
+            width: "45%", height: "320%",
+            transform: `translate(-50%, -100%) rotate(${angleDeg}deg)`,
+            transformOrigin: "bottom center",
+            background: "linear-gradient(to top, rgba(120,255,255,0.75) 0%, rgba(0,200,255,0.3) 40%, transparent 100%)",
+            filter: "blur(4px)", borderRadius: "50%",
+          }}
+        />
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: "radial-gradient(circle at 40% 40%, #ffffff 0%, #aef4ff 45%, #00c8ff 100%)",
+            boxShadow: "0 0 16px #7df4ff, 0 0 34px rgba(0,200,255,0.6)",
+          }}
+        />
+      </div>
+    );
+  }
+
   // Dimension-specific styles
   const getDimStyle = () => {
     if (dimension === 'neon_city') {
@@ -92,33 +123,43 @@ const ObstacleItem = memo(({ obstacle, dimension, bonusRound }: { obstacle: Obst
         dimStyle ? (
           <div className="w-full h-full" style={{ ...dimStyle, width: "100%", height: "100%" }} />
         ) : (
-        // Normal asteroid with consistent gradient appearance
-        <div className="w-full h-full relative">
-          {/* Base meteor shape - always perfectly round */}
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: "linear-gradient(225deg, #7E69AB 0%, #1A1F2C 100%)",
-              boxShadow: "0 0 15px rgba(126, 105, 171, 0.5)",
-              aspectRatio: "1 / 1"
-            }}
-          ></div>
-
-          {/* Inner gradient for depth */}
-          <div className="absolute inset-[15%] rounded-full opacity-70"
-               style={{
-                 background: "linear-gradient(45deg, #6E59A5 0%, #D6BCFA 100%)",
-                 aspectRatio: "1 / 1"
-               }}></div>
-
-          {/* Consistent crater patterns */}
-          <div className="absolute w-[25%] h-[25%] rounded-full bg-gray-700 opacity-80"
-               style={{top: "20%", left: "30%", aspectRatio: "1 / 1"}}></div>
-          <div className="absolute w-[20%] h-[20%] rounded-full bg-gray-800 opacity-70"
-               style={{top: "60%", left: "70%", aspectRatio: "1 / 1"}}></div>
-          <div className="absolute w-[15%] h-[15%] rounded-full bg-gray-700 opacity-60"
-               style={{top: "40%", left: "55%", aspectRatio: "1 / 1"}}></div>
-        </div>
+        // Rocky meteor: irregular shape, ember rim, fire trail, slow rotation
+        (() => {
+          const seed = obstacle.seed ?? 0.5;
+          const spinDur = 6 + seed * 10;
+          const spinDir = seed > 0.5 ? "normal" : "reverse";
+          const br = `${38 + seed * 20}% ${62 - seed * 20}% ${45 + seed * 15}% ${55 - seed * 15}% / ${50 + seed * 12}% ${40 + seed * 18}% ${60 - seed * 18}% ${50 - seed * 12}%`;
+          return (
+            <div className="w-full h-full relative">
+              {/* Fire trail — points up because meteors fall down; tilts with drift */}
+              <div
+                className="absolute left-1/2"
+                style={{
+                  width: "55%", height: "150%", bottom: "45%",
+                  transform: `translateX(-50%) rotate(${(obstacle.vx ?? 0) * -150}deg)`,
+                  transformOrigin: "bottom center",
+                  background: "linear-gradient(to top, rgba(255,140,0,0.5) 0%, rgba(255,60,0,0.22) 45%, transparent 100%)",
+                  filter: "blur(3px)", borderRadius: "50%",
+                }}
+              />
+              {/* Rock body */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  borderRadius: br,
+                  background: `radial-gradient(circle at ${30 + seed * 20}% ${25 + seed * 20}%, #8a7060 0%, #4a3f38 45%, #201a16 100%)`,
+                  boxShadow:
+                    "0 0 12px rgba(255,120,0,0.55), inset -3px -4px 8px rgba(0,0,0,0.8), inset 2px 2px 4px rgba(255,160,60,0.28)",
+                  border: "1px solid rgba(255,140,40,0.5)",
+                  animation: `meteorSpin ${spinDur}s linear infinite ${spinDir}`,
+                }}
+              >
+                <div className="absolute rounded-full bg-black/50" style={{ width: "24%", height: "24%", top: `${15 + seed * 20}%`, left: `${25 + seed * 25}%` }} />
+                <div className="absolute rounded-full bg-black/40" style={{ width: "16%", height: "16%", top: `${55 + seed * 12}%`, left: `${60 - seed * 20}%` }} />
+              </div>
+            </div>
+          );
+        })()
         )
       ) : (
         // Enhanced explosion effect with consistent fragment size and distribution
@@ -214,6 +255,7 @@ const Obstacles: React.FC<ObstaclesProps> = memo(({ obstacles, dimension, bonusR
       {obstacles.map((obstacle) => (
         <ObstacleItem key={obstacle.id} obstacle={obstacle} dimension={dimension} bonusRound={bonusRound} />
       ))}
+      <style>{`@keyframes meteorSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </>
   );
 });
