@@ -25,7 +25,7 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
       }
 
       lastObstacleTimeRef.current = now;
-      return { id: now, x, y: -5, size } as Obstacle;
+      return { id: now, x, y: -5, size, seed: Math.random() } as Obstacle;
     }
 
     return null;
