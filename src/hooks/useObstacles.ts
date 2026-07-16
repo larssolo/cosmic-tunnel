@@ -1,6 +1,7 @@
 
 import { useCallback, useRef } from "react";
 import { Obstacle } from "@/types/gameTypes";
+import { getLevelByScore } from "@/config/levels";
 
 export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.RefObject<number>) {
   const lastObstacleTimeRef = useRef(Date.now());
@@ -25,7 +26,11 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
       }
 
       lastObstacleTimeRef.current = now;
-      return { id: now, x, y: -5, size, seed: Math.random() } as Obstacle;
+      const level = getLevelByScore(scoreRef.current!).level;
+      const vx = level >= 3 && Math.random() < 0.25
+        ? (Math.random() < 0.5 ? -1 : 1) * (0.05 + Math.random() * 0.10)
+        : undefined;
+      return { id: now, x, y: -5, size, seed: Math.random(), vx } as Obstacle;
     }
 
     return null;
@@ -42,14 +47,17 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
         // If the obstacle is exploding, move it faster
         if (obstacle.isExploding) {
           // Remove if it's far below the screen
-          if (obstacle.y > 110) return null;
-          return { ...obstacle, y: obstacle.y + speedRef.current! * 1.5 * speedFactor * slowMotionMultiplier };
+          const explodingNewX = obstacle.x + (obstacle.vx ?? 0) * slowMotionMultiplier;
+          if (obstacle.y > 110 || explodingNewX < -10 || explodingNewX > 110) return null;
+          return { ...obstacle, y: obstacle.y + speedRef.current! * 1.5 * speedFactor * slowMotionMultiplier, x: explodingNewX };
         }
-        
+
         // Remove once off the bottom of the screen
-        const newY = obstacle.y + (baseSpeed + speedRef.current! * speedFactor) * slowMotionMultiplier;
-        if (newY > 105) return null;
-        return { ...obstacle, y: newY };
+        const fallMult = obstacle.kind === 'comet' ? 2.5 : 1;
+        const newY = obstacle.y + (baseSpeed + speedRef.current! * speedFactor) * fallMult * slowMotionMultiplier;
+        const newX = obstacle.x + (obstacle.vx ?? 0) * slowMotionMultiplier;
+        if (newY > 105 || newX < -10 || newX > 110) return null;
+        return { ...obstacle, y: newY, x: newX };
       })
       // Filter out null values (removed obstacles)
       .filter(Boolean) as Obstacle[];
