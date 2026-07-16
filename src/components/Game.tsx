@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Tunnel from "./Tunnel";
 import TunnelMode from "./TunnelMode";
 import Obstacles from "./Obstacles";
@@ -56,6 +56,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     meteorHits,
     lives,
     isInvulnerable,
+    hitFlash,
     currentLevel,
     levelUpNotification,
     powerUps,
@@ -117,6 +118,25 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
 
   const isMobile = useIsMobile();
   isMobileRef.current = isMobile;
+
+  const [shaking, setShaking] = useState(false);
+  const [flashVisible, setFlashVisible] = useState(false);
+  useEffect(() => {
+    if (!hitFlash) return;
+    setShaking(true);
+    setFlashVisible(true);
+    const t1 = setTimeout(() => setShaking(false), 450);
+    const t2 = setTimeout(() => setFlashVisible(false), 250);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [hitFlash]);
+
+  const [shakingSm, setShakingSm] = useState(false);
+  useEffect(() => {
+    if (!bossDefeatedNotice) return;
+    setShakingSm(true);
+    const t = setTimeout(() => setShakingSm(false), 350);
+    return () => clearTimeout(t);
+  }, [bossDefeatedNotice]);
 
   // Mount-once movement handlers — use refs so they never go stale or re-subscribe
   useEffect(() => {
@@ -227,7 +247,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   return (
     <div
       ref={gameContainerRef}
-      className="relative w-full h-full overflow-hidden bg-black"
+      className={`relative w-full h-full overflow-hidden bg-black ${shaking ? "game-shake" : shakingSm ? "game-shake-sm" : ""}`}
       style={{ touchAction: "none" }}
       onPointerMove={(e) => {
         if (e.pointerType === "touch") return;
@@ -295,6 +315,13 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
             {comboCount >= 10 ? "★ ULTRA COMBO ★" : comboCount >= 6 ? "★ MEGA COMBO ★" : "★ COMBO ★"} x{comboCount}
           </div>
         </div>
+      )}
+
+      {flashVisible && (
+        <div
+          className="absolute inset-0 pointer-events-none z-[70]"
+          style={{ background: "radial-gradient(ellipse at center, rgba(255,0,0,0.28) 0%, rgba(255,0,0,0.55) 100%)", animation: "hitFlashFade 0.25s ease-out forwards" }}
+        />
       )}
 
       {/* Game UI */}

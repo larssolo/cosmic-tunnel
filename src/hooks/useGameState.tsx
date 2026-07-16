@@ -37,7 +37,9 @@ const useGameState = () => {
   const [meteorHits, setMeteorHits] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES); // Initialize with maximum lives
   const [isInvulnerable, setIsInvulnerable] = useState(false); // Add invulnerability state
-  
+  const [hitFlash, setHitFlash] = useState(0);
+  const hitStopUntilRef = useRef(0);
+
   // New state for features
   const [currentLevel, setCurrentLevel] = useState(1);
   const [levelUpNotification, setLevelUpNotification] = useState<{ level: number; name: string } | null>(null);
@@ -202,6 +204,9 @@ const useGameState = () => {
   const handleShipHit = useCallback(() => {
     if (isInvulnerable || gameOverRef.current) return;
 
+    setHitFlash(Date.now());
+    hitStopUntilRef.current = Date.now() + 120;
+
     setLives(prev => prev - 1);
     if (livesRef.current - 1 <= 0) {
       if (!continueUsedRef.current) {
@@ -249,6 +254,8 @@ const useGameState = () => {
     setMeteorHits(0);
     setLives(MAX_LIVES);
     setIsInvulnerable(false);
+    setHitFlash(0);
+    hitStopUntilRef.current = 0;
     setCurrentLevel(1);
     survivalTimeRef.current = 0;
     setConsecutiveHits(0);
@@ -336,7 +343,8 @@ const useGameState = () => {
 
   const updateGame = useCallback(() => {
     if (gameOverRef.current) return;
-    
+    if (Date.now() < hitStopUntilRef.current) return; // brief hit-stop after losing a life
+
     // Update survival/hit-time refs (no setState — only read at game-over submission)
     const currentTime = Date.now();
     const timeSinceStart = (currentTime - gameStartTimeRef.current) / 1000;
@@ -1155,6 +1163,7 @@ const useGameState = () => {
     meteorHits,
     lives,
     isInvulnerable,
+    hitFlash,
     currentLevel,
     levelUpNotification,
     powerUps,
