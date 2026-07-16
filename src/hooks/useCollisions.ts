@@ -6,12 +6,12 @@ export function useCollisions() {
   const checkShipCollision = useCallback((
     obstacles: Obstacle[],
     shipPosition: number,
+    shipY: number,
     gameOver: boolean,
     isTunnelMode: boolean = false
   ) => {
     if (gameOver) return false;
-    
-    const shipY = 85; // Ship position from top (percentage)
+
     const shipSize = isTunnelMode ? 5 : 6;
     
     for (const obstacle of obstacles) {

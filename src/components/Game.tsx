@@ -44,12 +44,16 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const lastHoldShotRef = useRef<number>(0);
   const gameOverRef = useRef<boolean>(false);
   const isMobileRef = useRef<boolean>(false);
+  const kbVertRef = useRef<number>(82);
+  const moveShipVertRef = useRef<(pos: number) => void>(() => {});
+  const isTunnelModeRef = useRef<boolean>(false);
 
   const {
     score,
     gameOver,
     isVictory,
     shipPosition,
+    shipVertical,
     obstacles,
     projectiles,
     scoreMultiplier,
@@ -80,6 +84,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     voidEntity,
     resetGame,
     moveShip,
+    moveShipVertical,
     shootProjectile,
     updateGame,
     submitHighScore,
@@ -98,6 +103,8 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   gameOverRef.current = gameOver;
   // Keep kbPos in sync when ship moves via mouse/touch so keyboard picks up from correct position
   kbPosRef.current = shipPosition;
+  moveShipVertRef.current = moveShipVertical;
+  kbVertRef.current = shipVertical;
 
   // Unlock audio context as soon as Game mounts (right after user clicked START)
   useEffect(() => { unlockAudio(); }, []);
@@ -140,26 +147,33 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
 
   // Mount-once movement handlers — use refs so they never go stale or re-subscribe
   useEffect(() => {
-    const handleMove = (clientX: number) => {
+    const handleMove = (clientX: number, clientY?: number) => {
       if (gameOverRef.current || !gameContainerRef.current) return;
       const rect = gameContainerRef.current.getBoundingClientRect();
       if (rect.width === 0) return;
       const position = ((clientX - rect.left) / rect.width) * 100;
       moveShipRef.current(position);
+      if (clientY !== undefined && !isTunnelModeRef.current) {
+        moveShipVertRef.current(((clientY - rect.top) / rect.height) * 100);
+      }
     };
 
     // Primary: pointermove handles mouse, trackpad and pen uniformly
     const handlePointerMove = (e: PointerEvent) => {
       if (e.pointerType === "touch") return; // touchmove handles touch
-      handleMove(e.clientX);
+      handleMove(e.clientX, e.clientY);
     };
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) handleMove(e.touches[0].clientX);
+      if (e.touches.length > 0) handleMove(e.touches[0].clientX, e.touches[0].clientY);
     };
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (!isMobileRef.current || e.gamma === null || gameOverRef.current) return;
       const gamma = Math.max(-30, Math.min(30, e.gamma));
       moveShipRef.current(((gamma + 30) / 60) * 100);
+      if (e.beta !== null && !isTunnelModeRef.current) {
+        const beta = Math.max(20, Math.min(70, e.beta)); // 45° ≈ neutral grip
+        moveShipVertRef.current(35 + ((beta - 20) / 50) * 53);
+      }
     };
 
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
@@ -184,7 +198,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         keysDownRef.current.add("Space");
         return;
       }
-      if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
+      if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "ArrowUp" || e.code === "ArrowDown") {
         e.preventDefault();
         keysDownRef.current.add(e.code);
       }
@@ -213,6 +227,11 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
           if (keys.has("ArrowLeft"))  kbPosRef.current = Math.max(10, kbPosRef.current - STEP);
           if (keys.has("ArrowRight")) kbPosRef.current = Math.min(90, kbPosRef.current + STEP);
           moveShipRef.current(kbPosRef.current);
+        }
+        if ((keys.has("ArrowUp") || keys.has("ArrowDown")) && !isTunnelModeRef.current) {
+          if (keys.has("ArrowUp"))   kbVertRef.current = Math.max(35, kbVertRef.current - STEP);
+          if (keys.has("ArrowDown")) kbVertRef.current = Math.min(88, kbVertRef.current + STEP);
+          moveShipVertRef.current(kbVertRef.current);
         }
         updateGameRef.current();
         if (keys.has("Space")) {
@@ -243,6 +262,12 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   // Determine current game mode
   const currentLevelData = getLevelByScore(score);
   const isTunnelMode = currentLevelData.gameMode === GameMode.TUNNEL && tunnelActive;
+  isTunnelModeRef.current = isTunnelMode;
+
+  // Vertical steering is a corridor no-go — lock the ship back to center while in tunnel mode
+  useEffect(() => {
+    if (isTunnelMode) moveShipVertical(82);
+  }, [isTunnelMode, moveShipVertical]);
 
   return (
     <div
@@ -255,6 +280,9 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         const rect = gameContainerRef.current.getBoundingClientRect();
         if (rect.width === 0) return;
         moveShipRef.current(((e.clientX - rect.left) / rect.width) * 100);
+        if (!isTunnelModeRef.current) {
+          moveShipVertRef.current(((e.clientY - rect.top) / rect.height) * 100);
+        }
       }}
       onClick={handleShoot}
     >
@@ -300,7 +328,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
           <style>{`@keyframes bonusRoundPulse { from { transform: scale(0.95); } to { transform: scale(1.08); } }`}</style>
         </div>
       )}
-      <Spaceship position={shipPosition} isInvulnerable={isInvulnerable} isExploding={gameOver} />
+      <Spaceship position={shipPosition} vertical={shipVertical} isInvulnerable={isInvulnerable} isExploding={gameOver} />
 
       {/* Combo notice */}
       {comboNotice && (

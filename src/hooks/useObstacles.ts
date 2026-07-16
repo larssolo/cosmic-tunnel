@@ -8,7 +8,7 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
   const createObstacle = useCallback((spawnRateMultiplier: number = 1, existingObstacles: Obstacle[] = []) => {
     const now = Date.now();
 
-    const baseInterval = 1500;
+    const baseInterval = 1300; // tightened: vertical dodging made the game easier
     const minInterval = 380; // raised — prevents wall of meteors even during storm
     const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 6, minInterval) / spawnRateMultiplier;
 

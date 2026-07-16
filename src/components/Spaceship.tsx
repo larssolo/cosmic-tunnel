@@ -5,12 +5,13 @@ import SpaceshipExplosion from "./SpaceshipExplosion";
 
 interface SpaceshipProps {
   position: number;
+  vertical: number;
   isExploding?: boolean;
   isInvulnerable?: boolean;
 }
 
 // Use memo to prevent unnecessary re-renders when props haven't changed
-const Spaceship: React.FC<SpaceshipProps> = memo(({ position, isExploding = false, isInvulnerable = false }) => {
+const Spaceship: React.FC<SpaceshipProps> = memo(({ position, vertical, isExploding = false, isInvulnerable = false }) => {
   const prevPosRef = React.useRef(position);
   const [tilt, setTilt] = React.useState(0);
   const tiltResetRef = React.useRef<number | null>(null);
@@ -29,11 +30,11 @@ const Spaceship: React.FC<SpaceshipProps> = memo(({ position, isExploding = fals
     <div
       className="absolute w-16 h-16 cursor-pointer"
       style={{
-        bottom: "20%",
+        top: `${vertical}%`,
         left: `${position}%`,
-        transform: `translateX(-50%) rotate(${tilt}deg)`,
+        transform: `translate(-50%, -50%) rotate(${tilt}deg)`,
         transition: "transform 120ms ease-out",
-        willChange: "left, transform",
+        willChange: "left, top, transform",
         zIndex: isExploding ? 3 : 60,
       }}
     >
