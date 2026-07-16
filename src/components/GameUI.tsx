@@ -144,10 +144,20 @@ const GameUI: React.FC<GameUIProps> = ({
 
       {/* Meteor Storm Active — red screen border pulse */}
       {meteorStormActive && !gameOver && (
-        <div
-          className="absolute inset-0 pointer-events-none z-10"
-          style={{ boxShadow: "inset 0 0 60px rgba(255,0,0,0.4)", animation: "stormPulse 0.6s ease-in-out infinite alternate" }}
-        />
+        <>
+          <div
+            className="absolute inset-0 pointer-events-none z-10"
+            style={{ boxShadow: "inset 0 0 110px rgba(255,0,0,0.55)", animation: "stormPulse 0.6s ease-in-out infinite alternate" }}
+          />
+          <div
+            className="absolute inset-0 pointer-events-none z-10 opacity-[0.07]"
+            style={{
+              background: "repeating-linear-gradient(115deg, transparent 0px, transparent 18px, #ff2200 19px, transparent 20px)",
+              animation: "stormStreak 0.4s linear infinite",
+            }}
+          />
+          <style>{`@keyframes stormStreak { from { background-position: 0 0; } to { background-position: -40px 20px; } }`}</style>
+        </>
       )}
 
       {/* Pilot + Level display */}
