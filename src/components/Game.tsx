@@ -90,6 +90,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     submitHighScore,
     comboCount,
     comboNotice,
+    grazeNotice,
     showContinue,
     useContinue,
     declineContinue,
@@ -329,6 +330,21 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         </div>
       )}
       <Spaceship position={shipPosition} vertical={shipVertical} isInvulnerable={isInvulnerable} isExploding={gameOver} />
+
+      {grazeNotice && (
+        <div
+          className="absolute pointer-events-none z-[65]"
+          style={{
+            left: `${shipPosition}%`, top: `${shipVertical - 9}%`,
+            transform: "translateX(-50%)",
+            fontFamily: "'Press Start 2P', monospace", fontSize: "10px",
+            color: "#7df4ff", textShadow: "0 0 8px #00e5ff, 2px 2px 0 #000",
+            animation: "comboPop 0.6s ease-out forwards",
+          }}
+        >
+          GRAZE! +25
+        </div>
+      )}
 
       {/* Combo notice */}
       {comboNotice && (

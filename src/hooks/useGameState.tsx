@@ -58,6 +58,7 @@ const useGameState = () => {
   // Combo system
   const [comboCount, setComboCount] = useState(0);
   const [comboNotice, setComboNotice] = useState(false);
+  const [grazeNotice, setGrazeNotice] = useState(false);
   const comboCountRef = useRef(0);
   const lastKillTimeRef = useRef(0);
   // Continue screen
@@ -319,6 +320,7 @@ const useGameState = () => {
     comboCountRef.current = 0;
     setComboCount(0);
     setComboNotice(false);
+    setGrazeNotice(false);
     setIsPersonalBest(false);
     gameStartTimeRef.current = Date.now();
     lastHitTimeRef.current = Date.now();
@@ -1157,6 +1159,23 @@ const useGameState = () => {
         lastHitTimeRef.current = Date.now();
         handleShipHit();
       }
+    } else if (!bonusRoundEndTimeRef.current && !(isTunnelMode && tunnelActive)) {
+      // GRAZE: near-miss bonus — obstacle passes within a whisker of the ship
+      const shipY = shipVerticalRef.current;
+      const grazedIds: number[] = [];
+      for (const o of obstacles) {
+        if (o.isExploding || o.grazed) continue;
+        const xDiff = Math.abs(o.x - shipPosition);
+        const yDiff = Math.abs(o.y - shipY);
+        const collisionX = o.size / 2 + 3; // mirrors checkShipCollision thresholds
+        if (yDiff < 5 && xDiff > collisionX && xDiff < collisionX + 4) grazedIds.push(o.id);
+      }
+      if (grazedIds.length > 0) {
+        setScore(prev => prev + 25 * grazedIds.length * scoreMultiplierRef.current);
+        setObstacles(prev => prev.map(o => (grazedIds.includes(o.id) ? { ...o, grazed: true } : o)));
+        setGrazeNotice(true);
+        safeTimeout(() => setGrazeNotice(false), 600);
+      }
     }
   }, [
     createObstacle, 
@@ -1229,6 +1248,7 @@ const useGameState = () => {
     submitHighScore,
     comboCount,
     comboNotice,
+    grazeNotice,
     showContinue,
     useContinue,
     declineContinue,
