@@ -10,26 +10,34 @@ interface SpaceshipProps {
 }
 
 // Use memo to prevent unnecessary re-renders when props haven't changed
-const Spaceship: React.FC<SpaceshipProps> = memo(({ 
-  position, 
-  isExploding = false, 
-  isInvulnerable = false 
-}) => {
+const Spaceship: React.FC<SpaceshipProps> = memo(({ position, isExploding = false, isInvulnerable = false }) => {
+  const prevPosRef = React.useRef(position);
+  const [tilt, setTilt] = React.useState(0);
+  const tiltResetRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    const delta = position - prevPosRef.current;
+    prevPosRef.current = position;
+    if (Math.abs(delta) > 0.05) {
+      setTilt(Math.max(-18, Math.min(18, delta * 9)));
+      if (tiltResetRef.current) window.clearTimeout(tiltResetRef.current);
+      tiltResetRef.current = window.setTimeout(() => setTilt(0), 150);
+    }
+  }, [position]);
+
   return (
     <div
-      className="absolute w-16 h-16 transform -translate-x-1/2 cursor-pointer"
+      className="absolute w-16 h-16 cursor-pointer"
       style={{
         bottom: "20%",
         left: `${position}%`,
-        willChange: "left",
+        transform: `translateX(-50%) rotate(${tilt}deg)`,
+        transition: "transform 120ms ease-out",
+        willChange: "left, transform",
         zIndex: isExploding ? 3 : 60,
       }}
     >
-      {isExploding ? (
-        <SpaceshipExplosion />
-      ) : (
-        <SpaceshipVessel isInvulnerable={isInvulnerable} />
-      )}
+      {isExploding ? <SpaceshipExplosion /> : <SpaceshipVessel isInvulnerable={isInvulnerable} />}
     </div>
   );
 });
