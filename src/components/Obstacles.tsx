@@ -47,6 +47,28 @@ const ObstacleItem = memo(({ obstacle, dimension, bonusRound }: { obstacle: Obst
   }
 
   if (obstacle.kind === 'comet' && !obstacle.isExploding) {
+    // Warning phase: comet held offscreen — flash a chevron at the edge it will enter from
+    if (obstacle.warnUntil && Date.now() < obstacle.warnUntil) {
+      const fromLeft = (obstacle.vx ?? 0) > 0;
+      return (
+        <div
+          className="absolute pointer-events-none z-40"
+          style={{
+            left: fromLeft ? "1.5%" : "auto",
+            right: fromLeft ? "auto" : "1.5%",
+            top: `${obstacle.y}%`,
+            transform: "translateY(-50%)",
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "clamp(14px, 2.2vw, 22px)",
+            color: "#ff3300",
+            textShadow: "0 0 12px #ff3300, 0 0 24px #ff6600",
+            animation: "cometWarnBlink 0.22s step-end infinite",
+          }}
+        >
+          {fromLeft ? "⚠▶" : "◀⚠"}
+        </div>
+      );
+    }
     const angleDeg = (obstacle.vx ?? 0) > 0 ? -60 : 60; // trail points back along travel
     return (
       <div

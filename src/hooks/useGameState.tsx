@@ -12,7 +12,7 @@ import { AchievementService } from "@/services/AchievementService";
 import { getLevelByScore } from "@/config/levels";
 import { POWER_UP_CONFIGS } from "@/config/powerUps";
 import { PowerUpType } from "@/types/powerUpTypes";
-import { GameStats } from "@/types/achievementTypes";
+import { Achievement, GameStats } from "@/types/achievementTypes";
 import { GameMode } from "@/types/gameModeTypes";
 
 const MAX_LIVES = 3;
@@ -24,6 +24,8 @@ const BOSS_BY_LEVEL: Record<number, { type: BossType; name: string; hp: number; 
 };
 
 interface SpeedRing { id: number; x: number; y: number; createdAt: number; }
+
+export interface ScorePopup { id: number; x: number; y: number; text: string; color: string; }
 
 const useGameState = () => {
   const [score, setScore] = useState(0);
@@ -48,7 +50,7 @@ const useGameState = () => {
   const [consecutiveHits, setConsecutiveHits] = useState(0);
   const timeWithoutHitRef = useRef(0);
   const [powerUpsCollected, setPowerUpsCollected] = useState(0);
-  const [achievementNotifications, setAchievementNotifications] = useState<any[]>([]);
+  const [achievementNotifications, setAchievementNotifications] = useState<Achievement[]>([]);
   const [tunnelTransition, setTunnelTransition] = useState(false);
   const [meteorStormWarning, setMeteorStormWarning] = useState(false);
   const [meteorStormActive, setMeteorStormActive] = useState(false);
@@ -115,6 +117,16 @@ const useGameState = () => {
     return id;
   }, []);
   
+  // Floating score popups — spawned at kill locations for instant feedback
+  const [scorePopups, setScorePopups] = useState<ScorePopup[]>([]);
+  const popupIdRef = useRef(0);
+  const pushPopup = useCallback((x: number, y: number, text: string, color = "#ffee55") => {
+    const id = ++popupIdRef.current;
+    // Keep at most 8 on screen so heavy combos don't flood the DOM
+    setScorePopups(prev => [...prev.slice(-7), { id, x, y, text, color }]);
+    safeTimeout(() => setScorePopups(prev => prev.filter(p => p.id !== id)), 900);
+  }, [safeTimeout]);
+
   const { playSound, stopSound } = useSound();
   const voidCountdownStartedRef = useRef(false);
   const {
@@ -210,6 +222,11 @@ const useGameState = () => {
 
     setHitFlash(Date.now());
     hitStopUntilRef.current = Date.now() + 120;
+
+    // Getting hit costs half your multiplier and kills the streak — risk/reward
+    setScoreMultiplier(prev => Math.max(1, prev / 2));
+    scoreMultiplierRef.current = Math.max(1, scoreMultiplierRef.current / 2);
+    comboCountRef.current = 0;
 
     setLives(prev => prev - 1);
     if (livesRef.current - 1 <= 0) {
@@ -321,6 +338,7 @@ const useGameState = () => {
     setComboCount(0);
     setComboNotice(false);
     setGrazeNotice(false);
+    setScorePopups([]);
     setIsPersonalBest(false);
     gameStartTimeRef.current = Date.now();
     lastHitTimeRef.current = Date.now();
@@ -621,7 +639,7 @@ const useGameState = () => {
     // Move projectiles ONCE at the start of this frame; all subsequent collision
     // checks share `liveProjectiles` so a projectile can only ever be consumed once.
     const movedProjectiles = updateProjectiles(projectiles);
-    let liveProjectiles = movedProjectiles;
+    const liveProjectiles = movedProjectiles;
     const consumedProjectileIds = new Set<number>();
 
     // UFO INVADERS — spawn, move (zigzag), shoot, collide
@@ -720,6 +738,7 @@ const useGameState = () => {
           }
         }
         if (killed) {
+          pushPopup(u.x, uy, "+500", "#7df4ff");
           // Mark exploding; remove after a short delay so the animation shows
           const exploding: Ufo = { ...u, isExploding: true };
           updatedUfosAfterHits.push(exploding);
@@ -831,6 +850,7 @@ const useGameState = () => {
         // Collected!
         playSound('levelUp');
         setScore(prev => prev + 1500);
+        pushPopup(ring.x, newY, "+1500", "#aaff66");
         activatePowerUp(PowerUpType.SCORE_BOOST, 8000);
         setSpeedRing(null);
         speedRingRef.current = null;
@@ -896,6 +916,7 @@ const useGameState = () => {
         if (consumedIds.size > 0) {
           playSound('explosion');
           setScore(prev => prev + 100 * consumedIds.size);
+          pushPopup(gw.x, gw.y - 6, `+${100 * consumedIds.size}`, "#cc88ff");
         }
 
         // Bend every asteroid toward the well; consumed ones get the explosion VFX
@@ -927,22 +948,28 @@ const useGameState = () => {
       if (nowLevel >= 4 && currentTime >= nextCometTimeRef.current && !bonusRoundEndTimeRef.current && !bossRef.current) {
         nextCometTimeRef.current = currentTime + 15000 + Math.random() * 10000;
         const fromLeft = Math.random() < 0.5;
-        const comet = {
-          id: currentTime + 0.5,
-          x: fromLeft ? -5 : 105,
+        const makeComet = (left: boolean, idOffset: number) => ({
+          id: currentTime + idOffset,
+          x: left ? -5 : 105,
           y: 2 + Math.random() * 18,
           size: 5,
           seed: Math.random(),
           kind: 'comet' as const,
-          vx: (fromLeft ? 1 : -1) * (0.45 + Math.random() * 0.15),
-        };
-        setObstacles(prev => [...prev, comet]);
+          vx: (left ? 1 : -1) * (0.45 + Math.random() * 0.15),
+          warnUntil: currentTime + 900, // edge chevron telegraphs the entry
+        });
+        const comets = [makeComet(fromLeft, 0.5)];
+        // From level 6: sometimes a scissor attack — comets from BOTH flanks at once
+        if (nowLevel >= 6 && Math.random() < 0.35) comets.push(makeComet(!fromLeft, 0.7));
+        setObstacles(prev => [...prev, ...comets]);
       }
 
       // Standard mode obstacles — pass current obstacles so spawn can avoid overlaps
       const newObstacle = createObstacle(stormMultiplier, obstacles);
       setObstacles(prev => {
-        const withNew = newObstacle ? [...prev, newObstacle] : prev;
+        const withNew = newObstacle
+          ? [...prev, ...(Array.isArray(newObstacle) ? newObstacle : [newObstacle])]
+          : prev;
         const updated = updateObstacles(withNew, slowMotion);
         // Hard cap: never keep more than 40 obstacles to prevent unbounded growth
         return updated.length > 40 ? updated.slice(-40) : updated;
@@ -989,6 +1016,8 @@ const useGameState = () => {
       if (combo >= 3) {
         setComboCount(combo);
         setComboNotice(true);
+        // Milestone streaks get their own fanfare
+        if (combo === 8 || combo === 16) playSound('achievementUnlock');
         safeTimeout(() => setComboNotice(false), 1200);
       }
       const comboBonus = combo >= 10 ? 4 : combo >= 6 ? 3 : combo >= 3 ? 2 : 1;
@@ -1005,6 +1034,19 @@ const useGameState = () => {
         const scorePerHit = Math.round(50 * scoreMultiplierRef.current * scoreBoost * comboBonus);
         setScore(prev => prev + scorePerHit * meteorHitCount);
       }
+
+      // Floating popup at each kill site (cap 3 per frame so combos don't flood)
+      destroyedObstacles.slice(0, 3).forEach(o => {
+        if (o.kind === 'comet') {
+          pushPopup(o.x, o.y, `+${Math.round(150 * scoreMultiplierRef.current)}`, "#7df4ff");
+        } else if (bonusRoundEndTimeRef.current) {
+          pushPopup(o.x, o.y, `+${Math.round(500 * scoreBoost * comboBonus)}`, "#ffdd00");
+        } else if (isTunnelMode && tunnelActive) {
+          pushPopup(o.x, o.y, `+${Math.round((o.points ?? 50) * scoreMultiplierRef.current * scoreBoost * comboBonus)}`);
+        } else {
+          pushPopup(o.x, o.y, `+${Math.round(50 * scoreMultiplierRef.current * scoreBoost * comboBonus)}`);
+        }
+      });
     }
 
     // Projectile-vs-Boss collision
@@ -1029,6 +1071,7 @@ const useGameState = () => {
           setBoss(exploded);
           bossRef.current = exploded;
           setScore(prev => prev + 3000);
+          pushPopup(b.x, b.y, "+3000", "#ffee55");
           setBossDefeatedNotice(true);
           spawnPowerUp();
           if (b.type === 'laser_beast') {
@@ -1098,6 +1141,7 @@ const useGameState = () => {
             if (Math.abs(core.x - p.x) < 5 && Math.abs(coreY - (100 - p.y)) < 5) {
               consumedProjectileIds.add(p.id);
               coreHits++;
+              pushPopup(core.x, coreY, "+1000", "#ff66ff");
               return { ...core, destroyed: true };
             }
           }
@@ -1151,6 +1195,7 @@ const useGameState = () => {
         );
         if (collected.length > 0) {
           setScore((prev) => prev + 500 * collected.length);
+          pushPopup(shipPosition, shipY - 8, `+${500 * collected.length}`, "#ffdd00");
           const collectedIds = new Set(collected.map((o) => o.id));
           setObstacles((prev) => prev.filter((o) => !collectedIds.has(o.id)));
         }
@@ -1198,7 +1243,8 @@ const useGameState = () => {
     currentLevel,
     tunnelActive,
     countdownTime,
-    safeTimeout
+    safeTimeout,
+    pushPopup
   ]);
 
   useEffect(() => {
@@ -1249,6 +1295,7 @@ const useGameState = () => {
     comboCount,
     comboNotice,
     grazeNotice,
+    scorePopups,
     showContinue,
     useContinue,
     declineContinue,

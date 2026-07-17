@@ -7,6 +7,7 @@ export interface Obstacle {
   seed?: number;
   vx?: number;               // horizontal drift, % per frame
   kind?: 'meteor' | 'comet';
+  warnUntil?: number;        // comet edge-warning: held offscreen until this timestamp
   grazed?: boolean;          // graze bonus already awarded
   isExploding?: boolean;
   obstacleType?: 'small' | 'medium' | 'large';

@@ -12,6 +12,7 @@ import BonusStar from "./BonusStar";
 import SpeedRing from "./SpeedRing";
 import GravityWell from "./GravityWell";
 import useGameState from "@/hooks/useGameState";
+import ScorePopups from "./ScorePopups";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PowerUps } from "./PowerUps";
 import { ActivePowerUpIndicators } from "./ActivePowerUpIndicators";
@@ -91,6 +92,7 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     comboCount,
     comboNotice,
     grazeNotice,
+    scorePopups,
     showContinue,
     useContinue,
     declineContinue,
@@ -346,20 +348,33 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
         </div>
       )}
 
-      {/* Combo notice */}
+      {/* Kill-streak announcer */}
       {comboNotice && (
-        <div className="absolute inset-x-0 flex justify-center pointer-events-none" style={{ top: "30%", zIndex: 55 }}>
+        <div className="absolute inset-x-0 flex justify-center pointer-events-none" style={{ top: "28%", zIndex: 55 }}>
           <div style={{
             fontFamily: "'Press Start 2P', monospace",
-            fontSize: "clamp(14px, 3vw, 28px)",
-            color: comboCount >= 10 ? "#ff4400" : comboCount >= 6 ? "#ff00ff" : "#ffff00",
-            textShadow: "0 0 20px currentColor, 3px 3px 0 #000",
-            animation: "comboPop 1.2s ease-out forwards",
+            fontSize: comboCount >= 8 ? "clamp(18px, 4vw, 36px)" : "clamp(14px, 3vw, 28px)",
+            color: comboCount >= 16 ? "#ffffff" : comboCount >= 12 ? "#ff2200" : comboCount >= 8 ? "#ff00ff" : comboCount >= 5 ? "#ff8800" : "#ffff00",
+            textShadow: comboCount >= 16
+              ? "0 0 24px #ff2200, 0 0 48px #ff2200, 3px 3px 0 #000"
+              : "0 0 20px currentColor, 3px 3px 0 #000",
+            animation: "announcerSlam 1.2s cubic-bezier(0.16, 1.6, 0.4, 1) forwards",
+            textAlign: "center",
           }}>
-            {comboCount >= 10 ? "★ ULTRA COMBO ★" : comboCount >= 6 ? "★ MEGA COMBO ★" : "★ COMBO ★"} x{comboCount}
+            {comboCount >= 16 ? "☠ GODLIKE ☠"
+              : comboCount >= 12 ? "★ UNSTOPPABLE ★"
+              : comboCount >= 8 ? "★ RAMPAGE ★"
+              : comboCount >= 5 ? "MULTI KILL!"
+              : "TRIPLE KILL!"}
+            <div style={{ fontSize: "0.5em", marginTop: "0.5em", color: "#ffff88", textShadow: "0 0 10px #ffff00, 2px 2px 0 #000" }}>
+              x{comboCount} STREAK
+            </div>
           </div>
         </div>
       )}
+
+      {/* Floating score popups at kill sites */}
+      <ScorePopups popups={scorePopups} />
 
       {flashVisible && (
         <div

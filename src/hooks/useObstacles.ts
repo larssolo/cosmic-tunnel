@@ -14,6 +14,54 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
     const obstacleInterval = Math.max(baseInterval - scoreRef.current! / 6, minInterval) / spawnRateMultiplier;
 
     if (now - lastObstacleTimeRef.current > obstacleInterval) {
+      const level = getLevelByScore(scoreRef.current!).level;
+
+      // PATTERN DIRECTOR — once the run is warmed up, occasionally swap the single
+      // meteor for a formation so the sky stops feeling like a metronome
+      if (scoreRef.current! > 800 && Math.random() < 0.16) {
+        // Formations are denser than singles, so push the next spawn out a bit
+        lastObstacleTimeRef.current = now + obstacleInterval * 0.7;
+        const roll = Math.random();
+
+        if (roll < 0.35) {
+          // V-FORMATION — tight wedge diving straight down
+          const cx = 20 + Math.random() * 60;
+          return [
+            { id: now,     x: cx,      y: -4,  size: 7 + Math.random() * 2, seed: Math.random() },
+            { id: now + 1, x: cx - 13, y: -13, size: 6 + Math.random() * 2, seed: Math.random() },
+            { id: now + 2, x: cx + 13, y: -13, size: 6 + Math.random() * 2, seed: Math.random() },
+          ] as Obstacle[];
+        }
+
+        if (roll < 0.65) {
+          // WALL WITH A GAP — five slots, one missing; thread the needle
+          const slots = [15, 32.5, 50, 67.5, 85];
+          const gap = Math.floor(Math.random() * slots.length);
+          return slots
+            .filter((_, i) => i !== gap)
+            .map((sx, i) => ({
+              id: now + i,
+              x: sx + (Math.random() - 0.5) * 4,
+              y: -6,
+              size: 6 + Math.random() * 1.5,
+              seed: Math.random(),
+            })) as Obstacle[];
+        }
+
+        // SIDE VOLLEY — staggered column drifting hard from one flank
+        const fromLeft = Math.random() < 0.5;
+        const vxDir = (fromLeft ? 1 : -1) * (0.18 + Math.random() * 0.1);
+        const baseX = fromLeft ? 12 : 88;
+        return [0, 1, 2].map(i => ({
+          id: now + i,
+          x: baseX + (fromLeft ? -1 : 1) * i * 6,
+          y: -5 - i * 9,
+          size: 6 + Math.random() * 2,
+          seed: Math.random(),
+          vx: vxDir,
+        })) as Obstacle[];
+      }
+
       const size = Math.random() * 10 + 5;
 
       // Pick an x that doesn't overlap with meteors near the top of the screen
@@ -26,7 +74,6 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
       }
 
       lastObstacleTimeRef.current = now;
-      const level = getLevelByScore(scoreRef.current!).level;
       const vx = level >= 3 && Math.random() < 0.25
         ? (Math.random() < 0.5 ? -1 : 1) * (0.05 + Math.random() * 0.10)
         : undefined;
@@ -37,8 +84,11 @@ export function useObstacles(scoreRef: React.RefObject<number>, speedRef: React.
   }, [scoreRef]);
 
   const updateObstacles = useCallback((obstacles: Obstacle[], slowMotionMultiplier: number = 1.0) => {
+    const now = Date.now();
     return obstacles
       .map(obstacle => {
+        // Comet edge-warning phase: hold it offscreen so the ⚠ chevron can telegraph the entry
+        if (obstacle.warnUntil && now < obstacle.warnUntil) return obstacle;
         // Calculate the speed factor based on the game's current score
         // Start even slower and gradually increase speed
         const baseSpeed = 0.3; // Start with a slower base speed
