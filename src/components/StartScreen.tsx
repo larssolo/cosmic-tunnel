@@ -102,6 +102,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
             textShadow:
               "3px 3px 0 #00ffff, 6px 6px 0 #000, 0 0 20px #ff00ff",
             letterSpacing: "0.05em",
+            animation: "titleSlam 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both, neon-flicker 4s linear 1s infinite",
           }}
         >
           COSMIC
@@ -113,17 +114,31 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
             textShadow:
               "3px 3px 0 #ff00ff, 6px 6px 0 #000, 0 0 20px #00ffff",
             letterSpacing: "0.05em",
+            animation: "titleSlam 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 0.12s both, neon-flicker 5s linear 1.4s infinite",
           }}
         >
           TUNNEL
         </h1>
 
         <p
-          className="text-xs md:text-sm mb-6"
+          className="text-xs md:text-sm mb-2"
           style={{ color: "#ffff00", textShadow: "2px 2px 0 #000" }}
         >
           ★ INSERT COIN ★ 1 PLAYER ★
         </p>
+        <p
+          className="text-[9px] md:text-[11px] mb-6"
+          style={{ color: "#00ffaa", textShadow: "0 0 8px #00ffaa, 1px 1px 0 #000", letterSpacing: "0.2em" }}
+        >
+          DODGE ▪ SHOOT ▪ SURVIVE
+        </p>
+        <style>{`
+          @keyframes titleSlam {
+            0%   { transform: scale(2.4) translateY(-20px); opacity: 0; }
+            60%  { transform: scale(0.94); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
 
         {/* High scores */}
         <div

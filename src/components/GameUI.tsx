@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { Zap, Heart } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CloudHighScoreService } from "@/services/CloudHighScoreService";
 import { CountdownTimer } from "./CountdownTimer";
@@ -51,6 +51,38 @@ const GameUI: React.FC<GameUIProps> = ({
   const [showHitFlash, setShowHitFlash] = useState(false);
   const submittedRef = useRef(false);
   const queryClient = useQueryClient();
+
+  // Cinematic game over: let the explosion play out before the overlay slams in
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const [displayScore, setDisplayScore] = useState(0);
+  useEffect(() => {
+    if (!gameOver) { setOverlayVisible(false); setDisplayScore(0); return; }
+    const t = setTimeout(() => setOverlayVisible(true), 1400);
+    return () => clearTimeout(t);
+  }, [gameOver]);
+
+  // Score counts up arcade-style once the overlay is visible
+  useEffect(() => {
+    if (!overlayVisible) return;
+    const start = performance.now();
+    const duration = 1100;
+    let raf = 0;
+    const tick = (t: number) => {
+      const p = Math.min((t - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplayScore(Math.round(score * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [overlayVisible, score]);
+
+  // Session-best score for the classic HI readout
+  const [hiScore, setHiScore] = useState(0);
+  useEffect(() => {
+    const stored = parseInt(localStorage.getItem(`pb_${playerName}`) ?? "0", 10);
+    setHiScore(Number.isNaN(stored) ? 0 : stored);
+  }, [playerName, gameOver]);
 
   useEffect(() => {
     if (showInstructions) {
@@ -160,33 +192,84 @@ const GameUI: React.FC<GameUIProps> = ({
         </>
       )}
 
-      {/* Pilot + Level display */}
-      <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm p-3 rounded-lg border border-purple-500/30 text-white">
-        <p className="text-xs text-cyan-400">PILOT: {playerName}</p>
-        <p className="text-lg font-bold text-purple-400">Level {currentLevel}</p>
-        {tunnelMode && <p className="text-xs text-yellow-400 mt-1">Tunnel Mode</p>}
+      {/* ARCADE HUD — left column: 1UP / score / HI / lives */}
+      <div className="absolute top-3 left-4" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+        <p style={{ color: "#ff5555", fontSize: "clamp(7px, 1vw, 9px)", textShadow: "1px 1px 0 #000", letterSpacing: "0.1em" }}>
+          1UP · {playerName}
+        </p>
+        <p style={{ color: "#ffff00", fontSize: "clamp(15px, 2.4vw, 24px)", textShadow: "0 0 10px #ffff00, 2px 2px 0 #000", marginTop: "3px" }}>
+          {String(score).padStart(6, "0")}
+        </p>
+        <p style={{ color: "#ffffff", fontSize: "clamp(7px, 0.9vw, 9px)", textShadow: "1px 1px 0 #000", marginTop: "3px", opacity: 0.8 }}>
+          HI {String(Math.max(hiScore, score)).padStart(6, "0")}
+        </p>
+        <div className="flex items-center gap-1.5" style={{ marginTop: "6px" }}>
+          {Array.from({ length: lives }).map((_, index) => (
+            <span
+              key={index}
+              className={isInvulnerable ? "animate-pulse" : ""}
+              style={{
+                color: "#00ffff",
+                fontSize: "clamp(10px, 1.4vw, 14px)",
+                textShadow: "0 0 6px #00ffff, 1px 1px 0 #000",
+              }}
+            >
+              ▲
+            </span>
+          ))}
+          {lives === 1 && (
+            <span style={{ color: "#ff2200", fontSize: "clamp(6px, 0.9vw, 8px)", textShadow: "0 0 6px #ff2200", marginLeft: "4px", animation: "dangerBlink 0.5s step-end infinite" }}>
+              ⚠ LAST SHIP
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Score */}
-      <div className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm"
-           style={{ boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)", border: "1px solid rgba(155, 135, 245, 0.2)" }}>
-        <p className="font-bold">Score: {score}</p>
-        <p className="text-sm text-green-300 font-medium">Meteor Hit: {meteorHits}</p>
+      {/* ARCADE HUD — right column: level / multiplier heat / meteors */}
+      <div className="absolute top-3 right-4 text-right" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+        <p style={{ color: "#ff00ff", fontSize: "clamp(8px, 1.2vw, 11px)", textShadow: "0 0 8px #ff00ff, 1px 1px 0 #000" }}>
+          LEVEL {currentLevel}
+        </p>
+        {tunnelMode && (
+          <p style={{ color: "#00ffff", fontSize: "clamp(6px, 0.9vw, 8px)", textShadow: "0 0 6px #00ffff", marginTop: "3px" }}>
+            ▓ TUNNEL MODE ▓
+          </p>
+        )}
+        <p
+          key={Math.round(scoreMultiplier * 10)}
+          style={{
+            color: scoreMultiplier >= 6 ? "#ff2200" : scoreMultiplier >= 4 ? "#ff8800" : scoreMultiplier >= 2 ? "#ffff00" : "#ffffff",
+            fontSize: "clamp(13px, 2vw, 20px)",
+            textShadow: scoreMultiplier >= 4 ? "0 0 14px currentColor, 2px 2px 0 #000" : "0 0 8px currentColor, 2px 2px 0 #000",
+            marginTop: "5px",
+            animation: "hudPulse 0.35s ease-out",
+          }}
+        >
+          ×{scoreMultiplier.toFixed(1)}
+        </p>
+        <p style={{ color: "#00ff88", fontSize: "clamp(6px, 0.9vw, 8px)", textShadow: "1px 1px 0 #000", marginTop: "4px", opacity: 0.8 }}>
+          METEORS {meteorHits}
+        </p>
       </div>
 
-      {/* Lives display */}
-      <div className="absolute top-20 left-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm flex items-center gap-2"
-           style={{ boxShadow: "0 0 10px rgba(155, 135, 245, 0.3)", border: "1px solid rgba(155, 135, 245, 0.2)" }}>
-        {Array.from({ length: lives }).map((_, index) => (
-          <Heart key={index} size={18} className={`fill-red-500 text-red-500 ${isInvulnerable ? 'animate-pulse' : ''}`} />
-        ))}
-      </div>
+      {/* LAST SHIP danger vignette */}
+      {lives === 1 && !gameOver && (
+        <div
+          className="absolute inset-0 pointer-events-none z-10"
+          style={{ boxShadow: "inset 0 0 90px rgba(255,20,20,0.45)", animation: "dangerVignette 1.1s ease-in-out infinite alternate" }}
+        />
+      )}
 
-      {/* Game over screen */}
-      {gameOver && (
+      {/* Game over screen — waits for the explosion, then slams in */}
+      {gameOver && overlayVisible && (
         <div
           className="absolute inset-0 flex items-center justify-center flex-col gap-4 pointer-events-auto"
-          style={{ background: "rgba(0,0,0,0.96)", fontFamily: "'Press Start 2P', monospace", zIndex: 30 }}
+          style={{
+            background: "rgba(0,0,0,0.96)",
+            fontFamily: "'Press Start 2P', monospace",
+            zIndex: 30,
+            animation: "overlayFadeIn 0.35s ease-out",
+          }}
         >
           <h2
             className="text-3xl md:text-5xl"
@@ -194,6 +277,7 @@ const GameUI: React.FC<GameUIProps> = ({
               color: "#ff00ff",
               textShadow: "3px 3px 0 #00ffff, 6px 6px 0 #000",
               letterSpacing: "0.05em",
+              animation: "gameOverSlam 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both",
             }}
           >
             GAME OVER
@@ -208,7 +292,7 @@ const GameUI: React.FC<GameUIProps> = ({
             className="text-base md:text-2xl"
             style={{ color: "#00ffff", textShadow: "0 0 10px #00ffff" }}
           >
-            SCORE: {String(score).padStart(6, "0")}
+            SCORE: {String(displayScore).padStart(6, "0")}
           </p>
           {isPersonalBest && (
             <p
@@ -305,12 +389,12 @@ const GameUI: React.FC<GameUIProps> = ({
             </>
           ) : (
             <>
-              <p className="md:block hidden">Move mouse left/right to control the spaceship</p>
-              <p className="md:hidden">Tilt your phone left/right to control the spaceship</p>
+              <p className="md:block hidden">Move the mouse to steer — near-misses give GRAZE bonus!</p>
+              <p className="md:hidden">Tilt your phone to steer — near-misses give GRAZE bonus!</p>
             </>
           )}
           <p className="flex items-center justify-center gap-1 mt-1">
-            <span>Click/tap to shoot</span>
+            <span>Click/tap to shoot — chain kills for streaks</span>
             <Zap size={16} className="text-yellow-300" />
           </p>
         </div>
@@ -338,6 +422,24 @@ const GameUI: React.FC<GameUIProps> = ({
           45%  { background: rgba(255, 30, 30, 0.52); }
           70%  { background: rgba(255, 255, 255, 0.22); }
           100% { background: transparent; }
+        }
+        @keyframes dangerBlink { 50% { opacity: 0; } }
+        @keyframes dangerVignette {
+          from { opacity: 0.35; }
+          to   { opacity: 1; }
+        }
+        @keyframes hudPulse {
+          0%   { transform: scale(1.45); }
+          100% { transform: scale(1); }
+        }
+        @keyframes overlayFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes gameOverSlam {
+          0%   { transform: scale(3.2); opacity: 0; }
+          60%  { transform: scale(0.92); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </div>

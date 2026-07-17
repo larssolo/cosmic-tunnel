@@ -247,3 +247,23 @@
 }
 .game-shake-sm { animation: gameShakeSm 0.35s linear; }
 @keyframes hitFlashFade { from { opacity: 1; } to { opacity: 0; } }
+
+/* Floating score popups at kill sites */
+@keyframes scoreFloat {
+  0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  15%  { transform: translate(-50%, -70%) scale(1.25); opacity: 1; }
+  55%  { transform: translate(-50%, -110%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -170%) scale(0.9); opacity: 0; }
+}
+
+/* Kill-streak announcer slam */
+@keyframes announcerSlam {
+  0%   { transform: scale(2.6); opacity: 0; }
+  18%  { transform: scale(0.92); opacity: 1; }
+  30%  { transform: scale(1.05); opacity: 1; }
+  75%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.95) translateY(-10px); opacity: 0; }
+}
+
+/* Comet incoming edge warning */
+@keyframes cometWarnBlink { 50% { opacity: 0.15; } }
