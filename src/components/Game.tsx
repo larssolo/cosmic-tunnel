@@ -13,7 +13,6 @@ import SpeedRing from "./SpeedRing";
 import GravityWell from "./GravityWell";
 import useGameState from "@/hooks/useGameState";
 import ScorePopups from "./ScorePopups";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { PowerUps } from "./PowerUps";
 import { ActivePowerUpIndicators } from "./ActivePowerUpIndicators";
 import { LevelUpNotification } from "./LevelUpNotification";
@@ -44,7 +43,9 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
   const shootRef = useRef<() => void>(() => {});
   const lastHoldShotRef = useRef<number>(0);
   const gameOverRef = useRef<boolean>(false);
-  const isMobileRef = useRef<boolean>(false);
+  const touchHeldRef = useRef<boolean>(false);
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+  const lastTouchEndRef = useRef<number>(0);
   const kbVertRef = useRef<number>(82);
   const moveShipVertRef = useRef<(pos: number) => void>(() => {});
   const isTunnelModeRef = useRef<boolean>(false);
@@ -126,9 +127,6 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     };
   }, []);
 
-  const isMobile = useIsMobile();
-  isMobileRef.current = isMobile;
-
   const [shaking, setShaking] = useState(false);
   const [flashVisible, setFlashVisible] = useState(false);
   useEffect(() => {
@@ -150,42 +148,70 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
 
   // Mount-once movement handlers — use refs so they never go stale or re-subscribe
   useEffect(() => {
-    const handleMove = (clientX: number, clientY?: number) => {
+    // Desktop: ship follows the pointer position directly
+    const handlePointerMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return; // touch uses drag control below
       if (gameOverRef.current || !gameContainerRef.current) return;
       const rect = gameContainerRef.current.getBoundingClientRect();
       if (rect.width === 0) return;
-      const position = ((clientX - rect.left) / rect.width) * 100;
-      moveShipRef.current(position);
-      if (clientY !== undefined && !isTunnelModeRef.current) {
-        moveShipVertRef.current(((clientY - rect.top) / rect.height) * 100);
+      moveShipRef.current(((e.clientX - rect.left) / rect.width) * 100);
+      if (!isTunnelModeRef.current) {
+        moveShipVertRef.current(((e.clientY - rect.top) / rect.height) * 100);
       }
     };
 
-    // Primary: pointermove handles mouse, trackpad and pen uniformly
-    const handlePointerMove = (e: PointerEvent) => {
-      if (e.pointerType === "touch") return; // touchmove handles touch
-      handleMove(e.clientX, e.clientY);
+    // MOBILE: relative drag — the ship follows finger MOVEMENT, not finger position,
+    // so your thumb never covers the ship. Holding the finger down auto-fires.
+    const DRAG_SENSITIVITY = 1.3;
+    const handleTouchStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      lastTouchRef.current = { x: t.clientX, y: t.clientY };
+      if (gameOverRef.current) return;
+      touchHeldRef.current = true;
+      // First shot fires instantly; the game loop keeps firing while held
+      shootRef.current();
+      lastHoldShotRef.current = Date.now();
     };
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) handleMove(e.touches[0].clientX, e.touches[0].clientY);
-    };
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (!isMobileRef.current || e.gamma === null || gameOverRef.current) return;
-      const gamma = Math.max(-30, Math.min(30, e.gamma));
-      moveShipRef.current(((gamma + 30) / 60) * 100);
-      if (e.beta !== null && !isTunnelModeRef.current) {
-        const beta = Math.max(20, Math.min(70, e.beta)); // 45° ≈ neutral grip
-        moveShipVertRef.current(35 + ((beta - 20) / 50) * 53);
+      const last = lastTouchRef.current;
+      if (!last || e.touches.length === 0 || !gameContainerRef.current) return;
+      const rect = gameContainerRef.current.getBoundingClientRect();
+      if (rect.width === 0 || gameOverRef.current) return;
+      const t = e.touches[0];
+      // Incremental deltas (not distance-from-start) so the ship never rubber-bands
+      // after clamping at the edges
+      const dx = ((t.clientX - last.x) / rect.width) * 100 * DRAG_SENSITIVITY;
+      lastTouchRef.current = { x: t.clientX, y: t.clientY };
+      kbPosRef.current = Math.max(10, Math.min(90, kbPosRef.current + dx));
+      moveShipRef.current(kbPosRef.current);
+      if (!isTunnelModeRef.current) {
+        const dy = ((t.clientY - last.y) / rect.height) * 100 * DRAG_SENSITIVITY;
+        kbVertRef.current = Math.max(35, Math.min(88, kbVertRef.current + dy));
+        moveShipVertRef.current(kbVertRef.current);
       }
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        // Another finger is still down — hand the drag over to it
+        lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        return;
+      }
+      touchHeldRef.current = false;
+      lastTouchRef.current = null;
+      lastTouchEndRef.current = Date.now();
     };
 
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("deviceorientation", handleOrientation);
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("deviceorientation", handleOrientation);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -237,7 +263,8 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
           moveShipVertRef.current(kbVertRef.current);
         }
         updateGameRef.current();
-        if (keys.has("Space")) {
+        // Auto-fire while Space is held (desktop) or a finger is on the screen (mobile)
+        if (keys.has("Space") || touchHeldRef.current) {
           const nowMs = Date.now();
           if (nowMs - lastHoldShotRef.current >= 220) {
             shootRef.current();
@@ -255,8 +282,10 @@ const Game: React.FC<GameProps> = ({ playerName, onExit }) => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle click/tap to shoot
+  // Handle click to shoot (desktop). Touch auto-fires via the game loop, and the
+  // synthetic click that follows touchend must not fire an extra shot.
   const handleShoot = () => {
+    if (touchHeldRef.current || Date.now() - lastTouchEndRef.current < 500) return;
     if (!gameOver) {
       shootProjectile();
     }
