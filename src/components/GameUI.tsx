@@ -385,16 +385,20 @@ const GameUI: React.FC<GameUIProps> = ({
             <>
               <p className="text-yellow-400 font-bold mb-1">🚀 TUNNEL MODE ACTIVATED!</p>
               <p className="md:block hidden">Fly through the meteor tunnel! Small rocks = HIGH POINTS!</p>
-              <p className="md:hidden">Tilt to dodge! Small rocks = HIGH POINTS!</p>
+              <p className="md:hidden">Drag to dodge! Small rocks = HIGH POINTS!</p>
             </>
           ) : (
             <>
               <p className="md:block hidden">Move the mouse to steer — near-misses give GRAZE bonus!</p>
-              <p className="md:hidden">Tilt your phone to steer — near-misses give GRAZE bonus!</p>
+              <p className="md:hidden">Drag anywhere to steer — near-misses give GRAZE bonus!</p>
             </>
           )}
-          <p className="flex items-center justify-center gap-1 mt-1">
-            <span>Click/tap to shoot — chain kills for streaks</span>
+          <p className="md:flex hidden items-center justify-center gap-1 mt-1">
+            <span>Click to shoot — chain kills for streaks</span>
+            <Zap size={16} className="text-yellow-300" />
+          </p>
+          <p className="md:hidden flex items-center justify-center gap-1 mt-1">
+            <span>Hold your finger down to auto-fire</span>
             <Zap size={16} className="text-yellow-300" />
           </p>
         </div>

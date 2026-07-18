@@ -94,8 +94,8 @@ const StarWarsCrawl: React.FC<StarWarsCrawlProps> = ({ onDone }) => {
             >
               <p>🖱 MOUSE — move left / right to steer</p>
               <p>⌨ ARROW KEYS — steer left / right</p>
-              <p>📱 MOBILE — tilt phone to steer</p>
-              <p>👆 TAP / CLICK — fire laser cannons</p>
+              <p>📱 MOBILE — drag to steer, hold to auto-fire</p>
+              <p>👆 CLICK / HOLD SPACE — fire laser cannons</p>
               <p>SPACE — fire laser cannons</p>
               <p>⭐ POWER-UPS — collect for special abilities</p>
               <p>❤ LIVES — you have 3 before it's over</p>
